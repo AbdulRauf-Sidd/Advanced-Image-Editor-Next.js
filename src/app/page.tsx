@@ -1,103 +1,431 @@
-import Image from "next/image";
+"use client";
+
+import { useRouter } from 'next/navigation';
+import ImageEditor from 'components/ImageEditor';
+import { useState, useRef, useEffect } from 'react';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const router = useRouter();
+  const [description, setDescription] = useState('');
+  const [activeMode, setActiveMode] = useState<'none' | 'crop' | 'arrow'>('none');
+  const [hasCropFrame, setHasCropFrame] = useState(false);
+  const [showDrawingDropdown, setShowDrawingDropdown] = useState(false);
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [locationSearch, setLocationSearch] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState<string>('');
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [isSpeechSupported, setIsSpeechSupported] = useState(false);
+  const drawingDropdownRef = useRef<HTMLDivElement>(null);
+  const locationDropdownRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Location data
+  const locations = ['USA', 'Pakistan', 'India', 'China'];
+  
+  // Filtered locations based on search
+  const filteredLocations = locations.filter(location =>
+    location.toLowerCase().includes(locationSearch.toLowerCase())
+  );
+
+  // Initialize speech recognition
+  useEffect(() => {
+    // Check if speech recognition is available
+    const isSpeechRecognitionSupported = () => {
+      return typeof window !== 'undefined' && 
+             ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
+    };
+
+    setIsSpeechSupported(isSpeechRecognitionSupported());
+
+    if (isSpeechRecognitionSupported()) {
+      try {
+        const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+        recognitionRef.current = new SpeechRecognition();
+        
+        recognitionRef.current.continuous = true;
+        recognitionRef.current.interimResults = true;
+        recognitionRef.current.lang = 'en-US';
+        
+        recognitionRef.current.onresult = (event: any) => {
+          let finalTranscript = '';
+          let interimTranscript = '';
+          
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript;
+            } else {
+              interimTranscript += transcript;
+            }
+          }
+          
+          if (finalTranscript) {
+            setTranscript(prev => prev + ' ' + finalTranscript);
+            setDescription(prev => prev + ' ' + finalTranscript);
+          }
+        };
+        
+        recognitionRef.current.onerror = (event: any) => {
+          console.error('Speech recognition error:', event.error);
+          setIsListening(false);
+          
+          // Show user-friendly error messages
+          if (event.error === 'not-allowed') {
+            alert('Please allow microphone access to use voice input.');
+          } else if (event.error === 'no-speech') {
+            alert('No speech detected. Please try speaking again.');
+          } else if (event.error === 'audio-capture') {
+            alert('Microphone not found. Please check your microphone connection.');
+          }
+        };
+        
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+        };
+        
+        recognitionRef.current.onstart = () => {
+          console.log('Speech recognition started');
+        };
+      } catch (error) {
+        console.error('Failed to initialize speech recognition:', error);
+      }
+    }
+    
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  // Toggle microphone
+  const toggleMicrophone = () => {
+    if (!isSpeechSupported) {
+      alert('Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
+      return;
+    }
+    
+    if (!recognitionRef.current) {
+      // Try to initialize speech recognition if not already done
+      try {
+        const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+        recognitionRef.current = new SpeechRecognition();
+        
+        recognitionRef.current.continuous = true;
+        recognitionRef.current.interimResults = true;
+        recognitionRef.current.lang = 'en-US';
+        
+        recognitionRef.current.onresult = (event: any) => {
+          let finalTranscript = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript;
+            }
+          }
+          if (finalTranscript) {
+            setTranscript(prev => prev + ' ' + finalTranscript);
+            setDescription(prev => prev + ' ' + finalTranscript);
+          }
+        };
+        
+        recognitionRef.current.onerror = (event: any) => {
+          console.error('Speech recognition error:', event.error);
+          setIsListening(false);
+          if (event.error === 'not-allowed') {
+            alert('Please allow microphone access to use voice input.');
+          } else if (event.error === 'no-speech') {
+            alert('No speech detected. Please try speaking again.');
+          } else if (event.error === 'audio-capture') {
+            alert('Microphone not found. Please check your microphone connection.');
+          }
+        };
+        
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+        };
+        
+        recognitionRef.current.onstart = () => {
+          console.log('Speech recognition started');
+        };
+      } catch (error) {
+        console.error('Failed to initialize speech recognition:', error);
+        alert('Failed to initialize speech recognition. Please try refreshing the page.');
+        return;
+      }
+    }
+    
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      // Add a small delay before clearing transcript to show final result
+      setTimeout(() => {
+        setTranscript('');
+      }, 1000);
+    } else {
+      recognitionRef.current.start();
+      setIsListening(true);
+      setTranscript('');
+    }
+  };
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (drawingDropdownRef.current && !drawingDropdownRef.current.contains(event.target as Node)) {
+        setShowDrawingDropdown(false);
+      }
+      if (locationDropdownRef.current && !locationDropdownRef.current.contains(event.target as Node)) {
+        setShowLocationDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleSubmit = () => {
+    const locationText = selectedLocation ? ` from ${selectedLocation}` : '';
+    alert(`Image submitted successfully with description: ${description}${locationText}`);
+  };
+
+  const handleActionClick = (mode: 'none' | 'crop' | 'arrow') => {
+    if (mode === 'arrow') {
+      setShowDrawingDropdown(!showDrawingDropdown);
+      setActiveMode(activeMode === 'arrow' ? 'none' : 'arrow');
+    } else {
+      setShowDrawingDropdown(false);
+      setActiveMode(activeMode === mode ? 'none' : mode);
+    }
+  };
+
+  const handleUndo = () => {
+    console.log('Undo clicked');
+    // Dispatch custom event for ImageEditor to handle undo
+    const event = new CustomEvent('undoAction');
+    window.dispatchEvent(event);
+  };
+
+  const handleRedo = () => {
+    console.log('Redo clicked');
+    // Dispatch custom event for ImageEditor to handle redo
+    const event = new CustomEvent('redoAction');
+    window.dispatchEvent(event);
+  };
+
+  const handleCropStateChange = (hasFrame: boolean) => {
+    setHasCropFrame(hasFrame);
+  };
+
+  // Arrow color options
+  const arrowColors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#800080', '#000000', '#FFFFFF'];
+
+  return (
+    <div className="app-container">
+      {/* First Heading */}
+      <div className="heading-section">
+        <div className="heading-content">
+          <i className="fas fa-image heading-icon"></i>
+          <h1>Advanced Image Editor</h1>
+          <p>Edit your images with drawing and cropping tools</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+      </div>
+
+      {/* Action Options Bar */}
+      <div className="action-bar">
+        <button className="action-btn back-btn" onClick={() => router.back()}>
+          <i className="fas fa-arrow-left"></i>
+          {/* <span className="btn-text">Back</span> */}
+        </button>
+        <button className="action-btn undo-btn" onClick={handleUndo}>
+          <i className="fas fa-undo"></i>
+          {/* <span className="btn-text">Undo</span> */}
+        </button>
+        <button className="action-btn redo-btn" onClick={handleRedo}>
+          <i className="fas fa-redo"></i>
+          {/* <span className="btn-text">Redo</span> */}
+        </button>
+        <button 
+          className={`action-btn crop-btn ${activeMode === 'crop' ? 'active' : ''}`}
+          onClick={() => {
+            if (activeMode === 'crop' && hasCropFrame) {
+              const event = new CustomEvent('applyCrop');
+              window.dispatchEvent(event);
+            } else {
+              handleActionClick('crop');
+            }
+          }}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <i className="fas fa-crop-alt"></i>
+          <span className="btn-text">
+            {activeMode === 'crop' 
+              ? (hasCropFrame ? 'Apply' : '') 
+              : ''
+            }
+          </span>
+        </button>
+        
+        {/* Arrow button with dropdown */}
+        <div className="arrow-button-container" ref={drawingDropdownRef}>
+          <button 
+            className={`action-btn arrow-btn ${activeMode === 'arrow' ? 'active' : ''}`}
+            onClick={() => handleActionClick('arrow')}
+          >
+            <i className="fas fa-pencil-alt"></i>
+            <span className="btn-text">{activeMode === 'arrow' ? '' : ''}</span>
+          </button>
+          
+          {showDrawingDropdown && (
+            <div className="arrow-dropdown">
+              <div className="arrow-dropdown-header">
+                <span>Select Drawing Color</span>
+              </div>
+              <div className="arrow-color-options">
+                {arrowColors.map(color => (
+                  <div 
+                    key={color}
+                    className="arrow-color-option"
+                    style={{ backgroundColor: color }}
+                    onClick={() => {
+                      // Set the arrow color in the ImageEditor
+                      const event = new CustomEvent('setArrowColor', { detail: color });
+                      window.dispatchEvent(event);
+                      setShowDrawingDropdown(false);
+                    }}
+                  ></div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Image Upload Area */}
+      <div className="image-upload-area">
+        <ImageEditor 
+          activeMode={activeMode} 
+          onCropStateChange={handleCropStateChange}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+        />
+      </div>
+
+      {/* Second Heading */}
+      <div className="heading-section">
+        <div className="heading-content">
+          <i className="fas fa-edit heading-icon"></i>
+          <h2>Image Description</h2>
+          <p>Add details about your edited image</p>
+        </div>
+      </div>
+
+      {/* Description Box */}
+      <div className="description-box">
+        <textarea
+          placeholder="Describe your edited image here..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+
+      {/* Submit Section */}
+      <div className="submit-section">
+        <div className="submit-controls">
+          {/* Location Button with Dropdown */}
+          <div className="location-button-container">
+            <button 
+              className="location-btn"
+              onClick={() => setShowLocationDropdown(!showLocationDropdown)}
+            >
+              <i className="fas fa-map-marker-alt"></i>
+              <span>{selectedLocation || 'Location'}</span>
+              <i className={`fas fa-chevron-down ${showLocationDropdown ? 'rotate' : ''}`}></i>
+            </button>
+            
+            {showLocationDropdown && (
+              <div className="location-dropdown" ref={locationDropdownRef}>
+                <div className="location-search-container">
+                  <input
+                    type="text"
+                    placeholder="Search location..."
+                    value={locationSearch}
+                    onChange={(e) => setLocationSearch(e.target.value)}
+                    className="location-search-input"
+                  />
+                </div>
+                <div className="location-options">
+                  {filteredLocations.map(location => (
+                    <div 
+                      key={location}
+                      className={`location-option ${selectedLocation === location ? 'selected' : ''}`}
+                      onClick={() => {
+                        setSelectedLocation(location);
+                        setShowLocationDropdown(false);
+                        setLocationSearch('');
+                      }}
+                    >
+                      <i className="fas fa-map-marker-alt"></i>
+                      <span>{location}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Microphone Button */}
+          <div className="mic-container">
+            <button 
+              className={`mic-btn ${isListening ? 'listening' : ''}`}
+              onClick={toggleMicrophone}
+              title={isListening ? 'Click to stop recording' : 'Click to start voice recording'}
+            >
+              <i className={`fas ${isListening ? 'fa-stop' : 'fa-microphone'}`}></i>
+              <span className="mic-text">
+                {isListening ? 'Stop' : 'Voice'}
+              </span>
+            </button>
+            {isListening && (
+              <div className="mic-status">
+                <div className="mic-indicator">
+                  <span className="mic-dot"></span>
+                  <span className="mic-dot"></span>
+                  <span className="mic-dot"></span>
+                </div>
+                <span className="mic-status-text">Listening...</span>
+              </div>
+            )}
+            {transcript && !isListening && (
+              <div className="mic-transcript">
+                <span className="mic-transcript-text">"{transcript}"</span>
+                <button 
+                  className="mic-clear-btn"
+                  onClick={() => setTranscript('')}
+                  title="Clear transcript"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+            )}
+            {!isSpeechSupported && (
+              <div className="mic-unsupported">
+                <span className="mic-unsupported-text">
+                  <i className="fas fa-info-circle"></i>
+                  Voice input not supported in this browser
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <button className="submit-btn" onClick={handleSubmit}>
+            Submit Image
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
