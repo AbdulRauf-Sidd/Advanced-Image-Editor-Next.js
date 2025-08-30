@@ -312,20 +312,24 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Action Options Bar */}
-      <div className="action-bar">
-        <button className="action-btn back-btn" onClick={() => router.back()}>
-          <i className="fas fa-arrow-left"></i>
-          {/* <span className="btn-text">Back</span> */}
-        </button>
-        <button className="action-btn undo-btn" onClick={handleUndo}>
-          <i className="fas fa-undo"></i>
-          {/* <span className="btn-text">Undo</span> */}
-        </button>
-        <button className="action-btn redo-btn" onClick={handleRedo}>
-          <i className="fas fa-redo"></i>
-          {/* <span className="btn-text">Redo</span> */}
-        </button>
+              {/* Action Options Bar */}
+        <div className="action-bar">
+          <button className="action-btn back-btn" onClick={() => router.back()}>
+            <i className="fas fa-arrow-left"></i>
+            {/* <span className="btn-text">Back</span> */}
+          </button>
+          <button className="action-btn property-report-btn" onClick={() => router.push('/property-report')}>
+            <i className="fas fa-file-alt"></i>
+            <span className="btn-text">Property Report</span>
+          </button>
+          <button className="action-btn undo-btn" onClick={handleUndo}>
+            <i className="fas fa-undo"></i>
+            {/* <span className="btn-text">Undo</span> */}
+          </button>
+          <button className="action-btn redo-btn" onClick={handleRedo}>
+            <i className="fas fa-redo"></i>
+            {/* <span className="btn-text">Redo</span> */}
+          </button>
         <button 
           className={`action-btn crop-btn ${activeMode === 'crop' ? 'active' : ''}`}
           onClick={() => {
