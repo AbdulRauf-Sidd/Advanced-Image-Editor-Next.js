@@ -320,7 +320,7 @@ export default function Home() {
           </button>
           <button className="action-btn property-report-btn" onClick={() => router.push('/property-report')}>
             <i className="fas fa-file-alt"></i>
-            <span className="btn-text">Property Report</span>
+            {/* <span className="btn-text">Property Report</span> */}
           </button>
           <button className="action-btn undo-btn" onClick={handleUndo}>
             <i className="fas fa-undo"></i>

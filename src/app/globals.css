@@ -1816,7 +1816,7 @@ body {
 
 /* Complete Property Report Page Styles */
 .property-report-container {
-  background-color: #f8f9fa;
+  background-color: #e6fdfa 0%, #c2d5ef 100%;
   color: #343a40;
   line-height: 1.6;
   padding: 20px;
