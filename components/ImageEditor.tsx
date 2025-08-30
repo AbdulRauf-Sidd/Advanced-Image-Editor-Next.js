@@ -27,13 +27,15 @@ interface ImageEditorProps {
   onCropStateChange: (hasFrame: boolean) => void;
   onUndo: () => void;
   onRedo: () => void;
+  onImageChange?: (img: HTMLImageElement | null) => void;
 }
 
 const ImageEditor: React.FC<ImageEditorProps> = ({ 
   activeMode, 
   onCropStateChange, 
   onUndo, 
-  onRedo 
+  onRedo,
+  onImageChange
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -66,6 +68,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       window.removeEventListener('setArrowColor', handleArrowColorChange as EventListener);
     };
   }, []);
+
+  
 
   // Save current drawing action to history
   const saveAction = (line: Line) => {
@@ -163,6 +167,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       onCropStateChange(false);
     };
     croppedImage.src = canvas.toDataURL();
+    onImageChange?.(croppedImage);
   };
 
   // Load uploaded image
@@ -184,6 +189,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         onCropStateChange(false);
       };
       img.src = event.target?.result as string;
+      onImageChange?.(img);
     };
     reader.readAsDataURL(file);
   };

@@ -16,12 +16,19 @@ export default function Home() {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isSpeechSupported, setIsSpeechSupported] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState('');
   const drawingDropdownRef = useRef<HTMLDivElement>(null);
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const [cropState, setCropState] = useState(null);
+  const [currentImage, setCurrentImage] = useState<HTMLImageElement | null>(null);
+
 
   // Location data
   const locations = ['USA', 'Pakistan', 'India', 'China'];
+
+  const imageEditorRef = useRef<any>(null);
   
   // Filtered locations based on search
   const filteredLocations = locations.filter(location =>
@@ -98,6 +105,8 @@ export default function Home() {
       }
     };
   }, []);
+
+  
 
   // Toggle microphone
   const toggleMicrophone = () => {
@@ -187,9 +196,84 @@ export default function Home() {
     };
   }, []);
 
-  const handleSubmit = () => {
-    const locationText = selectedLocation ? ` from ${selectedLocation}` : '';
-    alert(`Image submitted successfully with description: ${description}${locationText}`);
+  const getImageData = async (): Promise<string | null> => {
+    
+    if (!imageEditorRef.current) return null;
+    
+    try {
+      // Access the canvas from the ImageEditor
+      const canvas = imageEditorRef.current.canvasRef.current;
+      if (!canvas) return null;
+      
+      // Return the image as a data URL
+      return canvas.toDataURL('image/jpeg', 0.9);
+    } catch (error) {
+      console.error('Error getting image data:', error);
+      return null;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    console.log('1');
+    
+    // Validate inputs
+    if (!description.trim()) {
+      setSubmitStatus('Please provide a description');
+      return;
+    }
+
+    if (!selectedLocation) {
+      setSubmitStatus('Please select a location');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitStatus('Processing image...');
+
+    try {
+      // Get the image data from the editor
+      // const imageData = await getImageData();
+      const imageData = currentImage;
+      
+      if (!imageData) {
+        throw new Error('Could not get image data from editor');
+      }
+
+      setSubmitStatus('Sending to API...');
+
+      // Prepare the data to send
+      const requestData = {
+        image: imageData,
+        description: `${description} | Location: ${selectedLocation}`,
+        location: selectedLocation
+      };
+
+      // Send to your API endpoint
+      const response = await fetch('/api/llm/analyze-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Server responded with ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log(result);
+      setSubmitStatus('Success! Analysis completed.');
+      
+    } catch (error: any) {
+      console.error('Submission error:', error);
+      setSubmitStatus(`Error: ${error.message || 'Unknown error occurred'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleActionClick = (mode: 'none' | 'crop' | 'arrow') => {
@@ -217,6 +301,7 @@ export default function Home() {
   };
 
   const handleCropStateChange = (hasFrame: boolean) => {
+    // setCropState(newCropState);
     setHasCropFrame(hasFrame);
   };
 
@@ -310,6 +395,7 @@ export default function Home() {
           onCropStateChange={handleCropStateChange}
           onUndo={handleUndo}
           onRedo={handleRedo}
+          onImageChange={setCurrentImage}
         />
       </div>
 
