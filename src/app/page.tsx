@@ -23,6 +23,7 @@ export default function Home() {
   const recognitionRef = useRef<any>(null);
   const [cropState, setCropState] = useState(null);
   const [currentImage, setCurrentImage] = useState<HTMLImageElement | null>(null);
+  const [editedFile, setEditedFile] = useState<File | null>(null);
 
 
   // Location data
@@ -233,37 +234,29 @@ export default function Home() {
     setSubmitStatus('Processing image...');
 
     try {
-      // Get the image data from the editor
-      // const imageData = await getImageData();
-      const imageData = currentImage;
-      
-      if (!imageData) {
+      if (!editedFile) {
         throw new Error('Could not get image data from editor');
       }
-
+    
       setSubmitStatus('Sending to API...');
-
-      // Prepare the data to send
-      const requestData = {
-        image: imageData,
-        description: `${description} | Location: ${selectedLocation}`,
-        location: selectedLocation
-      };
-
-      // Send to your API endpoint
+    
+      // ✅ Prepare FormData instead of JSON
+      const formData = new FormData();
+      formData.append('image', editedFile); // "image" will be req.formData().get("image")
+      formData.append('description', `${description} | Location: ${selectedLocation}`);
+      formData.append('location', selectedLocation);
+    
+      // ✅ Send to API endpoint as multipart/form-data
       const response = await fetch('/api/llm/analyze-image', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
+        body: formData,
       });
-
+    
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || `Server responded with ${response.status}`);
       }
-
+    
       const result = await response.json();
       console.log(result);
       setSubmitStatus('Success! Analysis completed.');
@@ -396,6 +389,7 @@ export default function Home() {
           onUndo={handleUndo}
           onRedo={handleRedo}
           onImageChange={setCurrentImage}
+          onEditedFile={setEditedFile}
         />
       </div>
 

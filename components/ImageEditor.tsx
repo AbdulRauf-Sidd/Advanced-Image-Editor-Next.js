@@ -28,6 +28,7 @@ interface ImageEditorProps {
   onUndo: () => void;
   onRedo: () => void;
   onImageChange?: (img: HTMLImageElement | null) => void;
+  onEditedFile?: (file: File | null) => void;
 }
 
 const ImageEditor: React.FC<ImageEditorProps> = ({ 
@@ -35,7 +36,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   onCropStateChange, 
   onUndo, 
   onRedo,
-  onImageChange
+  onImageChange, 
+  onEditedFile
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -68,6 +70,23 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       window.removeEventListener('setArrowColor', handleArrowColorChange as EventListener);
     };
   }, []);
+
+  const exportEditedFile = (): File | null => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+  
+    const dataUrl = canvas.toDataURL("image/png"); // sync
+    const byteString = atob(dataUrl.split(",")[1]);
+    const mimeString = dataUrl.split(",")[0].split(":")[1].split(";")[0];
+  
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+  
+    return new File([ab], "edited.png", { type: mimeString });
+  };
 
   
 
@@ -165,6 +184,9 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       setActionHistory([]);
       setRedoHistory([]);
       onCropStateChange(false);
+
+      const file = exportEditedFile();
+      onEditedFile?.(file);
     };
     croppedImage.src = canvas.toDataURL();
     onImageChange?.(croppedImage);
@@ -187,6 +209,9 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         setActionHistory([]);
         setRedoHistory([]);
         onCropStateChange(false);
+
+        const file = exportEditedFile();
+        onEditedFile?.(file);
       };
       img.src = event.target?.result as string;
       onImageChange?.(img);
@@ -357,8 +382,9 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       
       // Save to action history
       saveAction(newLine);
-      
       setCurrentLine(null);
+      const file = exportEditedFile();
+      onEditedFile?.(file);
     }
     setIsDrawing(false);
     setIsDraggingCrop(false);
