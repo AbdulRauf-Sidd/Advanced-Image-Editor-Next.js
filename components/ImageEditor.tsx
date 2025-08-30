@@ -41,12 +41,18 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const cameraCanvasRef = useRef<HTMLCanvasElement>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [lines, setLines] = useState<Line[]>([]);
   const [currentLine, setCurrentLine] = useState<Point[] | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawingColor, setDrawingColor] = useState('#FF0000');
   const [brushSize, setBrushSize] = useState(3);
+  
+  // Camera state
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   
   // Crop state
   const [cropFrame, setCropFrame] = useState<CropFrame | null>(null);
@@ -217,6 +223,70 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       onImageChange?.(img);
     };
     reader.readAsDataURL(file);
+  };
+
+  // Camera functions
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment', // Use back camera if available
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        } 
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setCameraStream(stream);
+        setIsCameraActive(true);
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      alert('Unable to access camera. Please make sure you have granted camera permissions.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraActive(false);
+  };
+
+  const captureImage = () => {
+    if (videoRef.current && cameraCanvasRef.current) {
+      const video = videoRef.current;
+      const canvas = cameraCanvasRef.current;
+      const context = canvas.getContext('2d');
+      
+      if (context) {
+        // Set canvas dimensions to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Draw the current video frame to canvas
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert canvas to blob and create image
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            const img = new Image();
+            img.onload = () => {
+              setImage(img);
+              if (onImageChange) onImageChange(img);
+              stopCamera(); // Stop camera after capturing
+            };
+            img.src = url;
+          }
+        }, 'image/jpeg', 0.9);
+      }
+    }
   };
 
   // Initialize crop frame when crop mode is activated
@@ -594,15 +664,38 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   return (
     <div className="image-editor-simple">
       <div className="upload-container">
-        {!image ? (
+        {!image && !isCameraActive ? (
           <>
             <div className="upload-instructions">
               Drag & drop your image here or click to browse
             </div>
+            <div className="button-container">
             <button className="choose-image-btn" onClick={() => fileInputRef.current?.click()}>
               Choose Image
             </button>
+              <button className="camera-btn" onClick={startCamera}>
+                <i className="fas fa-camera"></i> Take a Picture
+              </button>
+            </div>
           </>
+        ) : isCameraActive ? (
+          <div className="camera-container">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              style={{ width: '100%', maxWidth: '500px', borderRadius: '8px' }}
+            />
+            <div className="camera-controls">
+              <button className="capture-btn" onClick={captureImage}>
+                <i className="fas fa-camera-retro"></i> Capture
+              </button>
+              <button className="cancel-btn" onClick={stopCamera}>
+                <i className="fas fa-times"></i> Cancel
+              </button>
+            </div>
+          </div>
         ) : (
           <div className="image-display-area">
             <canvas
@@ -624,6 +717,9 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
           onChange={handleUpload}
           style={{ display: 'none' }}
         />
+        
+        {/* Hidden canvas for camera capture */}
+        <canvas ref={cameraCanvasRef} style={{ display: 'none' }} />
       </div>
     </div>
   );
