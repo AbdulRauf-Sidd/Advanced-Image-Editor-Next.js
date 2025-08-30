@@ -15,6 +15,17 @@ interface Line {
   id: number; // Add unique ID for each line
 }
 
+interface CropAction {
+  type: 'crop';
+  previousImage: HTMLImageElement;
+  previousLines: Line[];
+  previousActionHistory: any[];
+  cropFrame: CropFrame;
+  id: number;
+}
+
+type Action = Line | CropAction;
+
 interface CropFrame {
   x: number;
   y: number;
@@ -61,8 +72,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const [resizingCropHandle, setResizingCropHandle] = useState<string | null>(null);
 
   // History for undo/redo - track individual actions
-  const [actionHistory, setActionHistory] = useState<Line[]>([]);
-  const [redoHistory, setRedoHistory] = useState<Line[]>([]);
+  const [actionHistory, setActionHistory] = useState<Action[]>([]);
+  const [redoHistory, setRedoHistory] = useState<Action[]>([]);
   const [lineIdCounter, setLineIdCounter] = useState(0);
 
   // Add event listener for arrow color change
@@ -97,8 +108,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   
 
   // Save current drawing action to history
-  const saveAction = (line: Line) => {
-    setActionHistory(prev => [...prev, line]);
+  const saveAction = (action: Action) => {
+    setActionHistory(prev => [...prev, action]);
     setRedoHistory([]); // Clear redo history when new action is performed
   };
 
@@ -111,8 +122,17 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     // Move action to redo history
     setRedoHistory(prev => [...prev, lastAction]);
     
-    // Remove action from current lines
-    setLines(prev => prev.filter(line => line.id !== lastAction.id));
+    if (lastAction.type === 'crop') {
+      // Handle crop undo - restore previous image and lines
+      setImage(lastAction.previousImage);
+      setLines(lastAction.previousLines);
+      setActionHistory(lastAction.previousActionHistory);
+      onCropStateChange(false);
+      if (onImageChange) onImageChange(lastAction.previousImage);
+    } else {
+      // Handle drawing undo - remove action from current lines
+      setLines(prev => prev.filter(line => line.id !== lastAction.id));
+    }
     
     // Remove from action history
     setActionHistory(prev => prev.slice(0, -1));
@@ -124,8 +144,70 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     
     const lastRedoAction = redoHistory[redoHistory.length - 1];
     
-    // Add action back to current lines
-    setLines(prev => [...prev, lastRedoAction]);
+    if (lastRedoAction.type === 'crop') {
+      // Handle crop redo - reapply the crop
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (ctx && lastRedoAction.previousImage && lastRedoAction.cropFrame) {
+        // Reapply the crop operation using stored crop frame
+        const imgAspect = lastRedoAction.previousImage.width / lastRedoAction.previousImage.height;
+        const canvasAspect = 700 / 500;
+        
+        let drawWidth, drawHeight, offsetX, offsetY;
+        
+        if (imgAspect > canvasAspect) {
+          drawWidth = 700;
+          drawHeight = 700 / imgAspect;
+          offsetX = 0;
+          offsetY = (500 - drawHeight) / 2;
+        } else {
+          drawHeight = 500;
+          drawWidth = 500 * imgAspect;
+          offsetX = (700 - drawWidth) / 2;
+          offsetY = 0;
+        }
+        
+        // Calculate crop coordinates in original image space
+        const scaleX = lastRedoAction.previousImage.width / drawWidth;
+        const scaleY = lastRedoAction.previousImage.height / drawHeight;
+        
+        const cropX = (lastRedoAction.cropFrame.x - offsetX) * scaleX;
+        const cropY = (lastRedoAction.cropFrame.y - offsetY) * scaleY;
+        const cropW = lastRedoAction.cropFrame.w * scaleX;
+        const cropH = lastRedoAction.cropFrame.h * scaleY;
+        
+        // Ensure crop coordinates are within image bounds
+        const finalCropX = Math.max(0, Math.min(cropX, lastRedoAction.previousImage.width));
+        const finalCropY = Math.max(0, Math.min(cropY, lastRedoAction.previousImage.height));
+        const finalCropW = Math.min(cropW, lastRedoAction.previousImage.width - finalCropX);
+        const finalCropH = Math.min(cropH, lastRedoAction.previousImage.height - finalCropY);
+        
+        // Create new canvas with cropped dimensions
+        canvas.width = finalCropW;
+        canvas.height = finalCropH;
+        
+        // Draw cropped portion
+        ctx.drawImage(
+          lastRedoAction.previousImage,
+          finalCropX, finalCropY, finalCropW, finalCropH,
+          0, 0, finalCropW, finalCropH
+        );
+        
+        // Create new image from cropped canvas
+        const croppedImage = new Image();
+        croppedImage.onload = () => {
+          setImage(croppedImage);
+          setCropFrame(null);
+          setLines([]);
+          onCropStateChange(false);
+          if (onImageChange) onImageChange(croppedImage);
+        };
+        croppedImage.src = canvas.toDataURL();
+      }
+    } else {
+      // Handle drawing redo - add action back to current lines
+      setLines(prev => [...prev, lastRedoAction]);
+    }
     
     // Move action back to action history
     setActionHistory(prev => [...prev, lastRedoAction]);
@@ -144,19 +226,19 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     
     // Calculate the actual crop dimensions based on image scaling
     const imgAspect = image.width / image.height;
-    const canvasAspect = 600 / 400;
+    const canvasAspect = 700 / 500;
     
     let drawWidth, drawHeight, offsetX, offsetY;
     
     if (imgAspect > canvasAspect) {
-      drawWidth = 600;
-      drawHeight = 600 / imgAspect;
+      drawWidth = 700;
+      drawHeight = 700 / imgAspect;
       offsetX = 0;
-      offsetY = (400 - drawHeight) / 2;
+      offsetY = (500 - drawHeight) / 2;
     } else {
-      drawHeight = 400;
-      drawWidth = 400 * imgAspect;
-      offsetX = (600 - drawWidth) / 2;
+      drawHeight = 500;
+      drawWidth = 500 * imgAspect;
+      offsetX = (700 - drawWidth) / 2;
       offsetY = 0;
     }
     
@@ -169,33 +251,54 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     const cropW = cropFrame.w * scaleX;
     const cropH = cropFrame.h * scaleY;
     
+    // Ensure crop coordinates are within image bounds
+    const finalCropX = Math.max(0, Math.min(cropX, image.width));
+    const finalCropY = Math.max(0, Math.min(cropY, image.height));
+    const finalCropW = Math.min(cropW, image.width - finalCropX);
+    const finalCropH = Math.min(cropH, image.height - finalCropY);
+    
     // Create new canvas with cropped dimensions
-    canvas.width = cropW;
-    canvas.height = cropH;
+    canvas.width = finalCropW;
+    canvas.height = finalCropH;
     
     // Draw cropped portion
     ctx.drawImage(
       image,
-      cropX, cropY, cropW, cropH,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      0, 0, cropW, cropH
+      finalCropX, finalCropY, finalCropW, finalCropH,
+      0, 0, finalCropW, finalCropH
     );
     
     // Create new image from cropped canvas
     const croppedImage = new Image();
     croppedImage.onload = () => {
+      // Save current state for undo
+      const cropAction = {
+        type: 'crop',
+        previousImage: image,
+        previousLines: [...lines],
+        previousActionHistory: [...actionHistory],
+        cropFrame: cropFrame, // Store the crop frame for redo
+        id: lineIdCounter
+      };
+      
+      // Increment ID counter
+      setLineIdCounter(prev => prev + 1);
+      
+      // Save to action history
+      setActionHistory(prev => [...prev, cropAction]);
+      setRedoHistory([]); // Clear redo history when new action is performed
+      
+      // Update image and clear drawing history
       setImage(croppedImage);
       setCropFrame(null);
       setLines([]);
-      setActionHistory([]);
-      setRedoHistory([]);
       onCropStateChange(false);
 
       const file = exportEditedFile();
       onEditedFile?.(file);
+      onImageChange?.(croppedImage);
     };
     croppedImage.src = canvas.toDataURL();
-    onImageChange?.(croppedImage);
   };
 
   // Load uploaded image
