@@ -1,6 +1,10 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
+import styles from './ImageEditor.module.css';
+
+// Use in JSX:
+<div className={styles.cameraFullscreen}></div>
 
 interface Point {
   x: number;
@@ -40,6 +44,9 @@ interface ImageEditorProps {
   onRedo: () => void;
   onImageChange?: (img: HTMLImageElement | null) => void;
   onEditedFile?: (file: File | null) => void;
+  videoRef?: React.RefObject<HTMLVideoElement>;
+  setIsCameraOpen: (val: boolean) => void;
+  isCameraOpen: boolean;
 }
 
 const ImageEditor: React.FC<ImageEditorProps> = ({ 
@@ -48,11 +55,17 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   onUndo, 
   onRedo,
   onImageChange, 
-  onEditedFile
+  onEditedFile,
+  videoRef,
+  setIsCameraOpen,
+  isCameraOpen
 }) => {
+
+  
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  // const videoRef = useRef<HTMLVideoElement>(null);
+  
   const cameraCanvasRef = useRef<HTMLCanvasElement>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [lines, setLines] = useState<Line[]>([]);
@@ -62,7 +75,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const [brushSize, setBrushSize] = useState(3);
   
   // Camera state
-  const [isCameraActive, setIsCameraActive] = useState(false);
+  // const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   
   // Crop state
@@ -76,6 +89,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const [redoHistory, setRedoHistory] = useState<Action[]>([]);
   const [lineIdCounter, setLineIdCounter] = useState(0);
 
+  const [isCameraFullscreen, setIsCameraFullscreen] = useState(false);
   // Add event listener for arrow color change
   useEffect(() => {
     const handleArrowColorChange = (e: CustomEvent) => {
@@ -87,6 +101,49 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       window.removeEventListener('setArrowColor', handleArrowColorChange as EventListener);
     };
   }, []);
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    if (!canvasRef.current) return;
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    const touch = e.touches[0];
+    const mouseX = touch.clientX - rect.left;
+    const mouseY = touch.clientY - rect.top;
+  
+    // Create a mock mouse event for compatibility
+    const mockEvent = {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      preventDefault: () => e.preventDefault(),
+      // Add other required properties as needed
+    } as unknown as React.MouseEvent<HTMLCanvasElement>;
+    
+    handleMouseDown(mockEvent);
+  };
+  
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    if (!canvasRef.current) return;
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    const touch = e.touches[0];
+    const mouseX = touch.clientX - rect.left;
+    const mouseY = touch.clientY - rect.top;
+  
+    const mockEvent = {
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      preventDefault: () => e.preventDefault(),
+    } as unknown as React.MouseEvent<HTMLCanvasElement>;
+    
+    handleMouseMove(mockEvent);
+  };
+  
+  const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    handleMouseUp();
+  };
 
   const exportEditedFile = (): File | null => {
     const canvas = canvasRef.current;
@@ -331,18 +388,48 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   // Camera functions
   const startCamera = async () => {
     try {
+      // Stop any existing stream first
+      // if (cameraStream) {
+      //   cameraStream.getTracks().forEach(track => track.stop());
+      // }
+
+      // if (!videoRef?.current) {
+      //   console.error('Video element not ready yet');
+      //   return;
+      // }
+
+      setIsCameraFullscreen(true); // Enter fullscreen mode      
+
+      console.log('Video ref:', videoRef?.current); // This should now work
+
+      // const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
-          facingMode: 'environment', // Use back camera if available
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
         } 
+        // video: true
       });
+
+
+      console.log(videoRef);
       
-      if (videoRef.current) {
+      
+      if (videoRef?.current) {
+        console.log('hello');
         videoRef.current.srcObject = stream;
         setCameraStream(stream);
-        setIsCameraActive(true);
+        setIsCameraOpen(true);
+        // setIsCameraFullscreen(true); // Enter fullscreen mode
+        
+        // Wait for video to be ready and play it
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().catch(error => {
+            console.error('Error playing video:', error);
+          });
+        };
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
@@ -355,19 +442,20 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       cameraStream.getTracks().forEach(track => track.stop());
       setCameraStream(null);
     }
-    if (videoRef.current) {
+    if (videoRef?.current) {
       videoRef.current.srcObject = null;
     }
-    setIsCameraActive(false);
+    setIsCameraOpen(false);
+    setIsCameraFullscreen(false); // Exit fullscreen mode
   };
 
   const captureImage = () => {
-    if (videoRef.current && cameraCanvasRef.current) {
+    if (videoRef?.current && cameraCanvasRef.current) {
       const video = videoRef.current;
       const canvas = cameraCanvasRef.current;
       const context = canvas.getContext('2d');
       
-      if (context) {
+      if (context && video.videoWidth > 0 && video.videoHeight > 0) {
         // Set canvas dimensions to match video
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
@@ -375,19 +463,27 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         // Draw the current video frame to canvas
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Convert canvas to blob and create image
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const url = URL.createObjectURL(blob);
-            const img = new Image();
-            img.onload = () => {
-              setImage(img);
-              if (onImageChange) onImageChange(img);
-              stopCamera(); // Stop camera after capturing
-            };
-            img.src = url;
-          }
-        }, 'image/jpeg', 0.9);
+        // Create image from canvas
+        const img = new Image();
+        img.onload = () => {
+          setImage(img);
+          setLines([]);
+          setCurrentLine(null);
+          setCropFrame(null);
+          setActionHistory([]);
+          setRedoHistory([]);
+          onCropStateChange(false);
+          
+          if (onImageChange) onImageChange(img);
+          
+          // Stop camera after capturing
+          stopCamera();
+          
+          // Export the file
+          const file = exportEditedFile();
+          onEditedFile?.(file);
+        };
+        img.src = canvas.toDataURL('image/jpeg', 0.9);
       }
     }
   };
@@ -648,6 +744,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     ctx.fill();
   };
 
+  
+
   // Draw everything on canvas
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -764,43 +862,67 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     return 'default';
   };
 
+  // if (isCameraOpen) {
+  //   <div className="flex flex-col items-center space-y-2">
+  //         <video ref={videoRef} className="rounded-lg border" playsInline />
+  //         <button
+  //           // onClick={takePicture}
+  //           className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md"
+  //         >
+  //           Take Picture
+  //         </button>
+  //   </div>
+  // }
+
   return (
-    <div className="image-editor-simple">
-      <div className="upload-container">
-        {!image && !isCameraActive ? (
+    <div className={styles.imageEditorSimple}>
+      {/* Fullscreen Camera Overlay */}
+      {isCameraFullscreen && (
+      <div className={styles.cameraFullscreen}>
+        {/* Video element */}
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className={styles.cameraVideo}
+        />
+
+        {/* Controls overlay - positioned absolutely on top of video */}
+        <div className={styles.cameraControlsOverlay}>
+          <button className={styles.captureBtnFullscreen} onClick={captureImage}>
+            <div className={styles.captureCircle}></div>
+          </button>
+          <button className={styles.closeCameraBtn} onClick={stopCamera}>
+            <i className="fas fa-times"></i>
+          </button>
+
+          {/* Camera flip button for mobile */}
+          {/* <button className={styles.flipCameraBtn} onClick={toggleCamera}>
+            <i className="fas fa-sync-alt"></i>
+          </button> */}
+        </div>
+      </div>
+    )}
+
+      {/* Main Content */}
+      <div className={styles.uploadContainer}>
+        {!image && !isCameraFullscreen ? (
           <>
-            <div className="upload-instructions">
+            <div className={styles.uploadInstructions}>
               Drag & drop your image here or click to browse
             </div>
-            <div className="button-container">
-            <button className="choose-image-btn" onClick={() => fileInputRef.current?.click()}>
-              Choose Image
-            </button>
-              <button className="camera-btn" onClick={startCamera}>
+            <div className={styles.buttonContainer}>
+              <button className={styles.chooseImageBtn} onClick={() => fileInputRef.current?.click()}>
+                Choose Image
+              </button>
+              <button className={styles.cameraBtn} onClick={startCamera}>
                 <i className="fas fa-camera"></i> Take a Picture
               </button>
             </div>
           </>
-        ) : isCameraActive ? (
-          <div className="camera-container">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              style={{ width: '100%', maxWidth: '500px', borderRadius: '8px' }}
-            />
-            <div className="camera-controls">
-              <button className="capture-btn" onClick={captureImage}>
-                <i className="fas fa-camera-retro"></i> Capture
-              </button>
-              <button className="cancel-btn" onClick={stopCamera}>
-                <i className="fas fa-times"></i> Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="image-display-area">
+        ) : image && !isCameraFullscreen ? (
+          <div className={styles.imageDisplayArea}>
             <canvas
               ref={canvasRef}
               width={700}
@@ -808,10 +930,18 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
-              style={{ cursor: getCursor() }}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              style={{ 
+                cursor: getCursor(),
+                // width: "500px",   // fills parent
+                // height: "100%",  // fills parent
+                // display: "block" 
+              }}
             />
           </div>
-        )}
+        ) : null}
         
         <input
           ref={fileInputRef}

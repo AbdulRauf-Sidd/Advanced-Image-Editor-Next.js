@@ -26,6 +26,8 @@ export default function Home() {
   const [cropState, setCropState] = useState(null);
   const [currentImage, setCurrentImage] = useState<HTMLImageElement | null>(null);
   const [editedFile, setEditedFile] = useState<File | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   // const router = useRouter();
   const setAnalysisData = useAnalysisStore(state => state.setAnalysisData);
@@ -39,6 +41,22 @@ export default function Home() {
   const filteredLocations = locations.filter(location =>
     location.toLowerCase().includes(locationSearch.toLowerCase())
   );
+
+  const openCamera = async () => {
+    // setIsCameraOpen(true);
+    console.log(isCameraOpen);
+    // try {
+    //   const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+    //   console.log(videoRef);
+    //   if (videoRef.current) {
+    //     videoRef.current.srcObject = stream;
+    //     await videoRef.current.play();
+    //   }
+    // } catch (err) {
+    //   console.error("Error accessing camera:", err);
+    // }
+  };
 
   // Initialize speech recognition
   useEffect(() => {
@@ -330,6 +348,74 @@ export default function Home() {
   // Arrow color options
   const arrowColors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#800080', '#000000', '#FFFFFF'];
 
+  // if (isCameraOpen) {
+  //   return ( 
+  //     <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-4">
+  //       {/* Camera Viewport */}
+  //       <div className="relative w-full h-full max-w-4xl max-h-[80vh] flex items-center justify-center">
+  //         <video 
+  //           ref={videoRef} 
+  //           className="w-full h-full object-cover rounded-lg"
+  //           style={{
+  //             width: '100%',
+  //             height: '100%',
+  //             minWidth: '300px',
+  //             minHeight: '400px',
+  //             backgroundColor: '#000', // Black background while loading
+  //             display: 'block' // Ensure it's not display: none
+  //           }}
+  //           playsInline 
+  //           autoPlay
+  //           muted
+  //         />
+          
+
+  //         <div className="absolute inset-0 border-4 border-white/20 rounded-lg pointer-events-none" />
+          
+          
+  //         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+  //           <button
+  //             // onClick={takePicture}
+  //             className="w-16 h-16 bg-white rounded-full border-4 border-gray-200 shadow-2xl flex items-center justify-center hover:scale-105 transition-transform duration-200"
+  //           >
+  //             <div className="w-12 h-12 bg-white rounded-full border-2 border-gray-300" />
+  //           </button>
+  //         </div>
+          
+          
+  //         <button
+  //           onClick={() => setIsCameraOpen(false)}
+  //           className="absolute top-4 right-4 w-12 h-12 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors duration-200"
+  //         >
+  //           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  //             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+  //           </svg>
+  //         </button>
+  //       </div>
+        
+  //       {/* Debug info - Remove this after testing */}
+  //       <div className="mt-4 text-white text-sm">
+  //         Video status: {videoRef.current?.readyState || 'Not loaded'}
+  //       </div>
+  //       <div className="image-upload-area">
+  //       <ImageEditor 
+  //         activeMode={activeMode} 
+  //         onCropStateChange={handleCropStateChange}
+  //         onUndo={handleUndo}
+  //         onRedo={handleRedo}
+  //         onImageChange={setCurrentImage}
+  //         onEditedFile={setEditedFile}
+  //         videoRef={videoRef}
+  //         setIsCameraOpen={setIsCameraOpen}
+  //         isCameraOpen={isCameraOpen}
+  //       />
+  //     </div>
+  //     </div>
+
+      
+  //   );
+  // }
+
   return (
     <div className="app-container">
       {/* First Heading */}
@@ -423,6 +509,9 @@ export default function Home() {
           onRedo={handleRedo}
           onImageChange={setCurrentImage}
           onEditedFile={setEditedFile}
+          videoRef={videoRef}
+          setIsCameraOpen={setIsCameraOpen}
+          isCameraOpen={isCameraOpen}
         />
       </div>
 
@@ -493,7 +582,7 @@ export default function Home() {
           <div className="mic-container">
             <button 
               className={`mic-btn ${isListening ? 'listening' : ''}`}
-              onClick={toggleMicrophone}
+              onClick={openCamera}
               title={isListening ? 'Click to stop recording' : 'Click to start voice recording'}
             >
               <i className={`fas ${isListening ? 'fa-stop' : 'fa-microphone'}`}></i>
