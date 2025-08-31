@@ -272,7 +272,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     const croppedImage = new Image();
     croppedImage.onload = () => {
       // Save current state for undo
-      const cropAction = {
+      const cropAction: CropAction = {
         type: 'crop',
         previousImage: image,
         previousLines: [...lines],

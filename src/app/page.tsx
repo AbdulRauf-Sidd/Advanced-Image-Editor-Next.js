@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import ImageEditor from 'components/ImageEditor';
 import { useState, useRef, useEffect } from 'react';
+import { useAnalysisStore } from '@/lib/store';
+
 
 export default function Home() {
   const router = useRouter();
@@ -25,6 +27,8 @@ export default function Home() {
   const [currentImage, setCurrentImage] = useState<HTMLImageElement | null>(null);
   const [editedFile, setEditedFile] = useState<File | null>(null);
 
+  // const router = useRouter();
+  const setAnalysisData = useAnalysisStore(state => state.setAnalysisData);
 
   // Location data
   const locations = ['USA', 'Pakistan', 'India', 'China'];
@@ -215,6 +219,16 @@ export default function Home() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+
+    const fileToDataURL = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    };
+
     e.preventDefault();
 
     console.log('1');
@@ -237,6 +251,8 @@ export default function Home() {
       if (!editedFile) {
         throw new Error('Could not get image data from editor');
       }
+
+      console.log(editedFile);
     
       setSubmitStatus('Sending to API...');
     
@@ -260,6 +276,19 @@ export default function Home() {
       const result = await response.json();
       console.log(result);
       setSubmitStatus('Success! Analysis completed.');
+
+      const imageDataUrl = await fileToDataURL(editedFile);
+      
+      // ✅ Store all data in global state
+      setAnalysisData({
+        image: imageDataUrl, // Store as data URL
+        description,
+        location: selectedLocation,
+        analysisResult: result
+      });
+      
+      // ✅ Navigate to results page
+      router.push('/property-report');
       
     } catch (error: any) {
       console.error('Submission error:', error);

@@ -2,19 +2,116 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAnalysisStore } from '@/lib/store';
+import { CostItem } from '@/types/llm';
+
 
 export default function PropertyReport() {
   const router = useRouter();
   const [currentDate, setCurrentDate] = useState('');
+  const { analysisData, clearAnalysisData } = useAnalysisStore();
 
+  const [title, setTitle] = useState<string>('');
+  const [description1, setDescription1] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+  const [recommendedAction, setRecommendedAction] = useState<string>('');
+  const [costs, setCosts] = useState<CostItem[]>([]);
+  const [analysis, setAnalysis] = useState<string>('');
+  const [hasCosts, setHasCosts] = useState<boolean>(false);
+  const [image2, setImage2] = useState<string | File | null>(null)
+
+
+  
   useEffect(() => {
     const now = new Date();
+    if (!analysisData) {
+      router.push('/');
+    }
     setCurrentDate(now.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     }));
+
+    
+    
+    // console.log(description, location, analysisResult);
+    if (analysisData) {
+      console.log("analysis", analysisData);
+      const { image, description, location, analysisResult } = analysisData;
+      setDescription(description);
+      setImage2(image);
+      if (analysisResult) {
+        setTitle(analysisResult.title || '');
+        setDescription1(analysisResult.description || '');
+        setRecommendedAction(analysisResult.recommended_action || '');
+        setAnalysis(analysisResult.analysis || '');
+
+        // Handle costs array
+        if (analysisResult.costs && Array.isArray(analysisResult.costs)) {
+          setCosts(analysisResult.costs);
+          setHasCosts(analysisResult.costs.length > 0);
+        } else {
+          setCosts([]);
+          setHasCosts(false);
+        }
+      }
+  } else {
+    // const [description, setDescription] = null;
+  }
+
+    console.log(costs);
   }, []);
+
+  if (!analysisData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div>No analysis data found. Redirecting...</div>
+      </div>
+    );
+  }
+
+  const getCostIcon = (type: string): string => {
+    const iconMap: { [key: string]: string } = {
+      materials: 'fas fa-paint-roller',
+      labor: 'fas fa-user-hard-hat',
+      equipment: 'fas fa-tools',
+      permit: 'fas fa-file-alt',
+      disposal: 'fas fa-trash-alt',
+      transportation: 'fas fa-truck',
+      // Add more mappings as needed
+    };
+    
+    return iconMap[type] || 'fas fa-dollar-sign'; // default icon
+  };
+  
+  // Helper function to capitalize first letter
+  const capitalizeFirstLetter = (string: string): string => {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  };
+  
+  // Helper function to get total cost
+  const getTotalCost = (): string => {
+    const totalCost = costs.find(cost => cost.type === 'total');
+    return totalCost ? totalCost.amount : calculateTotal(); // fallback if no total provided
+  };
+
+  const calculateTotal = (): string => {
+    const nonTotalCosts = costs.filter(cost => cost.type !== 'total');
+    let total = 0;
+    
+    nonTotalCosts.forEach(cost => {
+      const amount = parseFloat(cost.amount.replace(/[^\d.]/g, ''));
+      if (!isNaN(amount)) {
+        total += amount;
+      }
+    });
+    
+    return `$${total.toFixed(2)}`;
+  };
+
+  // const { image, location, analysisResult } = analysisData;
+  // const { image, location } = analysisData;
 
   const generatePDF = () => {
     alert("PDF generation functionality would be implemented here. This might connect to a PDF generation service or use a library like jsPDF.");
@@ -40,56 +137,63 @@ export default function PropertyReport() {
           <div className="issue-section">
             <h2><i className="fas fa-exclamation-triangle icon"></i>Issue Identified</h2>
             <div className="description">
-              <h3>Trim Rot at Exterior Door</h3>
-              <p>There is visible rot on the trim at the exterior door, indicating moisture damage.</p>
+              <h3>{description}</h3>
+              <p>{description1}</p>
             </div>
           </div>
           
           <div className="image-section">
-            <h2><i className="fas fa-camera icon"></i>Visual Evidence</h2>
-            <div className="image-container">
+          <h2><i className="fas fa-camera icon"></i>Visual Evidence</h2>
+          <div className="image-container">
+            {/* Replace the placeholder with actual image */}
+            {image2 ? (
+              <img 
+                src={typeof image2 === 'string' ? image2 : URL.createObjectURL(image2)} 
+                alt="Damage analysis" 
+                className="uploaded-image"
+                style={{ 
+                  maxWidth: '100%', 
+                  height: 'auto', 
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                }}
+              />
+            ) : (
               <div className="image-placeholder">
                 <i className="fas fa-image fa-3x" style={{marginRight: '10px'}}></i>
                 <span>Image of damaged exterior door trim</span>
               </div>
-            </div>
-            <p className="image-caption">Figure 1: Visible rot and moisture damage on the exterior door trim</p>
+            )}
           </div>
+          <p className="image-caption">Figure 1: {description}</p>
+        </div>
           
           <div className="action-section">
             <h2><i className="fas fa-tools icon"></i>Recommended Action</h2>
-            <p>Remove and replace the affected trim section. Ensure proper sealing and painting to prevent future moisture intrusion.</p>
+            <p>{recommendedAction}.</p>
           </div>
           
           <div className="costs-section">
             <h2><i className="fas fa-dollar-sign icon"></i>Estimated Costs</h2>
             
-            <div className="cost-item">
-              <div className="cost-type">
-                <i className="fas fa-paint-roller"></i> Materials
-                <div className="cost-desc">Replacement trim and sealant</div>
-              </div>
-              <div className="cost-amount">$50.00</div>
-            </div>
-            
-            <div className="cost-item">
-              <div className="cost-type">
-                <i className="fas fa-user-hard-hat"></i> Labor
-                <div className="cost-desc">Approximately 2 hours at $50/hour</div>
-              </div>
-              <div className="cost-amount">$100.00</div>
-            </div>
-            
-            <div className="cost-item">
-              <div className="cost-type">
-                <i className="fas fa-calculator"></i> Total
-                <div className="cost-desc">Sum of materials and labor</div>
-              </div>
-              <div className="cost-amount">$150.00</div>
-            </div>
+            {costs
+              .filter(cost => cost.type !== 'total')
+              // console.log('hi');
+              .map((cost, index) => (
+                // console.log('hii');
+                <div key={index} className="cost-item">
+                  <div className="cost-type">
+                    <i className={getCostIcon(cost.type)}></i>
+                     {capitalizeFirstLetter(cost.type)}
+                    <div className="cost-desc">{cost.description}</div>
+                  </div>
+                  <div className="cost-amount">{cost.amount}</div>
+                </div>
+              ))
+            }
             
             <div className="total-cost">
-              Total Estimated Cost: $150.00
+              Total Estimated Cost: {getTotalCost()}
             </div>
           </div>
           
