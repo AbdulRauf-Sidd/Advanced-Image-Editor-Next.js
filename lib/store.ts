@@ -19,37 +19,34 @@ export const useAnalysisStore = create<AnalysisState>()(
   persist(
     (set) => ({
       analysisData: null,
-      setAnalysisData: (data) => set({
-        analysisData: {
-          ...data,
-          timestamp: Date.now()
+      setAnalysisData: (data) => {
+        // Convert File to data URL before storing
+        const processedData = { ...data };
+        if (data.image instanceof File) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            set({
+              analysisData: {
+                ...processedData,
+                image: reader.result as string,
+                timestamp: Date.now()
+              }
+            });
+          };
+          reader.readAsDataURL(data.image);
+        } else {
+          set({
+            analysisData: {
+              ...processedData,
+              timestamp: Date.now()
+            }
+          });
         }
-      }),
+      },
       clearAnalysisData: () => set({ analysisData: null }),
     }),
     {
       name: 'analysis-storage',
-      // Convert File objects to string for storage
-      serialize: (state) => {
-        if (state.analysisData?.image instanceof File) {
-          // Convert File to object that can be serialized
-          const file = state.analysisData.image;
-          return JSON.stringify({
-            ...state,
-            analysisData: {
-              ...state.analysisData,
-              image: {
-                name: file.name,
-                type: file.type,
-                size: file.size,
-                lastModified: file.lastModified,
-                // We'll store as data URL in the component instead
-              }
-            }
-          });
-        }
-        return JSON.stringify(state);
-      }
     }
   )
 );
