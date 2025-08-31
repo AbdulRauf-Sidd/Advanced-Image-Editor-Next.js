@@ -146,8 +146,25 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   };
 
   const exportEditedFile = (): File | null => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
+    let canvas = canvasRef.current;
+    console.log(canvas);
+    if (!canvas) {
+      console.log('hi');
+      if (!image) return null; // Need an image to create canvas
+      
+      console.log('Creating temporary canvas for export');
+      canvas = document.createElement('canvas');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      
+      // Draw the image on the temporary canvas
+      ctx.drawImage(image, 0, 0, image.width, image.height);
+    } else {
+      console.log('Using existing canvas for export');
+    }
   
     const dataUrl = canvas.toDataURL("image/png"); // sync
     const byteString = atob(dataUrl.split(",")[1]);
@@ -161,6 +178,11 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   
     return new File([ab], "edited.png", { type: mimeString });
   };
+
+  useEffect(() => {
+    const file = exportEditedFile();
+    onEditedFile?.(file);
+  }, [image]);
 
   
 
@@ -366,6 +388,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new Image();
+      
       img.onload = () => {
         setImage(img);
         // Clear all drawing history when new image is uploaded
@@ -376,8 +399,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         setRedoHistory([]);
         onCropStateChange(false);
 
-        const file = exportEditedFile();
-        onEditedFile?.(file);
+        // const file = exportEditedFile();
+        // onEditedFile?.(file);
       };
       img.src = event.target?.result as string;
       onImageChange?.(img);
@@ -480,8 +503,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
           stopCamera();
           
           // Export the file
-          const file = exportEditedFile();
-          onEditedFile?.(file);
+          // const file = exportEditedFile();
+          // onEditedFile?.(file);
         };
         img.src = canvas.toDataURL('image/jpeg', 0.9);
       }
