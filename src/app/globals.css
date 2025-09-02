@@ -1200,7 +1200,7 @@ body {
   .action-bar {
     flex-direction: row;
     gap: 6px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
   }
   
   .action-btn {
@@ -1223,7 +1223,7 @@ body {
   
   .image-upload-area {
     padding: 30px 15px;
-    min-height: 250px;
+    min-height: 400px;
   }
   
   .heading-section {
@@ -1334,8 +1334,9 @@ body {
 /* Mobile responsiveness for drawing tool dropdown */
 @media (max-width: 768px) {
   .arrow-dropdown {
-    right: -50px;
+    right: 0px;
     min-width: 180px;
+    margin: 0px 0px 0px -150px;
   }
 }
 
@@ -1343,6 +1344,7 @@ body {
   .arrow-dropdown {
     right: -80px;
     min-width: 160px;
+    margin: 0px 0px 0px -100px;
   }
   
   .arrow-color-option {
@@ -1493,8 +1495,9 @@ body {
   }
   
   .arrow-dropdown {
-    right: -50px;
+    right: 0px;
     min-width: 180px;
+    margin: 0px 0px 0px -150px;
   }
   
   .arrow-button-container .action-btn {
@@ -1531,8 +1534,9 @@ body {
   }
   
   .arrow-dropdown {
-    right: -80px;
+    right: 0px;
     min-width: 160px;
+    margin: 0px 0px 0px -150px;
   }
   
   .arrow-button-container .action-btn {
