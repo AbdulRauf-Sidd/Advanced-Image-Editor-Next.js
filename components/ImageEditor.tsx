@@ -227,22 +227,24 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       // Handle crop redo - reapply the crop
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      if (ctx && lastRedoAction.previousImage && lastRedoAction.cropFrame) {
+      if (ctx && lastRedoAction.previousImage && lastRedoAction.cropFrame && canvasRef.current) {
         // Reapply the crop operation using stored crop frame
         const imgAspect = lastRedoAction.previousImage.width / lastRedoAction.previousImage.height;
-        const canvasAspect = 700 / 500;
+        const canvasWidth = canvasRef.current.width;
+        const canvasHeight = canvasRef.current.height;
+        const canvasAspect = canvasWidth / canvasHeight;
         
         let drawWidth, drawHeight, offsetX, offsetY;
         
         if (imgAspect > canvasAspect) {
-          drawWidth = 700;
-          drawHeight = 700 / imgAspect;
+          drawWidth = canvasWidth;
+          drawHeight = canvasWidth / imgAspect;
           offsetX = 0;
-          offsetY = (500 - drawHeight) / 2;
+          offsetY = (canvasHeight - drawHeight) / 2;
         } else {
-          drawHeight = 500;
-          drawWidth = 500 * imgAspect;
-          offsetX = (700 - drawWidth) / 2;
+          drawHeight = canvasHeight;
+          drawWidth = canvasHeight * imgAspect;
+          offsetX = (canvasWidth - drawWidth) / 2;
           offsetY = 0;
         }
         
@@ -297,27 +299,31 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
 
   // Apply crop function
   const applyCrop = () => {
-    if (!cropFrame || !image) return;
+    if (!cropFrame || !image || !canvasRef.current) return;
     
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
+    // Get actual canvas dimensions
+    const canvasWidth = canvasRef.current.width;
+    const canvasHeight = canvasRef.current.height;
+    
     // Calculate the actual crop dimensions based on image scaling
     const imgAspect = image.width / image.height;
-    const canvasAspect = 700 / 500;
+    const canvasAspect = canvasWidth / canvasHeight;
     
     let drawWidth, drawHeight, offsetX, offsetY;
     
     if (imgAspect > canvasAspect) {
-      drawWidth = 700;
-      drawHeight = 700 / imgAspect;
+      drawWidth = canvasWidth;
+      drawHeight = canvasWidth / imgAspect;
       offsetX = 0;
-      offsetY = (500 - drawHeight) / 2;
+      offsetY = (canvasHeight - drawHeight) / 2;
     } else {
-      drawHeight = 500;
-      drawWidth = 500 * imgAspect;
-      offsetX = (700 - drawWidth) / 2;
+      drawHeight = canvasHeight;
+      drawWidth = canvasHeight * imgAspect;
+      offsetX = (canvasWidth - drawWidth) / 2;
       offsetY = 0;
     }
     
