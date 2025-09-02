@@ -368,10 +368,7 @@ export default function Home() {
             <i className="fas fa-arrow-left"></i>
             {/* <span className="btn-text">Back</span> */}
           </button>
-          <button className="action-btn property-report-btn" onClick={() => router.push('/property-report')}>
-            <i className="fas fa-file-alt"></i>
-            {/* <span className="btn-text">Property Report</span> */}
-          </button>
+
           <button className="action-btn undo-btn" onClick={handleUndo}>
             <i className="fas fa-undo"></i>
             {/* <span className="btn-text">Undo</span> */}

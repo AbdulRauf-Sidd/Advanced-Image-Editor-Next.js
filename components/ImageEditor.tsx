@@ -742,29 +742,39 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
 
   // Draw arrow function
   const drawArrow = (ctx: CanvasRenderingContext2D, fromX: number, fromY: number, toX: number, toY: number) => {
-    const headlen = 15;
+    // Extra thick arrow dimensions
+    const arrowThickness = Math.max(brushSize * 4, 12); // Much thicker - 4x brush size, minimum 12px
+    const headlen = Math.max(arrowThickness * 2.5, 25); // Well-proportioned arrowhead for thick shaft
     const angle = Math.atan2(toY - fromY, toX - fromX);
     
-    // Set the drawing style for the arrow
+    // Professional drawing settings
     ctx.strokeStyle = drawingColor;
     ctx.fillStyle = drawingColor;
-    ctx.lineWidth = brushSize;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    ctx.lineWidth = arrowThickness;
+    ctx.lineCap = 'square'; // Clean, sharp line ends
+    ctx.lineJoin = 'miter'; // Sharp, clean joins
+    ctx.setLineDash([]); // Solid lines
     
-    // Draw line
+    // Draw main arrow shaft with clean lines - stop well before the tip
+    const shaftEndX = toX - headlen * 0.6 * Math.cos(angle);
+    const shaftEndY = toY - headlen * 0.6 * Math.sin(angle);
     ctx.beginPath();
     ctx.moveTo(fromX, fromY);
-    ctx.lineTo(toX, toY);
+    ctx.lineTo(shaftEndX, shaftEndY);
     ctx.stroke();
     
-    // Draw arrowhead
+    // Draw professional arrowhead - sharp corners, extending to the very tip
     ctx.beginPath();
     ctx.moveTo(toX, toY);
-    ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
-    ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+    ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 8), toY - headlen * Math.sin(angle - Math.PI / 8));
+    ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 8), toY - headlen * Math.sin(angle + Math.PI / 8));
     ctx.closePath();
     ctx.fill();
+    
+    // Add subtle outline for professional look
+    ctx.strokeStyle = drawingColor;
+    ctx.lineWidth = 1;
+    ctx.stroke();
   };
 
   
@@ -948,8 +958,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
           <div className={styles.imageDisplayArea}>
             <canvas
               ref={canvasRef}
-              width={700}
-              height={500}
+              width={300}
+              height={400}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
