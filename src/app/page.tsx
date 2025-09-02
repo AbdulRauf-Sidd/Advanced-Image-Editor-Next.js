@@ -409,9 +409,9 @@ export default function Home() {
           
           {showDrawingDropdown && (
             <div className="arrow-dropdown">
-              <div className="arrow-dropdown-header">
+              {/* <div className="arrow-dropdown-header">
                 <span>Select Drawing Color</span>
-              </div>
+              </div> */}
               <div className="arrow-color-options">
                 {arrowColors.map(color => (
                   <div 
