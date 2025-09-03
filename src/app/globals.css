@@ -280,7 +280,8 @@ body {
 .undo-btn,
 .redo-btn,
 .crop-btn,
-.arrow-btn {
+.arrow-btn,
+.property-report-btn {
   background: linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%);
   box-shadow: 0 4px 20px rgba(75, 108, 183, 0.3);
 }
@@ -289,7 +290,8 @@ body {
 .undo-btn:hover,
 .redo-btn:hover,
 .crop-btn:hover,
-.arrow-btn:hover {
+.arrow-btn:hover,
+.property-report-btn:hover {
   background: linear-gradient(135deg, rgb(106, 17, 203) 0%, rgb(75, 108, 183) 100%);
   box-shadow: 0 8px 30px rgba(75, 108, 183, 0.4);
 }
@@ -2030,6 +2032,21 @@ body {
   font-size: 0.9rem;
   color: #666;
   margin-top: 2px;
+}
+
+/* DIY section specific styling */
+.property-report-container .diy-section {
+  background-color: #f0f9ff;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  border-left: 4px solid #0ea5e9;
+}
+
+.property-report-container .diy-section p {
+  margin: 0;
+  line-height: 1.6;
+  color: #1e293b;
 }
 
 /* Responsive styles for property report */

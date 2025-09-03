@@ -15,6 +15,8 @@ export default function PropertyReport() {
   const [description1, setDescription1] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [recommendedAction, setRecommendedAction] = useState<string>('');
+  const [diyOption, setDiyOption] = useState<string>('');
+  const [defect, setDefect] = useState<string>('');
   const [costs, setCosts] = useState<CostItem[]>([]);
   const [analysis, setAnalysis] = useState<string>('');
   const [hasCosts, setHasCosts] = useState<boolean>(false);
@@ -24,17 +26,12 @@ export default function PropertyReport() {
   
   useEffect(() => {
     const now = new Date();
-    if (!analysisData) {
-      router.push('/');
-    }
     setCurrentDate(now.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     }));
 
-    
-    
     // console.log(description, location, analysisResult);
     if (analysisData) {
       console.log("analysis", analysisData);
@@ -44,7 +41,9 @@ export default function PropertyReport() {
       if (analysisResult) {
         setTitle(analysisResult.title || '');
         setDescription1(analysisResult.description || '');
-        setRecommendedAction(analysisResult.recommended_action || '');
+        setRecommendedAction(analysisResult.recommendation || '');
+        setDiyOption(analysisResult.diy_option || '');
+        setDefect(analysisResult.defect || '');
         setAnalysis(analysisResult.analysis || '');
 
         // Handle costs array
@@ -56,20 +55,71 @@ export default function PropertyReport() {
           setHasCosts(false);
         }
       }
-  } else {
-    // const [description, setDescription] = null;
-  }
+    }
 
     console.log(costs);
   }, []);
 
-  if (!analysisData) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div>No analysis data found. Redirecting...</div>
-      </div>
-    );
-  }
+  // if (!analysisData) {
+  //   return (
+  //     <div className="property-report-container">
+  //       <div className="container">
+  //         <header>
+  //           <div className="header-content">
+  //             <button className="back-btn" onClick={() => router.push('/')}>
+  //               <i className="fas fa-arrow-left"></i>
+  //               <span>Back to Editor</span>
+  //             </button>
+  //             <div className="header-main">
+  //               <h1><i className="fas fa-home icon"></i>Property Repair Report</h1>
+  //               <p className="subtitle">Professional Assessment & Cost Estimation</p>
+  //             </div>
+  //           </div>
+  //         </header>
+          
+  //         <div className="content">
+  //           <div className="issue-section">
+  //             <h2><i className="fas fa-info-circle icon"></i>No Analysis Data</h2>
+  //             <div className="description">
+  //               <h3>No property analysis has been completed yet.</h3>
+  //               <p>To generate a property repair report, please:</p>
+  //               <ol style={{ marginTop: '15px', paddingLeft: '20px' }}>
+  //                 <li>Upload an image of the property issue</li>
+  //                 <li>Add a description of the problem</li>
+  //                 <li>Select a location</li>
+  //                 <li>Submit the image for analysis</li>
+  //               </ol>
+  //               <div style={{ marginTop: '20px', textAlign: 'center' }}>
+  //                 <button 
+  //                   className="submit-btn" 
+  //                   onClick={() => router.push('/')}
+  //                   style={{ 
+  //                     background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%)',
+  //                     color: 'white',
+  //                     border: 'none',
+  //                     padding: '12px 24px',
+  //                     borderRadius: '8px',
+  //                     fontSize: '16px',
+  //                     fontWeight: '600',
+  //                     cursor: 'pointer',
+  //                     transition: 'all 0.3s ease'
+  //                   }}
+  //                 >
+  //                   <i className="fas fa-arrow-left" style={{ marginRight: '8px' }}></i>
+  //                   Go to Image Editor
+  //                 </button>
+  //               </div>
+  //             </div>
+  //           </div>
+  //         </div>
+          
+  //         <footer>
+  //           <p>© 2023 Property Repair Experts | Report generated on {currentDate}</p>
+  //         </footer>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   const getCostIcon = (type: string): string => {
     const iconMap: { [key: string]: string } = {
@@ -137,8 +187,7 @@ export default function PropertyReport() {
           <div className="issue-section">
             <h2><i className="fas fa-exclamation-triangle icon"></i>Issue Identified</h2>
             <div className="description">
-              <h3>{description}</h3>
-              <p>{description1}</p>
+              <h3>{defect || 'No defect information available'}</h3>
             </div>
           </div>
           
@@ -170,7 +219,12 @@ export default function PropertyReport() {
           
           <div className="action-section">
             <h2><i className="fas fa-tools icon"></i>Recommended Action</h2>
-            <p>{recommendedAction}.</p>
+            <p>{recommendedAction || 'No recommendation available'}</p>
+          </div>
+          
+          <div className="diy-section">
+            <h2><i className="fas fa-hammer icon"></i>DIY Option (Extra Info)</h2>
+            <p>{diyOption || 'No DIY option information available'}</p>
           </div>
           
           <div className="costs-section">
