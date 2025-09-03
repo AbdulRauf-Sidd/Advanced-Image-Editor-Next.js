@@ -237,34 +237,35 @@ export default function PropertyReport() {
                  </div>
                ))
              ) : (
-               <div className="cost-item default-cost-item">
-                 <div className="cost-type">
-                   {/* <i className="fas fa-dollar-sign"></i> */}
-                   <div className="default-cost-details">
-                     <div className="cost-row">
-                       <span className="cost-label"><strong>Item:</strong></span>
-                       <span className="cost-value">Not specified</span>
-                     </div>
-                     <div className="cost-row">
-                       <span className="cost-label"><strong>Type:</strong></span>
-                       <span className="cost-value">Not specified</span>
-                     </div>
-                     <div className="cost-row">
-                       <span className="cost-label"><strong>Unit Cost:</strong></span>
-                       <span className="cost-value">$0</span>
-                     </div>
-                     <div className="cost-row">
-                       <span className="cost-label"><strong>Quantity:</strong></span>
-                       <span className="cost-value">0</span>
-                     </div>
-                     <div className="cost-row">
-                       <span className="cost-label"><strong>Total Cost:</strong></span>
-                       <span className="cost-value">$0</span>
+               // Show 3 default placeholder items
+               [1, 2, 3].map((itemIndex) => (
+                 <div key={itemIndex} className="cost-item default-cost-item">
+                   <div className="cost-type">
+                     <div className="default-cost-details">
+                       <div className="cost-row">
+                         <span className="cost-label"><strong>Item:</strong></span>
+                         <span className="cost-value">Not specified</span>
+                       </div>
+                       <div className="cost-row">
+                         <span className="cost-label"><strong>Type:</strong></span>
+                         <span className="cost-value">Not specified</span>
+                       </div>
+                       <div className="cost-row">
+                         <span className="cost-label"><strong>Unit Cost:</strong></span>
+                         <span className="cost-value">$0</span>
+                       </div>
+                       <div className="cost-row">
+                         <span className="cost-label"><strong>Quantity:</strong></span>
+                         <span className="cost-value">0</span>
+                       </div>
+                       <div className="cost-row">
+                         <span className="cost-label"><strong>Total Cost:</strong></span>
+                         <span className="cost-value">$0</span>
+                       </div>
                      </div>
                    </div>
                  </div>
-                 {/* <div className="cost-amount">$0</div> */}
-               </div>
+               ))
              )}
              
              <div className="total-cost">
