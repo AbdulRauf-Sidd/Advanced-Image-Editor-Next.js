@@ -31,7 +31,7 @@ export default function PropertyReport() {
       month: 'long',
       day: 'numeric'
     }));
-
+    
     // console.log(description, location, analysisResult);
     if (analysisData) {
       console.log("analysis", analysisData);
@@ -46,16 +46,16 @@ export default function PropertyReport() {
         setDefect(analysisResult.defect || '');
         setAnalysis(analysisResult.analysis || '');
 
-        // Handle costs array
-        if (analysisResult.costs && Array.isArray(analysisResult.costs)) {
-          setCosts(analysisResult.costs);
-          setHasCosts(analysisResult.costs.length > 0);
+        // Handle costs array - use estimated_costs from backend
+        if (analysisResult.estimated_costs && Array.isArray(analysisResult.estimated_costs)) {
+          setCosts(analysisResult.estimated_costs);
+          setHasCosts(analysisResult.estimated_costs.length > 0);
         } else {
           setCosts([]);
           setHasCosts(false);
         }
       }
-    }
+  }
 
     console.log(costs);
   }, []);
@@ -142,18 +142,11 @@ export default function PropertyReport() {
   
   // Helper function to get total cost
   const getTotalCost = (): string => {
-    const totalCost = costs.find(cost => cost.type === 'total');
-    return totalCost ? totalCost.amount : calculateTotal(); // fallback if no total provided
-  };
-
-  const calculateTotal = (): string => {
-    const nonTotalCosts = costs.filter(cost => cost.type !== 'total');
     let total = 0;
     
-    nonTotalCosts.forEach(cost => {
-      const amount = parseFloat(cost.amount.replace(/[^\d.]/g, ''));
-      if (!isNaN(amount)) {
-        total += amount;
+    costs.forEach(cost => {
+      if (cost.total_cost && typeof cost.total_cost === 'number') {
+        total += cost.total_cost;
       }
     });
     
@@ -184,8 +177,8 @@ export default function PropertyReport() {
         </header>
         
         <div className="content">
-          <div className="issue-section">
-            <h2><i className="fas fa-exclamation-triangle icon"></i>Issue Identified</h2>
+                     <div className="issue-section">
+             <h2><i className="fas fa-exclamation-triangle icon"></i>Defect (Issue Identified)</h2>
             <div className="description">
               <h3>{defect || 'No defect information available'}</h3>
             </div>
@@ -227,29 +220,57 @@ export default function PropertyReport() {
             <p>{diyOption || 'No DIY option information available'}</p>
           </div>
           
-          <div className="costs-section">
-            <h2><i className="fas fa-dollar-sign icon"></i>Estimated Costs</h2>
-            
-            {costs
-              .filter(cost => cost.type !== 'total')
-              // console.log('hi');
-              .map((cost, index) => (
-                // console.log('hii');
-                <div key={index} className="cost-item">
-                  <div className="cost-type">
-                    <i className={getCostIcon(cost.type)}></i>
-                     {capitalizeFirstLetter(cost.type)}
-                    <div className="cost-desc">{cost.description}</div>
-                  </div>
-                  <div className="cost-amount">{cost.amount}</div>
-                </div>
-              ))
-            }
-            
-            <div className="total-cost">
-              Total Estimated Cost: {getTotalCost()}
-            </div>
-          </div>
+                     <div className="costs-section">
+             <h2><i className="fas fa-dollar-sign icon"></i>Estimated Costs</h2>
+             
+             {costs.length > 0 ? (
+               costs.map((cost, index) => (
+                 <div key={index} className="cost-item">
+                   <div className="cost-type">
+                     <i className={getCostIcon(cost.type)}></i>
+                     {cost.item}
+                     <div className="cost-desc">
+                       {cost.type} - ${cost.unit_cost} × {cost.quantity}
+                     </div>
+                   </div>
+                   <div className="cost-amount">${cost.total_cost}</div>
+                 </div>
+               ))
+             ) : (
+               <div className="cost-item default-cost-item">
+                 <div className="cost-type">
+                   {/* <i className="fas fa-dollar-sign"></i> */}
+                   <div className="default-cost-details">
+                     <div className="cost-row">
+                       <span className="cost-label"><strong>Item:</strong></span>
+                       <span className="cost-value">Not specified</span>
+                     </div>
+                     <div className="cost-row">
+                       <span className="cost-label"><strong>Type:</strong></span>
+                       <span className="cost-value">Not specified</span>
+                     </div>
+                     <div className="cost-row">
+                       <span className="cost-label"><strong>Unit Cost:</strong></span>
+                       <span className="cost-value">$0</span>
+                     </div>
+                     <div className="cost-row">
+                       <span className="cost-label"><strong>Quantity:</strong></span>
+                       <span className="cost-value">0</span>
+                     </div>
+                     <div className="cost-row">
+                       <span className="cost-label"><strong>Total Cost:</strong></span>
+                       <span className="cost-value">$0</span>
+                     </div>
+                   </div>
+                 </div>
+                 {/* <div className="cost-amount">$0</div> */}
+               </div>
+             )}
+             
+             <div className="total-cost">
+               Total Estimated Cost: {costs.length > 0 ? getTotalCost() : '$0.00'}
+             </div>
+           </div>
           
           <button className="pdf-button" onClick={generatePDF}>
             <i className="fas fa-file-pdf"></i> Generate PDF Report

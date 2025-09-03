@@ -1,8 +1,10 @@
 // types/analysis.ts (create this file)
 export interface CostItem {
+    item: string;
     type: string;
-    description: string;
-    amount: string;
+    unit_cost: number;
+    quantity: number;
+    total_cost: number;
   }
   
   export interface AnalysisResult {
