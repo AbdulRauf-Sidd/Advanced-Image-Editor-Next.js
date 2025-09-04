@@ -133,7 +133,7 @@ export default function PropertyReport() {
       <div className="container">
         <header>
           <div className="header-content">
-            <button className="back-btn" onClick={() => router.push('/')}>
+            <button className="back-btn" onClick={() => window.location.href = "/"}>
               <i className="fas fa-arrow-left"></i>
               <span>Back to Editor</span>
             </button>
@@ -186,15 +186,6 @@ export default function PropertyReport() {
           <div className="action-section">
             <h2><i className="fas fa-tools icon"></i>Recommended Action</h2>
             <p>{recommendedAction}.</p>
-          </div>
-
-          <div className="diy-section">
-            <h2><i className="fas fa-wrench icon"></i>DIY Option</h2>
-            <p>{analysis}</p>
-            {diyCost && (
-              <p><strong>DIY Cost:</strong> ${diyCost}</p>
-            )}
-            <br></br>
           </div>
 
           {/* <div className="diy-section">
