@@ -17,6 +17,10 @@ interface Line {
   size: number;
   type: 'draw' | 'arrow';
   id: number; // Add unique ID for each line
+  // Arrow-specific properties
+  rotation?: number; // Rotation angle in radians
+  scale?: number; // Scale factor for resizing
+  center?: Point; // Center point for rotation and scaling
 }
 
 interface CropAction {
@@ -84,6 +88,22 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const [dragCropOffset, setDragCropOffset] = useState({ x: 0, y: 0 });
   const [resizingCropHandle, setResizingCropHandle] = useState<string | null>(null);
 
+  // Arrow interaction state - simplified without visible handles
+  const [selectedArrowId, setSelectedArrowId] = useState<number | null>(null);
+  const [hoveredArrowId, setHoveredArrowId] = useState<number | null>(null);
+  const [isDraggingArrow, setIsDraggingArrow] = useState(false);
+  const [isRotatingArrow, setIsRotatingArrow] = useState(false);
+  const [isResizingArrow, setIsResizingArrow] = useState(false);
+  const [dragArrowOffset, setDragArrowOffset] = useState({ x: 0, y: 0 });
+  const [interactionMode, setInteractionMode] = useState<'move' | 'rotate' | 'resize' | null>(null);
+
+  // Touch gesture state - simplified for better UX
+  const [touchStartAngle, setTouchStartAngle] = useState<number | null>(null);
+  const [touchStartArrowRotation, setTouchStartArrowRotation] = useState<number | null>(null);
+  const [isTwoFingerTouch, setIsTwoFingerTouch] = useState(false);
+  const [rotationCenter, setRotationCenter] = useState<Point | null>(null);
+  const [lastTapTime, setLastTapTime] = useState<number>(0);
+
   // History for undo/redo - track individual actions
   const [actionHistory, setActionHistory] = useState<Action[]>([]);
   const [redoHistory, setRedoHistory] = useState<Action[]>([]);
@@ -107,19 +127,73 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     if (!canvasRef.current) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
-    const touch = e.touches[0];
-    const mouseX = touch.clientX - rect.left;
-    const mouseY = touch.clientY - rect.top;
-  
-    // Create a mock mouse event for compatibility
-    const mockEvent = {
-      clientX: touch.clientX,
-      clientY: touch.clientY,
-      preventDefault: () => e.preventDefault(),
-      // Add other required properties as needed
-    } as unknown as React.MouseEvent<HTMLCanvasElement>;
     
-    handleMouseDown(mockEvent);
+    if (e.touches.length === 2) {
+      // Two-finger touch - simplified rotation gesture
+      setIsTwoFingerTouch(true);
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      
+      const angle = getAngle(touch1, touch2);
+      const center = getTouchCenter(touch1, touch2, rect);
+      
+      setTouchStartAngle(angle);
+      setRotationCenter(center);
+      
+      // If there's a selected arrow, enable rotation immediately
+      if (selectedArrowId !== null) {
+        const selectedArrow = lines.find(line => line.id === selectedArrowId);
+        if (selectedArrow) {
+          setTouchStartArrowRotation(selectedArrow.rotation || 0);
+          setIsRotatingArrow(true);
+        }
+      }
+    } else if (e.touches.length === 1) {
+      // Single touch - simplified interaction
+      const touch = e.touches[0];
+      const mouseX = touch.clientX - rect.left;
+      const mouseY = touch.clientY - rect.top;
+      
+      // Check for double-tap rotation (much easier for users)
+      const currentTime = Date.now();
+      const timeDiff = currentTime - lastTapTime;
+      
+      if (timeDiff < 300 && selectedArrowId !== null) { // Double tap within 300ms
+        const clickedArrow = lines.find(line => 
+          line.type === 'arrow' && line.id === selectedArrowId && isPointInArrow(line, { x: mouseX, y: mouseY })
+        );
+        
+        if (clickedArrow) {
+          // Rotate arrow by 15 degrees on double-tap
+          const center = getArrowCenter(clickedArrow);
+          const rotationAngle = Math.PI / 12; // 15 degrees
+          
+          setLines(prev => prev.map(line => 
+            line.id === selectedArrowId 
+              ? {
+                  ...line,
+                  rotation: (line.rotation || 0) + rotationAngle,
+                  points: line.points.map(point => rotatePoint(point, center, rotationAngle))
+                }
+              : line
+          ));
+          setLastTapTime(0); // Reset to prevent triple-tap
+          return;
+        }
+      }
+      
+      setLastTapTime(currentTime);
+    
+      // Create a mock mouse event for compatibility
+      const mockEvent = {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        preventDefault: () => e.preventDefault(),
+        // Add other required properties as needed
+      } as unknown as React.MouseEvent<HTMLCanvasElement>;
+      
+      handleMouseDown(mockEvent);
+    }
   };
   
   const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
@@ -127,21 +201,56 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     if (!canvasRef.current) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
-    const touch = e.touches[0];
-    const mouseX = touch.clientX - rect.left;
-    const mouseY = touch.clientY - rect.top;
-  
-    const mockEvent = {
-      clientX: touch.clientX,
-      clientY: touch.clientY,
-      preventDefault: () => e.preventDefault(),
-    } as unknown as React.MouseEvent<HTMLCanvasElement>;
     
-    handleMouseMove(mockEvent);
+    if (e.touches.length === 2 && isTwoFingerTouch && isRotatingArrow && selectedArrowId !== null) {
+      // Simplified two-finger rotation - much more responsive
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      
+      const currentAngle = getAngle(touch1, touch2);
+      
+      if (touchStartAngle !== null && touchStartArrowRotation !== null && rotationCenter) {
+        const angleDelta = currentAngle - touchStartAngle;
+        
+        // Update the selected arrow's rotation with smoother calculation
+        setLines(prev => prev.map(line => 
+          line.id === selectedArrowId 
+            ? {
+                ...line,
+                rotation: (line.rotation || 0) + angleDelta * 0.5, // Reduce sensitivity for smoother rotation
+                points: line.points.map(point => rotatePoint(point, rotationCenter, angleDelta * 0.5))
+              }
+            : line
+        ));
+        
+        // Update the start angle for continuous rotation
+        setTouchStartAngle(currentAngle);
+      }
+    } else if (e.touches.length === 1) {
+      // Single touch - handle as mouse event
+      const touch = e.touches[0];
+      const mouseX = touch.clientX - rect.left;
+      const mouseY = touch.clientY - rect.top;
+    
+      const mockEvent = {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        preventDefault: () => e.preventDefault(),
+      } as unknown as React.MouseEvent<HTMLCanvasElement>;
+      
+      handleMouseMove(mockEvent);
+    }
   };
   
   const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
+    
+    // Reset simplified touch gesture states
+    setIsTwoFingerTouch(false);
+    setTouchStartAngle(null);
+    setTouchStartArrowRotation(null);
+    setRotationCenter(null);
+    
     handleMouseUp();
   };
 
@@ -594,9 +703,26 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       setIsDrawing(true);
       return;
     } else if (activeMode === 'arrow') {
-      // Only allow drawing when arrow mode is active
-      setIsDrawing(true);
-      setCurrentLine([{ x: mouseX, y: mouseY }]);
+      // Check if clicking on an existing arrow
+      const clickedArrow = lines.find(line => 
+        line.type === 'arrow' && isPointInArrow(line, { x: mouseX, y: mouseY })
+      );
+      
+      if (clickedArrow) {
+        // Simply select the arrow and start moving it
+        setSelectedArrowId(clickedArrow.id);
+        setIsDraggingArrow(true);
+        const center = getArrowCenter(clickedArrow);
+        setDragArrowOffset({ x: mouseX - center.x, y: mouseY - center.y });
+        setInteractionMode('move');
+        return;
+      } else {
+        // Clicked on empty space - deselect arrow and start drawing new one
+        setSelectedArrowId(null);
+        setInteractionMode(null);
+        setIsDrawing(true);
+        setCurrentLine([{ x: mouseX, y: mouseY }]);
+      }
     }
     // If activeMode is 'none', do nothing - no drawing allowed
   };
@@ -631,9 +757,68 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         }));
         return;
       }
-    } else if (activeMode === 'arrow' && isDrawing) {
-      // Only allow drawing when arrow mode is active
-      setCurrentLine(prev => [...prev!, { x: mouseX, y: mouseY }]);
+    } else if (activeMode === 'arrow') {
+      if (isDraggingArrow && selectedArrowId !== null) {
+        const selectedArrow = lines.find(line => line.id === selectedArrowId);
+        if (selectedArrow) {
+          // Check if user is trying to rotate (holding Shift key or moving in circular motion)
+          const center = getArrowCenter(selectedArrow);
+          const distanceFromCenter = Math.sqrt(
+            Math.pow(mouseX - center.x, 2) + Math.pow(mouseY - center.y, 2)
+          );
+          
+          // If mouse is far from center, switch to rotation mode
+          if (distanceFromCenter > 50 && interactionMode === 'move') {
+            setInteractionMode('rotate');
+            setIsRotatingArrow(true);
+            setIsDraggingArrow(false);
+          }
+          
+          if (interactionMode === 'move') {
+            // Move the selected arrow
+            const newCenter = { x: mouseX - dragArrowOffset.x, y: mouseY - dragArrowOffset.y };
+            const oldCenter = getArrowCenter(selectedArrow);
+            const deltaX = newCenter.x - oldCenter.x;
+            const deltaY = newCenter.y - oldCenter.y;
+            
+            setLines(prev => prev.map(line => 
+              line.id === selectedArrowId 
+                ? {
+                    ...line,
+                    points: line.points.map(point => ({
+                      x: point.x + deltaX,
+                      y: point.y + deltaY
+                    }))
+                  }
+                : line
+            ));
+          } else if (interactionMode === 'rotate') {
+            // Rotate the selected arrow
+            const angle = Math.atan2(mouseY - center.y, mouseX - center.x);
+            setLines(prev => prev.map(line => 
+              line.id === selectedArrowId 
+                ? {
+                    ...line,
+                    rotation: angle,
+                    points: line.points.map(point => rotatePoint(point, center, angle))
+                  }
+                : line
+            ));
+          }
+        }
+        return;
+      }
+      
+      if (isDrawing) {
+        // Only allow drawing when arrow mode is active
+        setCurrentLine(prev => [...prev!, { x: mouseX, y: mouseY }]);
+      } else {
+        // Check for hover effects on arrows
+        const hoveredArrow = lines.find(line => 
+          line.type === 'arrow' && isPointInArrow(line, { x: mouseX, y: mouseY })
+        );
+        setHoveredArrowId(hoveredArrow ? hoveredArrow.id : null);
+      }
     }
   };
 
@@ -669,7 +854,10 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         color: drawingColor,
         size: brushSize,
         type: lineType,
-        id: lineIdCounter
+        id: lineIdCounter,
+        rotation: 0,
+        scale: 1,
+        center: getArrowCenter({ points: currentLine, color: drawingColor, size: brushSize, type: 'arrow', id: lineIdCounter })
       };
       
       // Increment ID counter
@@ -678,15 +866,24 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       // Add to lines array
       setLines(prev => [...prev, newLine]);
       
+      // Automatically select the newly drawn arrow so user can immediately rotate/resize it
+      setSelectedArrowId(newLine.id);
+      
       // Save to action history
       saveAction(newLine);
       setCurrentLine(null);
       const file = exportEditedFile();
       onEditedFile?.(file);
     }
+    
+    // Reset all interaction states
     setIsDrawing(false);
     setIsDraggingCrop(false);
     setResizingCropHandle(null);
+    setIsDraggingArrow(false);
+    setIsRotatingArrow(false);
+    setIsResizingArrow(false);
+    setInteractionMode(null);
   };
 
   // Get resize handles for crop frame
@@ -744,6 +941,121 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         break;
     }
     return { ...obj, x, y, w, h };
+  };
+
+  // Arrow interaction helpers
+  // These functions enable moveable, rotatable, and resizable arrows
+  // - Click on an arrow to select it (shows handles)
+  // - Drag the center handle to move the arrow
+  // - Drag the green rotation handle to rotate the arrow
+  // - Drag the yellow resize handles to change arrow size
+  const getArrowBounds = (line: Line) => {
+    if (line.points.length < 2) return null;
+    const from = line.points[0];
+    const to = line.points[line.points.length - 1];
+    const minX = Math.min(from.x, to.x);
+    const maxX = Math.max(from.x, to.x);
+    const minY = Math.min(from.y, to.y);
+    const maxY = Math.max(from.y, to.y);
+    return { minX, maxX, minY, maxY, width: maxX - minX, height: maxY - minY };
+  };
+
+  const getArrowCenter = (line: Line) => {
+    if (line.points.length < 2) return { x: 0, y: 0 };
+    const from = line.points[0];
+    const to = line.points[line.points.length - 1];
+    return {
+      x: (from.x + to.x) / 2,
+      y: (from.y + to.y) / 2
+    };
+  };
+
+  const isPointInArrow = (line: Line, point: Point) => {
+    if (line.points.length < 2) return false;
+    const from = line.points[0];
+    const to = line.points[line.points.length - 1];
+    
+    // Calculate distance from point to line
+    const A = point.x - from.x;
+    const B = point.y - from.y;
+    const C = to.x - from.x;
+    const D = to.y - from.y;
+    
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    let param = -1;
+    if (lenSq !== 0) param = dot / lenSq;
+    
+    let xx, yy;
+    if (param < 0) {
+      xx = from.x;
+      yy = from.y;
+    } else if (param > 1) {
+      xx = to.x;
+      yy = to.y;
+    } else {
+      xx = from.x + param * C;
+      yy = from.y + param * D;
+    }
+    
+    const dx = point.x - xx;
+    const dy = point.y - yy;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Check if point is within arrow thickness
+    const arrowThickness = Math.max(line.size * 4, 12);
+    return distance <= arrowThickness + 10; // Add some padding for easier selection
+  };
+
+  const getArrowHandles = (line: Line) => {
+    const bounds = getArrowBounds(line);
+    if (!bounds) return [];
+    
+    const center = getArrowCenter(line);
+    const handleSize = 8;
+    
+    return [
+      { name: 'move', x: center.x, y: center.y, type: 'move' },
+      { name: 'rotate', x: center.x, y: center.y - 40, type: 'rotate' }, // Made rotation handle bigger and further away
+      { name: 'resize-start', x: bounds.minX, y: bounds.minY, type: 'resize' },
+      { name: 'resize-end', x: bounds.maxX, y: bounds.maxY, type: 'resize' }
+    ];
+  };
+
+  const rotatePoint = (point: Point, center: Point, angle: number) => {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const dx = point.x - center.x;
+    const dy = point.y - center.y;
+    return {
+      x: center.x + dx * cos - dy * sin,
+      y: center.y + dx * sin + dy * cos
+    };
+  };
+
+  const scalePoint = (point: Point, center: Point, scale: number) => {
+    return {
+      x: center.x + (point.x - center.x) * scale,
+      y: center.y + (point.y - center.y) * scale
+    };
+  };
+
+  // Touch gesture helpers
+  const getDistance = (touch1: Touch, touch2: Touch) => {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const getAngle = (touch1: Touch, touch2: Touch) => {
+    return Math.atan2(touch2.clientY - touch1.clientY, touch2.clientX - touch1.clientX);
+  };
+
+  const getTouchCenter = (touch1: Touch, touch2: Touch, rect: DOMRect) => {
+    return {
+      x: ((touch1.clientX + touch2.clientX) / 2) - rect.left,
+      y: ((touch1.clientY + touch2.clientY) / 2) - rect.top
+    };
   };
 
   // Draw arrow function
@@ -849,7 +1161,46 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       } else if (line.type === 'arrow' && line.points.length >= 2) {
         const from = line.points[0];
         const to = line.points[line.points.length - 1];
+        
+        // Draw hover effect if this arrow is hovered
+        if (hoveredArrowId === line.id && selectedArrowId !== line.id) {
+          ctx.strokeStyle = line.color;
+          ctx.lineWidth = line.size + 4;
+          ctx.globalAlpha = 0.3;
+          drawArrow(ctx, from.x, from.y, to.x, to.y);
+          ctx.globalAlpha = 1.0;
+        }
+        
+        // Draw the main arrow
         drawArrow(ctx, from.x, from.y, to.x, to.y);
+        
+        // Show subtle selection indicator (no handles, just a slight highlight)
+        if (selectedArrowId === line.id) {
+          // Draw a subtle outline around the selected arrow
+          ctx.strokeStyle = 'rgba(0, 123, 255, 0.5)';
+          ctx.lineWidth = line.size + 2;
+          ctx.globalAlpha = 0.3;
+          drawArrow(ctx, from.x, from.y, to.x, to.y);
+          ctx.globalAlpha = 1.0;
+          
+          // Show two-finger rotation indicator
+          if (isTwoFingerTouch && isRotatingArrow) {
+            const center = getArrowCenter(line);
+            ctx.fillStyle = 'rgba(40, 167, 69, 0.3)';
+            ctx.strokeStyle = '#28a745';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, 30, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Draw rotation arrows
+            ctx.fillStyle = '#28a745';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('↻', center.x, center.y + 5);
+          }
+        }
       }
     });
 
@@ -890,12 +1241,17 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         ctx.fill();
       });
     }
-  }, [image, lines, currentLine, isDrawing, drawingColor, brushSize, activeMode, cropFrame]);
+  }, [image, lines, currentLine, isDrawing, drawingColor, brushSize, activeMode, cropFrame, selectedArrowId, hoveredArrowId, isDraggingArrow, isRotatingArrow, isResizingArrow, isTwoFingerTouch, rotationCenter, interactionMode]);
 
   const getCursor = () => {
     if (activeMode === 'crop') {
       return 'crosshair';
-    } else if (activeMode === 'arrow' || activeMode === 'none') {
+    } else if (activeMode === 'arrow') {
+      if (interactionMode === 'move') return 'grabbing';
+      if (interactionMode === 'rotate') return 'grab';
+      if (hoveredArrowId !== null) return 'pointer';
+      return 'default';
+    } else if (activeMode === 'none') {
       return 'default';
     }
     return 'default';

@@ -158,3 +158,25 @@
     -ms-touch-action: none;  /* for older IE/Edge */
     overscroll-behavior: contain; /* prevent "bounce" scroll chaining */
   }
+
+  .imageEditorSimple {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .uploadContainer {
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
