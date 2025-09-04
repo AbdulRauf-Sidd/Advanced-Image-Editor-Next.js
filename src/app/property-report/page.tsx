@@ -177,7 +177,7 @@ export default function PropertyReport() {
         </header>
         
         <div className="content">
-                     <div className="issue-section">
+          <div className="issue-section">
              <h2><i className="fas fa-exclamation-triangle icon"></i>Defect (Issue Identified)</h2>
             <div className="description">
               <h3>{defect || 'No defect information available'}</h3>
@@ -220,14 +220,14 @@ export default function PropertyReport() {
             <p>{diyOption || 'No DIY option information available'}</p>
           </div>
           
-                     <div className="costs-section">
-             <h2><i className="fas fa-dollar-sign icon"></i>Estimated Costs</h2>
-             
+          <div className="costs-section">
+            <h2><i className="fas fa-dollar-sign icon"></i>Estimated Costs</h2>
+            
              {costs.length > 0 ? (
                costs.map((cost, index) => (
-                 <div key={index} className="cost-item">
-                   <div className="cost-type">
-                     <i className={getCostIcon(cost.type)}></i>
+                <div key={index} className="cost-item">
+                  <div className="cost-type">
+                    <i className={getCostIcon(cost.type)}></i>
                      {cost.item}
                      <div className="cost-desc">
                        {cost.type} - ${cost.unit_cost} × {cost.quantity}
@@ -263,15 +263,15 @@ export default function PropertyReport() {
                          <span className="cost-value">$0</span>
                        </div>
                      </div>
-                   </div>
-                 </div>
-               ))
+                  </div>
+                </div>
+              ))
              )}
-             
-             <div className="total-cost">
+            
+            <div className="total-cost">
                Total Estimated Cost: {costs.length > 0 ? getTotalCost() : '$0.00'}
-             </div>
-           </div>
+            </div>
+          </div>
           
           <button className="pdf-button" onClick={generatePDF}>
             <i className="fas fa-file-pdf"></i> Generate PDF Report
