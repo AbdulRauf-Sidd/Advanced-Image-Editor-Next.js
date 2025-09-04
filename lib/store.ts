@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { CostItem } from '@/types/llm';
 
 interface AnalysisData {
   image: File | string | null;
@@ -7,6 +8,7 @@ interface AnalysisData {
   location: string;
   analysisResult: any | null;
   timestamp: number;
+  // estimated_costs: CostItem[];
 }
 
 interface AnalysisState {

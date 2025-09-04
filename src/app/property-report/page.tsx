@@ -15,22 +15,30 @@ export default function PropertyReport() {
   const [description1, setDescription1] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [recommendedAction, setRecommendedAction] = useState<string>('');
-  const [diyOption, setDiyOption] = useState<string>('');
-  const [defect, setDefect] = useState<string>('');
   const [costs, setCosts] = useState<CostItem[]>([]);
   const [analysis, setAnalysis] = useState<string>('');
   const [hasCosts, setHasCosts] = useState<boolean>(false);
   const [image2, setImage2] = useState<string | File | null>(null)
 
+  const [totalCosts, setTotalCosts] = useState(0);
+  const [diyCost, setDiyCost] = useState<string>('');
+
 
   
   useEffect(() => {
     const now = new Date();
+    if (!analysisData) {
+      router.push('/');
+    }
+
+    console.log(analysisData);
     setCurrentDate(now.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     }));
+
+    
     
     // console.log(description, location, analysisResult);
     if (analysisData) {
@@ -38,15 +46,19 @@ export default function PropertyReport() {
       const { image, description, location, analysisResult } = analysisData;
       setDescription(description);
       setImage2(image);
-      if (analysisResult) {
-        setTitle(analysisResult.title || '');
-        setDescription1(analysisResult.description || '');
-        setRecommendedAction(analysisResult.recommendation || '');
-        setDiyOption(analysisResult.diy_option || '');
-        setDefect(analysisResult.defect || '');
-        setAnalysis(analysisResult.analysis || '');
 
-        // Handle costs array - use estimated_costs from backend
+      // setCosts(analysisData.estimated_costs)
+      // setCosts([])
+              if (analysisResult) {
+        setDescription1(analysisResult.defect || '');
+        setRecommendedAction(analysisResult.recommendation || '');
+        setAnalysis(analysisResult.diy_option || '');
+
+        console.log(analysisResult.estimated_costs)
+        setTotalCosts((analysisResult.total_estimated_cost || 0));
+        setDiyCost(String(analysisResult.diy_cost || ''));
+        
+        // Handle costs array
         if (analysisResult.estimated_costs && Array.isArray(analysisResult.estimated_costs)) {
           setCosts(analysisResult.estimated_costs);
           setHasCosts(analysisResult.estimated_costs.length > 0);
@@ -55,71 +67,20 @@ export default function PropertyReport() {
           setHasCosts(false);
         }
       }
+  } else {
+    // const [description, setDescription] = null;
   }
 
     console.log(costs);
   }, []);
 
-  // if (!analysisData) {
-  //   return (
-  //     <div className="property-report-container">
-  //       <div className="container">
-  //         <header>
-  //           <div className="header-content">
-  //             <button className="back-btn" onClick={() => router.push('/')}>
-  //               <i className="fas fa-arrow-left"></i>
-  //               <span>Back to Editor</span>
-  //             </button>
-  //             <div className="header-main">
-  //               <h1><i className="fas fa-home icon"></i>Property Repair Report</h1>
-  //               <p className="subtitle">Professional Assessment & Cost Estimation</p>
-  //             </div>
-  //           </div>
-  //         </header>
-          
-  //         <div className="content">
-  //           <div className="issue-section">
-  //             <h2><i className="fas fa-info-circle icon"></i>No Analysis Data</h2>
-  //             <div className="description">
-  //               <h3>No property analysis has been completed yet.</h3>
-  //               <p>To generate a property repair report, please:</p>
-  //               <ol style={{ marginTop: '15px', paddingLeft: '20px' }}>
-  //                 <li>Upload an image of the property issue</li>
-  //                 <li>Add a description of the problem</li>
-  //                 <li>Select a location</li>
-  //                 <li>Submit the image for analysis</li>
-  //               </ol>
-  //               <div style={{ marginTop: '20px', textAlign: 'center' }}>
-  //                 <button 
-  //                   className="submit-btn" 
-  //                   onClick={() => router.push('/')}
-  //                   style={{ 
-  //                     background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%)',
-  //                     color: 'white',
-  //                     border: 'none',
-  //                     padding: '12px 24px',
-  //                     borderRadius: '8px',
-  //                     fontSize: '16px',
-  //                     fontWeight: '600',
-  //                     cursor: 'pointer',
-  //                     transition: 'all 0.3s ease'
-  //                   }}
-  //                 >
-  //                   <i className="fas fa-arrow-left" style={{ marginRight: '8px' }}></i>
-  //                   Go to Image Editor
-  //                 </button>
-  //               </div>
-  //             </div>
-  //           </div>
-  //         </div>
-          
-  //         <footer>
-  //           <p>© 2023 Property Repair Experts | Report generated on {currentDate}</p>
-  //         </footer>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  if (!analysisData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div>No analysis data found. Redirecting...</div>
+      </div>
+    );
+  }
 
   const getCostIcon = (type: string): string => {
     const iconMap: { [key: string]: string } = {
@@ -141,17 +102,24 @@ export default function PropertyReport() {
   };
   
   // Helper function to get total cost
-  const getTotalCost = (): string => {
-    let total = 0;
+  // const getTotalCost = (): string => {
+  //   const totalCost = costs.find(cost => cost.type === 'total');
+  //   return totalCost ? totalCost.amount : calculateTotal(); // fallback if no total provided
+  // };
+
+  // const calculateTotal = (): string => {
+  //   const nonTotalCosts = costs.filter(cost => cost.type !== 'total');
+  //   let total = 0;
     
-    costs.forEach(cost => {
-      if (cost.total_cost && typeof cost.total_cost === 'number') {
-        total += cost.total_cost;
-      }
-    });
+  //   nonTotalCosts.forEach(cost => {
+  //     const amount = parseFloat(cost.amount.replace(/[^\d.]/g, ''));
+  //     if (!isNaN(amount)) {
+  //       total += amount;
+  //     }
+  //   });
     
-    return `$${total.toFixed(2)}`;
-  };
+  //   return `$${total.toFixed(2)}`;
+  // };
 
   // const { image, location, analysisResult } = analysisData;
   // const { image, location } = analysisData;
@@ -178,9 +146,10 @@ export default function PropertyReport() {
         
         <div className="content">
           <div className="issue-section">
-             <h2><i className="fas fa-exclamation-triangle icon"></i>Defect (Issue Identified)</h2>
+            <h2><i className="fas fa-exclamation-triangle icon"></i>Issue Identified</h2>
             <div className="description">
-              <h3>{defect || 'No defect information available'}</h3>
+              <h3>{description}</h3>
+              <p>{description1}</p>
             </div>
           </div>
           
@@ -188,7 +157,7 @@ export default function PropertyReport() {
           <h2><i className="fas fa-camera icon"></i>Visual Evidence</h2>
           <div className="image-container">
             {/* Replace the placeholder with actual image */}
-            {image2 ? (
+                        {image2 ? (
               <img 
                 src={typeof image2 === 'string' ? image2 : URL.createObjectURL(image2)} 
                 alt="Damage analysis" 
@@ -199,77 +168,82 @@ export default function PropertyReport() {
                   borderRadius: '8px',
                   boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
                 }}
+                onError={(e) => {
+                  console.error('Image failed to load');
+                  // (e.target as HTMLImageElement).style.display = 'none';
+                }}
               />
-            ) : (
-              <div className="image-placeholder">
-                <i className="fas fa-image fa-3x" style={{marginRight: '10px'}}></i>
-                <span>Image of damaged exterior door trim</span>
-              </div>
-            )}
+) : (
+  <div className="image-placeholder">
+    <i className="fas fa-image fa-3x" style={{marginRight: '10px'}}></i>
+    <span>Image of damaged exterior door trim</span>
+  </div>
+)}
           </div>
           <p className="image-caption">Figure 1: {description}</p>
         </div>
           
           <div className="action-section">
             <h2><i className="fas fa-tools icon"></i>Recommended Action</h2>
-            <p>{recommendedAction || 'No recommendation available'}</p>
+            <p>{recommendedAction}.</p>
           </div>
-          
+
           <div className="diy-section">
-            <h2><i className="fas fa-hammer icon"></i>DIY Option (Extra Info)</h2>
-            <p>{diyOption || 'No DIY option information available'}</p>
+            <h2><i className="fas fa-wrench icon"></i>DIY Option</h2>
+            <p>{analysis}</p>
+            {diyCost && (
+              <p><strong>DIY Cost:</strong> ${diyCost}</p>
+            )}
+            <br></br>
           </div>
+
+          {/* <div className="diy-section">
+            <h2><i className="fas fa-dollar-sign icon"></i>DIY Cost</h2>
+            {diyCost && (
+              <p><strong> ${diyCost}</strong></p>
+            )}
+            <br></br>
+          </div> */}
           
           <div className="costs-section">
             <h2><i className="fas fa-dollar-sign icon"></i>Estimated Costs</h2>
             
-             {costs.length > 0 ? (
-               costs.map((cost, index) => (
-                <div key={index} className="cost-item">
-                  <div className="cost-type">
-                    <i className={getCostIcon(cost.type)}></i>
-                     {cost.item}
-                     <div className="cost-desc">
-                       {cost.type} - ${cost.unit_cost} × {cost.quantity}
-                     </div>
-                   </div>
-                   <div className="cost-amount">${cost.total_cost}</div>
-                 </div>
-               ))
-             ) : (
-               // Show 3 default placeholder items
-               [1, 2, 3].map((itemIndex) => (
-                 <div key={itemIndex} className="cost-item default-cost-item">
-                   <div className="cost-type">
-                     <div className="default-cost-details">
-                       <div className="cost-row">
-                         <span className="cost-label"><strong>Item:</strong></span>
-                         <span className="cost-value">Not specified</span>
-                       </div>
-                       <div className="cost-row">
-                         <span className="cost-label"><strong>Type:</strong></span>
-                         <span className="cost-value">Not specified</span>
-                       </div>
-                       <div className="cost-row">
-                         <span className="cost-label"><strong>Unit Cost:</strong></span>
-                         <span className="cost-value">$0</span>
-                       </div>
-                       <div className="cost-row">
-                         <span className="cost-label"><strong>Quantity:</strong></span>
-                         <span className="cost-value">0</span>
-                       </div>
-                       <div className="cost-row">
-                         <span className="cost-label"><strong>Total Cost:</strong></span>
-                         <span className="cost-value">$0</span>
-                       </div>
-                     </div>
-                  </div>
-                </div>
-              ))
-             )}
+            {costs
+  .filter(cost => cost.type !== 'total')
+  .map((cost, index) => (
+    <div key={index} className="cost-item">
+      <div className="cost-type">
+        {cost.type === 'labor' ? (
+          <>
+            <strong>Labor Type:</strong> {capitalizeFirstLetter(cost.item)}
+            <br />
+            <strong>Hourly Rate:</strong> ${cost.unit_cost}
+            <br />
+            <strong>Hours Required:</strong> {cost.quantity}
+            <br />
+            <strong>Total Labor Cost:</strong> ${cost.total_cost}
+          </>
+        ) : (
+          <>
+            <strong>Material Item:</strong> {capitalizeFirstLetter(cost.item)}
+            <br />
+            <strong>Material Type:</strong> {cost.type}
+            <br />
+            <strong>Unit Cost:</strong> ${cost.unit_cost}
+            <br />
+            <strong>Quantity:</strong> {cost.quantity}
+            <br />
+            <strong>Total Material Cost:</strong> ${cost.total_cost}
+          </>
+        )}
+      </div>
+    </div>
+  ))
+}
+
             
             <div className="total-cost">
-               Total Estimated Cost: {costs.length > 0 ? getTotalCost() : '$0.00'}
+              Total Estimated Cost: ${totalCosts}
             </div>
           </div>
           

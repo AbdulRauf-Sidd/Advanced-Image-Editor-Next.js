@@ -13,14 +13,18 @@ interface ErrorResponse {
 }
 
 interface AnalysisResult {
-  title?: string;
-  description?: string;
-  recommended_action?: string;
-  costs?: Array<{
-    type: string;
-    description: string;
-    amount: string;
+  defect?: string;
+  estimated_costs?: Array<{
+    item: string;
+    type: 'material' | 'labor' | string;
+    unit_cost: string | number;
+    quantity: number;
+    total_cost: string | number;
   }>;
+  diy_option?: string;
+  diy_cost?: string | number;
+  recommendation?: string;
+  total_estimated_cost?: string | number;
   analysis?: string;
 }
 
