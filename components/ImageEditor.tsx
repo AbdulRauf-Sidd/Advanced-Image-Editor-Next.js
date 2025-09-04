@@ -21,6 +21,7 @@ interface Line {
   rotation?: number; // Rotation angle in radians
   scale?: number; // Scale factor for resizing
   center?: Point; // Center point for rotation and scaling
+  originalPoints?: Point[]; // Store original points for scaling
 }
 
 interface CropAction {
@@ -100,9 +101,12 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   // Touch gesture state - simplified for better UX
   const [touchStartAngle, setTouchStartAngle] = useState<number | null>(null);
   const [touchStartArrowRotation, setTouchStartArrowRotation] = useState<number | null>(null);
+  const [touchStartDistance, setTouchStartDistance] = useState<number | null>(null);
+  const [touchStartArrowScale, setTouchStartArrowScale] = useState<number | null>(null);
   const [isTwoFingerTouch, setIsTwoFingerTouch] = useState(false);
   const [rotationCenter, setRotationCenter] = useState<Point | null>(null);
   const [lastTapTime, setLastTapTime] = useState<number>(0);
+  const [gestureType, setGestureType] = useState<'rotate' | 'resize' | null>(null);
 
   // History for undo/redo - track individual actions
   const [actionHistory, setActionHistory] = useState<Action[]>([]);
@@ -122,6 +126,61 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     };
   }, []);
 
+  // Add keyboard shortcut for rotation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'r' && selectedArrowId !== null) {
+        // Rotate selected arrow by 15 degrees while maintaining position
+        const selectedArrow = lines.find(line => line.id === selectedArrowId);
+        if (selectedArrow && selectedArrow.originalPoints) {
+          // Calculate the original center from original points
+          const originalCenter = {
+            x: (selectedArrow.originalPoints[0].x + selectedArrow.originalPoints[selectedArrow.originalPoints.length - 1].x) / 2,
+            y: (selectedArrow.originalPoints[0].y + selectedArrow.originalPoints[selectedArrow.originalPoints.length - 1].y) / 2
+          };
+          
+          // Get current center (where arrow is positioned now)
+          const currentCenter = getArrowCenter(selectedArrow);
+          
+          // Calculate the offset from original position
+          const offsetX = currentCenter.x - originalCenter.x;
+          const offsetY = currentCenter.y - originalCenter.y;
+          
+          const rotationAngle = Math.PI / 12; // 15 degrees
+          const currentScale = selectedArrow.scale || 1;
+          
+          setLines(prev => prev.map(line => 
+            line.id === selectedArrowId 
+              ? {
+                  ...line,
+                  rotation: (line.rotation || 0) + rotationAngle,
+                  points: line.originalPoints!.map(point => {
+                    // First scale from original center
+                    const scaledX = originalCenter.x + (point.x - originalCenter.x) * currentScale;
+                    const scaledY = originalCenter.y + (point.y - originalCenter.y) * currentScale;
+                    
+                    // Then rotate around the original center
+                    const rotatedPoint = rotatePoint({ x: scaledX, y: scaledY }, originalCenter, (line.rotation || 0) + rotationAngle);
+                    
+                    // Finally apply position offset to maintain current position
+                    return {
+                      x: rotatedPoint.x + offsetX,
+                      y: rotatedPoint.y + offsetY
+                    };
+                  })
+                }
+              : line
+          ));
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedArrowId, lines]);
+
   const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     if (!canvasRef.current) return;
@@ -129,23 +188,28 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     const rect = canvasRef.current.getBoundingClientRect();
     
     if (e.touches.length === 2) {
-      // Two-finger touch - simplified rotation gesture
+      // Two-finger touch - detect rotation or resize gesture
       setIsTwoFingerTouch(true);
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
       
       const angle = getAngle(touch1, touch2);
+      const distance = getDistance(touch1, touch2);
       const center = getTouchCenter(touch1, touch2, rect);
       
       setTouchStartAngle(angle);
+      setTouchStartDistance(distance);
       setRotationCenter(center);
       
-      // If there's a selected arrow, enable rotation immediately
+      // If there's a selected arrow, prepare for gesture
       if (selectedArrowId !== null) {
         const selectedArrow = lines.find(line => line.id === selectedArrowId);
         if (selectedArrow) {
           setTouchStartArrowRotation(selectedArrow.rotation || 0);
-          setIsRotatingArrow(true);
+          setTouchStartArrowScale(selectedArrow.scale || 1);
+          console.log('Two-finger touch started on arrow:', selectedArrowId);
+          console.log('Initial angle:', angle, 'Initial distance:', distance);
+          // We'll determine the gesture type in the move handler
         }
       }
     } else if (e.touches.length === 1) {
@@ -202,29 +266,96 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     
     const rect = canvasRef.current.getBoundingClientRect();
     
-    if (e.touches.length === 2 && isTwoFingerTouch && isRotatingArrow && selectedArrowId !== null) {
-      // Simplified two-finger rotation - much more responsive
+    if (e.touches.length === 2 && isTwoFingerTouch && selectedArrowId !== null) {
+      // Handle two-finger gestures (rotation or resize)
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
       
       const currentAngle = getAngle(touch1, touch2);
+      const currentDistance = getDistance(touch1, touch2);
+      const center = getTouchCenter(touch1, touch2, rect);
       
-      if (touchStartAngle !== null && touchStartArrowRotation !== null && rotationCenter) {
+      if (touchStartAngle !== null && touchStartDistance !== null && rotationCenter) {
         const angleDelta = currentAngle - touchStartAngle;
+        const distanceDelta = currentDistance - touchStartDistance;
         
-        // Update the selected arrow's rotation with smoother calculation
-        setLines(prev => prev.map(line => 
-          line.id === selectedArrowId 
-            ? {
-                ...line,
-                rotation: (line.rotation || 0) + angleDelta * 0.5, // Reduce sensitivity for smoother rotation
-                points: line.points.map(point => rotatePoint(point, rotationCenter, angleDelta * 0.5))
-              }
-            : line
-        ));
+        // Determine gesture type based on which change is more significant
+        if (gestureType === null) {
+          // First movement - determine if it's rotation or resize
+          // Make rotation detection much more sensitive
+          if (Math.abs(angleDelta) > 0.05) { // Very low threshold for rotation
+            setGestureType('rotate');
+            setIsRotatingArrow(true);
+            console.log('Rotation gesture detected!', angleDelta);
+          } else if (Math.abs(distanceDelta) > 8) { // Higher threshold for resize
+            setGestureType('resize');
+            setIsResizingArrow(true);
+            console.log('Resize gesture detected!', distanceDelta);
+          }
+        }
         
-        // Update the start angle for continuous rotation
-        setTouchStartAngle(currentAngle);
+        if (gestureType === 'rotate' && touchStartArrowRotation !== null) {
+          // Handle rotation - simplified approach
+          console.log('Rotating arrow, angleDelta:', angleDelta);
+          setLines(prev => prev.map(line => 
+            line.id === selectedArrowId 
+              ? {
+                  ...line,
+                  rotation: (line.rotation || 0) + angleDelta,
+                  points: line.points.map(point => rotatePoint(point, rotationCenter, angleDelta))
+                }
+              : line
+          ));
+          setTouchStartAngle(currentAngle);
+        } else if (gestureType === 'resize' && touchStartArrowScale !== null) {
+          // Handle resize (pinch to zoom) - maintain arrow position during scaling, even when rotated
+          const scaleFactor = currentDistance / touchStartDistance;
+          const newScale = Math.max(0.3, Math.min(4.0, touchStartArrowScale * scaleFactor));
+          
+          // Get the selected arrow
+          const selectedArrow = lines.find(line => line.id === selectedArrowId);
+          if (selectedArrow && selectedArrow.originalPoints) {
+            // Calculate the original center from original points
+            const originalCenter = {
+              x: (selectedArrow.originalPoints[0].x + selectedArrow.originalPoints[selectedArrow.originalPoints.length - 1].x) / 2,
+              y: (selectedArrow.originalPoints[0].y + selectedArrow.originalPoints[selectedArrow.originalPoints.length - 1].y) / 2
+            };
+            
+            // Get current center (where arrow is positioned now)
+            const currentCenter = getArrowCenter(selectedArrow);
+            
+            // Calculate the offset from original position
+            const offsetX = currentCenter.x - originalCenter.x;
+            const offsetY = currentCenter.y - originalCenter.y;
+            
+            // Get current rotation angle
+            const currentRotation = selectedArrow.rotation || 0;
+            
+            // Apply scaling from original points, then rotation, then position offset
+            setLines(prev => prev.map(line => 
+              line.id === selectedArrowId 
+                ? {
+                    ...line,
+                    scale: newScale,
+                    points: line.originalPoints!.map(point => {
+                      // First scale from original center
+                      const scaledX = originalCenter.x + (point.x - originalCenter.x) * newScale;
+                      const scaledY = originalCenter.y + (point.y - originalCenter.y) * newScale;
+                      
+                      // Then apply rotation around the original center
+                      const rotatedPoint = rotatePoint({ x: scaledX, y: scaledY }, originalCenter, currentRotation);
+                      
+                      // Finally apply position offset to maintain current position
+                      return {
+                        x: rotatedPoint.x + offsetX,
+                        y: rotatedPoint.y + offsetY
+                      };
+                    })
+                  }
+                : line
+            ));
+          }
+        }
       }
     } else if (e.touches.length === 1) {
       // Single touch - handle as mouse event
@@ -248,8 +379,11 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     // Reset simplified touch gesture states
     setIsTwoFingerTouch(false);
     setTouchStartAngle(null);
+    setTouchStartDistance(null);
     setTouchStartArrowRotation(null);
+    setTouchStartArrowScale(null);
     setRotationCenter(null);
+    setGestureType(null);
     
     handleMouseUp();
   };
@@ -709,13 +843,22 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       );
       
       if (clickedArrow) {
-        // Simply select the arrow and start moving it
-        setSelectedArrowId(clickedArrow.id);
-        setIsDraggingArrow(true);
-        const center = getArrowCenter(clickedArrow);
-        setDragArrowOffset({ x: mouseX - center.x, y: mouseY - center.y });
-        setInteractionMode('move');
-        return;
+        // Check if user is holding Shift key for rotation mode
+        if (e.shiftKey) {
+          // Start rotation mode
+          setSelectedArrowId(clickedArrow.id);
+          setIsRotatingArrow(true);
+          setInteractionMode('rotate');
+          return;
+        } else {
+          // Simply select the arrow and start moving it
+          setSelectedArrowId(clickedArrow.id);
+          setIsDraggingArrow(true);
+          const center = getArrowCenter(clickedArrow);
+          setDragArrowOffset({ x: mouseX - center.x, y: mouseY - center.y });
+          setInteractionMode('move');
+          return;
+        }
       } else {
         // Clicked on empty space - deselect arrow and start drawing new one
         setSelectedArrowId(null);
@@ -793,17 +936,50 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
                 : line
             ));
           } else if (interactionMode === 'rotate') {
-            // Rotate the selected arrow
-            const angle = Math.atan2(mouseY - center.y, mouseX - center.x);
-            setLines(prev => prev.map(line => 
-              line.id === selectedArrowId 
-                ? {
-                    ...line,
-                    rotation: angle,
-                    points: line.points.map(point => rotatePoint(point, center, angle))
-                  }
-                : line
-            ));
+            // Rotate the selected arrow with single finger - maintain position
+            if (selectedArrow.originalPoints) {
+              // Calculate the original center from original points
+              const originalCenter = {
+                x: (selectedArrow.originalPoints[0].x + selectedArrow.originalPoints[selectedArrow.originalPoints.length - 1].x) / 2,
+                y: (selectedArrow.originalPoints[0].y + selectedArrow.originalPoints[selectedArrow.originalPoints.length - 1].y) / 2
+              };
+              
+              // Get current center (where arrow is positioned now)
+              const currentCenter = getArrowCenter(selectedArrow);
+              
+              // Calculate the offset from original position
+              const offsetX = currentCenter.x - originalCenter.x;
+              const offsetY = currentCenter.y - originalCenter.y;
+              
+              // Calculate rotation angle from mouse position
+              const angle = Math.atan2(mouseY - currentCenter.y, mouseX - currentCenter.x);
+              
+              // Get current scale
+              const currentScale = selectedArrow.scale || 1;
+              
+              setLines(prev => prev.map(line => 
+                line.id === selectedArrowId 
+                  ? {
+                      ...line,
+                      rotation: angle,
+                      points: line.originalPoints!.map(point => {
+                        // First scale from original center
+                        const scaledX = originalCenter.x + (point.x - originalCenter.x) * currentScale;
+                        const scaledY = originalCenter.y + (point.y - originalCenter.y) * currentScale;
+                        
+                        // Then rotate around the original center
+                        const rotatedPoint = rotatePoint({ x: scaledX, y: scaledY }, originalCenter, angle);
+                        
+                        // Finally apply position offset to maintain current position
+                        return {
+                          x: rotatedPoint.x + offsetX,
+                          y: rotatedPoint.y + offsetY
+                        };
+                      })
+                    }
+                  : line
+              ));
+            }
           }
         }
         return;
@@ -857,7 +1033,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         id: lineIdCounter,
         rotation: 0,
         scale: 1,
-        center: getArrowCenter({ points: currentLine, color: drawingColor, size: brushSize, type: 'arrow', id: lineIdCounter })
+        center: getArrowCenter({ points: currentLine, color: drawingColor, size: brushSize, type: 'arrow', id: lineIdCounter }),
+        originalPoints: [...currentLine] // Store original points for scaling
       };
       
       // Increment ID counter
@@ -1183,22 +1360,41 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
           drawArrow(ctx, from.x, from.y, to.x, to.y);
           ctx.globalAlpha = 1.0;
           
-          // Show two-finger rotation indicator
-          if (isTwoFingerTouch && isRotatingArrow) {
+          // Show two-finger gesture indicators
+          if (isTwoFingerTouch) {
             const center = getArrowCenter(line);
-            ctx.fillStyle = 'rgba(40, 167, 69, 0.3)';
-            ctx.strokeStyle = '#28a745';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.arc(center.x, center.y, 30, 0, 2 * Math.PI);
-            ctx.fill();
-            ctx.stroke();
             
-            // Draw rotation arrows
-            ctx.fillStyle = '#28a745';
-            ctx.font = '16px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('↻', center.x, center.y + 5);
+            if (gestureType === 'rotate' && isRotatingArrow) {
+              // Show rotation indicator
+              ctx.fillStyle = 'rgba(40, 167, 69, 0.3)';
+              ctx.strokeStyle = '#28a745';
+              ctx.lineWidth = 3;
+              ctx.beginPath();
+              ctx.arc(center.x, center.y, 30, 0, 2 * Math.PI);
+              ctx.fill();
+              ctx.stroke();
+              
+              // Draw rotation arrows
+              ctx.fillStyle = '#28a745';
+              ctx.font = '16px Arial';
+              ctx.textAlign = 'center';
+              ctx.fillText('↻', center.x, center.y + 5);
+            } else if (gestureType === 'resize' && isResizingArrow) {
+              // Show resize indicator
+              ctx.fillStyle = 'rgba(255, 193, 7, 0.3)';
+              ctx.strokeStyle = '#ffc107';
+              ctx.lineWidth = 3;
+              ctx.beginPath();
+              ctx.arc(center.x, center.y, 30, 0, 2 * Math.PI);
+              ctx.fill();
+              ctx.stroke();
+              
+              // Draw resize arrows
+              ctx.fillStyle = '#ffc107';
+              ctx.font = '16px Arial';
+              ctx.textAlign = 'center';
+              ctx.fillText('⇅', center.x, center.y + 5);
+            }
           }
         }
       }
@@ -1241,7 +1437,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         ctx.fill();
       });
     }
-  }, [image, lines, currentLine, isDrawing, drawingColor, brushSize, activeMode, cropFrame, selectedArrowId, hoveredArrowId, isDraggingArrow, isRotatingArrow, isResizingArrow, isTwoFingerTouch, rotationCenter, interactionMode]);
+  }, [image, lines, currentLine, isDrawing, drawingColor, brushSize, activeMode, cropFrame, selectedArrowId, hoveredArrowId, isDraggingArrow, isRotatingArrow, isResizingArrow, isTwoFingerTouch, rotationCenter, interactionMode, gestureType]);
 
   const getCursor = () => {
     if (activeMode === 'crop') {
