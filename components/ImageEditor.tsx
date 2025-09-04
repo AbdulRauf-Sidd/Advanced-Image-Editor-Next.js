@@ -16,12 +16,10 @@ interface Line {
   color: string;
   size: number;
   type: 'draw' | 'arrow';
-  id: number; // Add unique ID for each line
-  // Arrow-specific properties
-  rotation?: number; // Rotation angle in radians
-  scale?: number; // Scale factor for resizing
-  center?: Point; // Center point for rotation and scaling
-  originalPoints?: Point[]; // Store original points for scaling
+  id: number;
+  rotation?: number;
+  scale?: number;
+  center?: Point;
 }
 
 interface CropAction {
@@ -65,12 +63,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   setIsCameraOpen,
   isCameraOpen
 }) => {
-
-  
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // const videoRef = useRef<HTMLVideoElement>(null);
-  
   const cameraCanvasRef = useRef<HTMLCanvasElement>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [lines, setLines] = useState<Line[]>([]);
@@ -79,17 +73,12 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const [drawingColor, setDrawingColor] = useState('#FF0000');
   const [brushSize, setBrushSize] = useState(3);
   
-  // Camera state
-  // const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
-  
-  // Crop state
   const [cropFrame, setCropFrame] = useState<CropFrame | null>(null);
   const [isDraggingCrop, setIsDraggingCrop] = useState(false);
   const [dragCropOffset, setDragCropOffset] = useState({ x: 0, y: 0 });
   const [resizingCropHandle, setResizingCropHandle] = useState<string | null>(null);
 
-  // Arrow interaction state - simplified without visible handles
   const [selectedArrowId, setSelectedArrowId] = useState<number | null>(null);
   const [hoveredArrowId, setHoveredArrowId] = useState<number | null>(null);
   const [isDraggingArrow, setIsDraggingArrow] = useState(false);
@@ -98,22 +87,24 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const [dragArrowOffset, setDragArrowOffset] = useState({ x: 0, y: 0 });
   const [interactionMode, setInteractionMode] = useState<'move' | 'rotate' | 'resize' | null>(null);
 
-  // Touch gesture state - simplified for better UX
   const [touchStartAngle, setTouchStartAngle] = useState<number | null>(null);
-  const [touchStartArrowRotation, setTouchStartArrowRotation] = useState<number | null>(null);
   const [touchStartDistance, setTouchStartDistance] = useState<number | null>(null);
+  const [touchStartArrowRotation, setTouchStartArrowRotation] = useState<number | null>(null);
   const [touchStartArrowScale, setTouchStartArrowScale] = useState<number | null>(null);
   const [isTwoFingerTouch, setIsTwoFingerTouch] = useState(false);
   const [rotationCenter, setRotationCenter] = useState<Point | null>(null);
   const [lastTapTime, setLastTapTime] = useState<number>(0);
-  const [gestureType, setGestureType] = useState<'rotate' | 'resize' | null>(null);
 
-  // History for undo/redo - track individual actions
   const [actionHistory, setActionHistory] = useState<Action[]>([]);
   const [redoHistory, setRedoHistory] = useState<Action[]>([]);
   const [lineIdCounter, setLineIdCounter] = useState(0);
-
   const [isCameraFullscreen, setIsCameraFullscreen] = useState(false);
+
+  // Animation frame reference for smooth rotation
+  const animationRef = useRef<number | null>(null);
+  const [rotationVelocity, setRotationVelocity] = useState(0);
+  const [lastRotationTime, setLastRotationTime] = useState<number | null>(null);
+
   // Add event listener for arrow color change
   useEffect(() => {
     const handleArrowColorChange = (e: CustomEvent) => {
@@ -126,60 +117,50 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     };
   }, []);
 
-  // Add keyboard shortcut for rotation
+  // Smooth rotation animation
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'r' && selectedArrowId !== null) {
-        // Rotate selected arrow by 15 degrees while maintaining position
-        const selectedArrow = lines.find(line => line.id === selectedArrowId);
-        if (selectedArrow && selectedArrow.originalPoints) {
-          // Calculate the original center from original points
-          const originalCenter = {
-            x: (selectedArrow.originalPoints[0].x + selectedArrow.originalPoints[selectedArrow.originalPoints.length - 1].x) / 2,
-            y: (selectedArrow.originalPoints[0].y + selectedArrow.originalPoints[selectedArrow.originalPoints.length - 1].y) / 2
-          };
-          
-          // Get current center (where arrow is positioned now)
-          const currentCenter = getArrowCenter(selectedArrow);
-          
-          // Calculate the offset from original position
-          const offsetX = currentCenter.x - originalCenter.x;
-          const offsetY = currentCenter.y - originalCenter.y;
-          
-          const rotationAngle = Math.PI / 12; // 15 degrees
-          const currentScale = selectedArrow.scale || 1;
-          
+    if (rotationVelocity !== 0 && selectedArrowId !== null) {
+      const animateRotation = (timestamp: number) => {
+        if (!lastRotationTime) {
+          setLastRotationTime(timestamp);
+        }
+        
+        const deltaTime = timestamp - (lastRotationTime || timestamp);
+        const rotationDelta = rotationVelocity * (deltaTime / 1000);
+        
+        if (Math.abs(rotationDelta) > 0.001) {
           setLines(prev => prev.map(line => 
             line.id === selectedArrowId 
               ? {
                   ...line,
-                  rotation: (line.rotation || 0) + rotationAngle,
-                  points: line.originalPoints!.map(point => {
-                    // First scale from original center
-                    const scaledX = originalCenter.x + (point.x - originalCenter.x) * currentScale;
-                    const scaledY = originalCenter.y + (point.y - originalCenter.y) * currentScale;
-                    
-                    // Then rotate around the original center
-                    const rotatedPoint = rotatePoint({ x: scaledX, y: scaledY }, originalCenter, (line.rotation || 0) + rotationAngle);
-                    
-                    // Finally apply position offset to maintain current position
-                    return {
-                      x: rotatedPoint.x + offsetX,
-                      y: rotatedPoint.y + offsetY
-                    };
+                  rotation: (line.rotation || 0) + rotationDelta,
+                  points: line.points.map(point => {
+                    const center = getArrowCenter(line);
+                    return rotatePoint(point, center, rotationDelta);
                   })
                 }
               : line
           ));
+          
+          // Apply friction to slow down rotation
+          setRotationVelocity(prev => prev * 0.95);
+          setLastRotationTime(timestamp);
+          animationRef.current = requestAnimationFrame(animateRotation);
+        } else {
+          setRotationVelocity(0);
+          setLastRotationTime(null);
         }
+      };
+      
+      animationRef.current = requestAnimationFrame(animateRotation);
+    }
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
       }
     };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [selectedArrowId, lines]);
+  }, [rotationVelocity, selectedArrowId, lastRotationTime]);
 
   const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -188,7 +169,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     const rect = canvasRef.current.getBoundingClientRect();
     
     if (e.touches.length === 2) {
-      // Two-finger touch - detect rotation or resize gesture
       setIsTwoFingerTouch(true);
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
@@ -201,36 +181,30 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       setTouchStartDistance(distance);
       setRotationCenter(center);
       
-      // If there's a selected arrow, prepare for gesture
       if (selectedArrowId !== null) {
         const selectedArrow = lines.find(line => line.id === selectedArrowId);
         if (selectedArrow) {
           setTouchStartArrowRotation(selectedArrow.rotation || 0);
           setTouchStartArrowScale(selectedArrow.scale || 1);
-          console.log('Two-finger touch started on arrow:', selectedArrowId);
-          console.log('Initial angle:', angle, 'Initial distance:', distance);
-          // We'll determine the gesture type in the move handler
+          setIsRotatingArrow(true);
         }
       }
     } else if (e.touches.length === 1) {
-      // Single touch - simplified interaction
       const touch = e.touches[0];
       const mouseX = touch.clientX - rect.left;
       const mouseY = touch.clientY - rect.top;
       
-      // Check for double-tap rotation (much easier for users)
       const currentTime = Date.now();
       const timeDiff = currentTime - lastTapTime;
       
-      if (timeDiff < 300 && selectedArrowId !== null) { // Double tap within 300ms
+      if (timeDiff < 300 && selectedArrowId !== null) {
         const clickedArrow = lines.find(line => 
-          line.type === 'arrow' && line.id === selectedArrowId && isPointInArrow(line, { x: mouseX, y: mouseY })
+          line.type === 'arrow' && isPointInArrow(line, { x: mouseX, y: mouseY })
         );
         
         if (clickedArrow) {
-          // Rotate arrow by 15 degrees on double-tap
           const center = getArrowCenter(clickedArrow);
-          const rotationAngle = Math.PI / 12; // 15 degrees
+          const rotationAngle = Math.PI / 8; // Increased from 15 to 22.5 degrees for faster rotation
           
           setLines(prev => prev.map(line => 
             line.id === selectedArrowId 
@@ -241,19 +215,17 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
                 }
               : line
           ));
-          setLastTapTime(0); // Reset to prevent triple-tap
+          setLastTapTime(0);
           return;
         }
       }
       
       setLastTapTime(currentTime);
-    
-      // Create a mock mouse event for compatibility
+  
       const mockEvent = {
         clientX: touch.clientX,
         clientY: touch.clientY,
         preventDefault: () => e.preventDefault(),
-        // Add other required properties as needed
       } as unknown as React.MouseEvent<HTMLCanvasElement>;
       
       handleMouseDown(mockEvent);
@@ -267,102 +239,45 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     const rect = canvasRef.current.getBoundingClientRect();
     
     if (e.touches.length === 2 && isTwoFingerTouch && selectedArrowId !== null) {
-      // Handle two-finger gestures (rotation or resize)
       const touch1 = e.touches[0];
       const touch2 = e.touches[1];
       
       const currentAngle = getAngle(touch1, touch2);
       const currentDistance = getDistance(touch1, touch2);
-      const center = getTouchCenter(touch1, touch2, rect);
       
-      if (touchStartAngle !== null && touchStartDistance !== null && rotationCenter) {
+      if (touchStartAngle !== null && touchStartDistance !== null && 
+          touchStartArrowRotation !== null && touchStartArrowScale !== null && rotationCenter) {
+        
         const angleDelta = currentAngle - touchStartAngle;
-        const distanceDelta = currentDistance - touchStartDistance;
+        const scaleDelta = currentDistance / touchStartDistance;
         
-        // Determine gesture type based on which change is more significant
-        if (gestureType === null) {
-          // First movement - determine if it's rotation or resize
-          // Make rotation detection much more sensitive
-          if (Math.abs(angleDelta) > 0.05) { // Very low threshold for rotation
-            setGestureType('rotate');
-            setIsRotatingArrow(true);
-            console.log('Rotation gesture detected!', angleDelta);
-          } else if (Math.abs(distanceDelta) > 8) { // Higher threshold for resize
-            setGestureType('resize');
-            setIsResizingArrow(true);
-            console.log('Resize gesture detected!', distanceDelta);
-          }
-        }
+        // Increased rotation speed by 30% (from 0.5 to 0.65)
+        setLines(prev => prev.map(line => 
+          line.id === selectedArrowId 
+            ? {
+                ...line,
+                rotation: touchStartArrowRotation + angleDelta * 1.0,
+                scale: touchStartArrowScale * scaleDelta,
+                points: line.points.map(point => {
+                  const scaledPoint = scalePoint(point, rotationCenter, scaleDelta);
+                  return rotatePoint(scaledPoint, rotationCenter, angleDelta * 1.0);
+                })
+              }
+            : line
+        ));
         
-        if (gestureType === 'rotate' && touchStartArrowRotation !== null) {
-          // Handle rotation - simplified approach
-          console.log('Rotating arrow, angleDelta:', angleDelta);
-          setLines(prev => prev.map(line => 
-            line.id === selectedArrowId 
-              ? {
-                  ...line,
-                  rotation: (line.rotation || 0) + angleDelta,
-                  points: line.points.map(point => rotatePoint(point, rotationCenter, angleDelta))
-                }
-              : line
-          ));
-          setTouchStartAngle(currentAngle);
-        } else if (gestureType === 'resize' && touchStartArrowScale !== null) {
-          // Handle resize (pinch to zoom) - maintain arrow position during scaling, even when rotated
-          const scaleFactor = currentDistance / touchStartDistance;
-          const newScale = Math.max(0.3, Math.min(4.0, touchStartArrowScale * scaleFactor));
-          
-          // Get the selected arrow
-          const selectedArrow = lines.find(line => line.id === selectedArrowId);
-          if (selectedArrow && selectedArrow.originalPoints) {
-            // Calculate the original center from original points
-            const originalCenter = {
-              x: (selectedArrow.originalPoints[0].x + selectedArrow.originalPoints[selectedArrow.originalPoints.length - 1].x) / 2,
-              y: (selectedArrow.originalPoints[0].y + selectedArrow.originalPoints[selectedArrow.originalPoints.length - 1].y) / 2
-            };
-            
-            // Get current center (where arrow is positioned now)
-            const currentCenter = getArrowCenter(selectedArrow);
-            
-            // Calculate the offset from original position
-            const offsetX = currentCenter.x - originalCenter.x;
-            const offsetY = currentCenter.y - originalCenter.y;
-            
-            // Get current rotation angle
-            const currentRotation = selectedArrow.rotation || 0;
-            
-            // Apply scaling from original points, then rotation, then position offset
-            setLines(prev => prev.map(line => 
-              line.id === selectedArrowId 
-                ? {
-                    ...line,
-                    scale: newScale,
-                    points: line.originalPoints!.map(point => {
-                      // First scale from original center
-                      const scaledX = originalCenter.x + (point.x - originalCenter.x) * newScale;
-                      const scaledY = originalCenter.y + (point.y - originalCenter.y) * newScale;
-                      
-                      // Then apply rotation around the original center
-                      const rotatedPoint = rotatePoint({ x: scaledX, y: scaledY }, originalCenter, currentRotation);
-                      
-                      // Finally apply position offset to maintain current position
-                      return {
-                        x: rotatedPoint.x + offsetX,
-                        y: rotatedPoint.y + offsetY
-                      };
-                    })
-                  }
-                : line
-            ));
-          }
-        }
+        // Calculate rotation velocity for smooth animation
+        const deltaTime = 16; // Approximate frame time
+        setRotationVelocity(angleDelta * 1.0 / deltaTime * 1000);
+        
+        setTouchStartAngle(currentAngle);
+        setTouchStartDistance(currentDistance);
       }
     } else if (e.touches.length === 1) {
-      // Single touch - handle as mouse event
       const touch = e.touches[0];
       const mouseX = touch.clientX - rect.left;
       const mouseY = touch.clientY - rect.top;
-    
+  
       const mockEvent = {
         clientX: touch.clientX,
         clientY: touch.clientY,
@@ -376,26 +291,21 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     
-    // Reset simplified touch gesture states
     setIsTwoFingerTouch(false);
     setTouchStartAngle(null);
     setTouchStartDistance(null);
     setTouchStartArrowRotation(null);
     setTouchStartArrowScale(null);
     setRotationCenter(null);
-    setGestureType(null);
     
     handleMouseUp();
   };
 
   const exportEditedFile = (): File | null => {
     let canvas = canvasRef.current;
-    console.log(canvas);
     if (!canvas) {
-      console.log('hi');
-      if (!image) return null; // Need an image to create canvas
+      if (!image) return null;
       
-      console.log('Creating temporary canvas for export');
       canvas = document.createElement('canvas');
       canvas.width = image.width;
       canvas.height = image.height;
@@ -403,13 +313,10 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       const ctx = canvas.getContext('2d');
       if (!ctx) return null;
       
-      // Draw the image on the temporary canvas
       ctx.drawImage(image, 0, 0, image.width, image.height);
-    } else {
-      console.log('Using existing canvas for export');
     }
   
-    const dataUrl = canvas.toDataURL("image/png"); // sync
+    const dataUrl = canvas.toDataURL("image/png");
     const byteString = atob(dataUrl.split(",")[1]);
     const mimeString = dataUrl.split(",")[0].split(":")[1].split(";")[0];
   
@@ -427,51 +334,39 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     onEditedFile?.(file);
   }, [image]);
 
-  
-
-  // Save current drawing action to history
   const saveAction = (action: Action) => {
     setActionHistory(prev => [...prev, action]);
-    setRedoHistory([]); // Clear redo history when new action is performed
+    setRedoHistory([]);
   };
 
-  // Undo function - remove the last action
   const handleUndo = () => {
     if (actionHistory.length === 0) return;
     
     const lastAction = actionHistory[actionHistory.length - 1];
-    
-    // Move action to redo history
     setRedoHistory(prev => [...prev, lastAction]);
     
     if (lastAction.type === 'crop') {
-      // Handle crop undo - restore previous image and lines
       setImage(lastAction.previousImage);
       setLines(lastAction.previousLines);
       setActionHistory(lastAction.previousActionHistory);
       onCropStateChange(false);
       if (onImageChange) onImageChange(lastAction.previousImage);
     } else {
-      // Handle drawing undo - remove action from current lines
       setLines(prev => prev.filter(line => line.id !== lastAction.id));
     }
     
-    // Remove from action history
     setActionHistory(prev => prev.slice(0, -1));
   };
 
-  // Redo function - add back the last undone action
   const handleRedo = () => {
     if (redoHistory.length === 0) return;
     
     const lastRedoAction = redoHistory[redoHistory.length - 1];
     
     if (lastRedoAction.type === 'crop') {
-      // Handle crop redo - reapply the crop
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (ctx && lastRedoAction.previousImage && lastRedoAction.cropFrame && canvasRef.current) {
-        // Reapply the crop operation using stored crop frame
         const imgAspect = lastRedoAction.previousImage.width / lastRedoAction.previousImage.height;
         const canvasWidth = canvasRef.current.width;
         const canvasHeight = canvasRef.current.height;
@@ -491,7 +386,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
           offsetY = 0;
         }
         
-        // Calculate crop coordinates in original image space
         const scaleX = lastRedoAction.previousImage.width / drawWidth;
         const scaleY = lastRedoAction.previousImage.height / drawHeight;
         
@@ -500,24 +394,20 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         const cropW = lastRedoAction.cropFrame.w * scaleX;
         const cropH = lastRedoAction.cropFrame.h * scaleY;
         
-        // Ensure crop coordinates are within image bounds
         const finalCropX = Math.max(0, Math.min(cropX, lastRedoAction.previousImage.width));
         const finalCropY = Math.max(0, Math.min(cropY, lastRedoAction.previousImage.height));
         const finalCropW = Math.min(cropW, lastRedoAction.previousImage.width - finalCropX);
         const finalCropH = Math.min(cropH, lastRedoAction.previousImage.height - finalCropY);
         
-        // Create new canvas with cropped dimensions
         canvas.width = finalCropW;
         canvas.height = finalCropH;
         
-        // Draw cropped portion
         ctx.drawImage(
           lastRedoAction.previousImage,
           finalCropX, finalCropY, finalCropW, finalCropH,
           0, 0, finalCropW, finalCropH
         );
         
-        // Create new image from cropped canvas
         const croppedImage = new Image();
         croppedImage.onload = () => {
           setImage(croppedImage);
@@ -529,18 +419,13 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         croppedImage.src = canvas.toDataURL();
       }
     } else {
-      // Handle drawing redo - add action back to current lines
       setLines(prev => [...prev, lastRedoAction]);
     }
     
-    // Move action back to action history
     setActionHistory(prev => [...prev, lastRedoAction]);
-    
-    // Remove from redo history
     setRedoHistory(prev => prev.slice(0, -1));
   };
 
-  // Apply crop function
   const applyCrop = () => {
     if (!cropFrame || !image || !canvasRef.current) return;
     
@@ -548,11 +433,9 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    // Get actual canvas dimensions
     const canvasWidth = canvasRef.current.width;
     const canvasHeight = canvasRef.current.height;
     
-    // Calculate the actual crop dimensions based on image scaling
     const imgAspect = image.width / image.height;
     const canvasAspect = canvasWidth / canvasHeight;
     
@@ -570,7 +453,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       offsetY = 0;
     }
     
-    // Calculate crop coordinates in original image space
     const scaleX = image.width / drawWidth;
     const scaleY = image.height / drawHeight;
     
@@ -579,44 +461,35 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     const cropW = cropFrame.w * scaleX;
     const cropH = cropFrame.h * scaleY;
     
-    // Ensure crop coordinates are within image bounds
     const finalCropX = Math.max(0, Math.min(cropX, image.width));
     const finalCropY = Math.max(0, Math.min(cropY, image.height));
     const finalCropW = Math.min(cropW, image.width - finalCropX);
     const finalCropH = Math.min(cropH, image.height - finalCropY);
     
-    // Create new canvas with cropped dimensions
     canvas.width = finalCropW;
     canvas.height = finalCropH;
     
-    // Draw cropped portion
     ctx.drawImage(
       image,
       finalCropX, finalCropY, finalCropW, finalCropH,
       0, 0, finalCropW, finalCropH
     );
     
-    // Create new image from cropped canvas
     const croppedImage = new Image();
     croppedImage.onload = () => {
-      // Save current state for undo
       const cropAction: CropAction = {
         type: 'crop',
         previousImage: image,
         previousLines: [...lines],
         previousActionHistory: [...actionHistory],
-        cropFrame: cropFrame, // Store the crop frame for redo
+        cropFrame: cropFrame,
         id: lineIdCounter
       };
       
-      // Increment ID counter
       setLineIdCounter(prev => prev + 1);
-      
-      // Save to action history
       setActionHistory(prev => [...prev, cropAction]);
-      setRedoHistory([]); // Clear redo history when new action is performed
+      setRedoHistory([]);
       
-      // Update image and clear drawing history
       setImage(croppedImage);
       setCropFrame(null);
       setLines([]);
@@ -629,7 +502,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     croppedImage.src = canvas.toDataURL();
   };
 
-  // Load uploaded image
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -640,16 +512,12 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       
       img.onload = () => {
         setImage(img);
-        // Clear all drawing history when new image is uploaded
         setLines([]);
         setCurrentLine(null);
         setCropFrame(null);
         setActionHistory([]);
         setRedoHistory([]);
         onCropStateChange(false);
-
-        // const file = exportEditedFile();
-        // onEditedFile?.(file);
       };
       img.src = event.target?.result as string;
       onImageChange?.(img);
@@ -657,46 +525,23 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     reader.readAsDataURL(file);
   };
 
-  // Camera functions
   const startCamera = async () => {
     try {
-      // Stop any existing stream first
-      // if (cameraStream) {
-      //   cameraStream.getTracks().forEach(track => track.stop());
-      // }
+      setIsCameraFullscreen(true);      
 
-      // if (!videoRef?.current) {
-      //   console.error('Video element not ready yet');
-      //   return;
-      // }
-
-      setIsCameraFullscreen(true); // Enter fullscreen mode      
-
-      console.log('Video ref:', videoRef?.current); // This should now work
-
-      // const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-  
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
           facingMode: 'environment',
           width: { ideal: 1280 },
           height: { ideal: 720 }
         } 
-        // video: true
       });
-
-
-      console.log(videoRef);
-      
       
       if (videoRef?.current) {
-        console.log('hello');
         videoRef.current.srcObject = stream;
         setCameraStream(stream);
         setIsCameraOpen(true);
-        // setIsCameraFullscreen(true); // Enter fullscreen mode
         
-        // Wait for video to be ready and play it
         videoRef.current.onloadedmetadata = () => {
           videoRef.current?.play().catch(error => {
             console.error('Error playing video:', error);
@@ -718,7 +563,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       videoRef.current.srcObject = null;
     }
     setIsCameraOpen(false);
-    setIsCameraFullscreen(false); // Exit fullscreen mode
+    setIsCameraFullscreen(false);
   };
 
   const captureImage = () => {
@@ -728,14 +573,11 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       const context = canvas.getContext('2d');
       
       if (context && video.videoWidth > 0 && video.videoHeight > 0) {
-        // Set canvas dimensions to match video
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         
-        // Draw the current video frame to canvas
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Create image from canvas
         const img = new Image();
         img.onload = () => {
           setImage(img);
@@ -747,20 +589,13 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
           onCropStateChange(false);
           
           if (onImageChange) onImageChange(img);
-          
-          // Stop camera after capturing
           stopCamera();
-          
-          // Export the file
-          // const file = exportEditedFile();
-          // onEditedFile?.(file);
         };
         img.src = canvas.toDataURL('image/jpeg', 0.9);
       }
     }
   };
 
-  // Initialize crop frame when crop mode is activated
   useEffect(() => {
     if (activeMode === 'crop' && !cropFrame) {
       setCropFrame(null);
@@ -771,7 +606,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     }
   }, [activeMode, cropFrame, onCropStateChange]);
 
-  // Listen for custom events from action bar
   useEffect(() => {
     const handleUndoAction = () => {
       handleUndo();
@@ -798,12 +632,10 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     };
   }, [actionHistory, redoHistory, cropFrame]);
 
-  // Handle color change while preserving active mode
   const handleColorChange = (newColor: string) => {
     setDrawingColor(newColor);
   };
 
-  // Mouse down handler
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!canvasRef.current) return;
     
@@ -813,7 +645,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
 
     if (activeMode === 'crop') {
       if (cropFrame) {
-        // Handle existing crop frame interaction
         const handle = getHandles(cropFrame).find(
           (h) => Math.abs(h.x - mouseX) < 6 && Math.abs(h.y - mouseY) < 6
         );
@@ -832,45 +663,31 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
           return;
         }
       }
-      // Start drawing new crop frame
       setCropFrame({ x: mouseX, y: mouseY, w: 0, h: 0 });
       setIsDrawing(true);
       return;
     } else if (activeMode === 'arrow') {
-      // Check if clicking on an existing arrow
+      // Check if clicking on an existing arrow with increased selection area
       const clickedArrow = lines.find(line => 
-        line.type === 'arrow' && isPointInArrow(line, { x: mouseX, y: mouseY })
+        line.type === 'arrow' && isPointInArrow(line, { x: mouseX, y: mouseY }, 25)
       );
       
       if (clickedArrow) {
-        // Check if user is holding Shift key for rotation mode
-        if (e.shiftKey) {
-          // Start rotation mode
-          setSelectedArrowId(clickedArrow.id);
-          setIsRotatingArrow(true);
-          setInteractionMode('rotate');
-          return;
-        } else {
-          // Simply select the arrow and start moving it
-          setSelectedArrowId(clickedArrow.id);
-          setIsDraggingArrow(true);
-          const center = getArrowCenter(clickedArrow);
-          setDragArrowOffset({ x: mouseX - center.x, y: mouseY - center.y });
-          setInteractionMode('move');
-          return;
-        }
+        setSelectedArrowId(clickedArrow.id);
+        setIsDraggingArrow(true);
+        const center = getArrowCenter(clickedArrow);
+        setDragArrowOffset({ x: mouseX - center.x, y: mouseY - center.y });
+        setInteractionMode('move');
+        return;
       } else {
-        // Clicked on empty space - deselect arrow and start drawing new one
         setSelectedArrowId(null);
         setInteractionMode(null);
         setIsDrawing(true);
         setCurrentLine([{ x: mouseX, y: mouseY }]);
       }
     }
-    // If activeMode is 'none', do nothing - no drawing allowed
   };
 
-  // Mouse move handler
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!canvasRef.current) return;
     
@@ -891,7 +708,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         }));
         return;
       }
-      // Update crop frame size while drawing
       if (isDrawing) {
         setCropFrame(prev => ({
           ...prev!,
@@ -904,21 +720,19 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       if (isDraggingArrow && selectedArrowId !== null) {
         const selectedArrow = lines.find(line => line.id === selectedArrowId);
         if (selectedArrow) {
-          // Check if user is trying to rotate (holding Shift key or moving in circular motion)
           const center = getArrowCenter(selectedArrow);
           const distanceFromCenter = Math.sqrt(
             Math.pow(mouseX - center.x, 2) + Math.pow(mouseY - center.y, 2)
           );
           
-          // If mouse is far from center, switch to rotation mode
-          if (distanceFromCenter > 50 && interactionMode === 'move') {
+          // Check if user is trying to rotate (cursor is far from center)
+          if (distanceFromCenter > 40 && interactionMode === 'move') {
             setInteractionMode('rotate');
             setIsRotatingArrow(true);
             setIsDraggingArrow(false);
           }
           
           if (interactionMode === 'move') {
-            // Move the selected arrow
             const newCenter = { x: mouseX - dragArrowOffset.x, y: mouseY - dragArrowOffset.y };
             const oldCenter = getArrowCenter(selectedArrow);
             const deltaX = newCenter.x - oldCenter.x;
@@ -936,72 +750,42 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
                 : line
             ));
           } else if (interactionMode === 'rotate') {
-            // Rotate the selected arrow with single finger - maintain position
-            if (selectedArrow.originalPoints) {
-              // Calculate the original center from original points
-              const originalCenter = {
-                x: (selectedArrow.originalPoints[0].x + selectedArrow.originalPoints[selectedArrow.originalPoints.length - 1].x) / 2,
-                y: (selectedArrow.originalPoints[0].y + selectedArrow.originalPoints[selectedArrow.originalPoints.length - 1].y) / 2
-              };
-              
-              // Get current center (where arrow is positioned now)
-              const currentCenter = getArrowCenter(selectedArrow);
-              
-              // Calculate the offset from original position
-              const offsetX = currentCenter.x - originalCenter.x;
-              const offsetY = currentCenter.y - originalCenter.y;
-              
-              // Calculate rotation angle from mouse position
-              const angle = Math.atan2(mouseY - currentCenter.y, mouseX - currentCenter.x);
-              
-              // Get current scale
-              const currentScale = selectedArrow.scale || 1;
-              
-              setLines(prev => prev.map(line => 
-                line.id === selectedArrowId 
-                  ? {
-                      ...line,
-                      rotation: angle,
-                      points: line.originalPoints!.map(point => {
-                        // First scale from original center
-                        const scaledX = originalCenter.x + (point.x - originalCenter.x) * currentScale;
-                        const scaledY = originalCenter.y + (point.y - originalCenter.y) * currentScale;
-                        
-                        // Then rotate around the original center
-                        const rotatedPoint = rotatePoint({ x: scaledX, y: scaledY }, originalCenter, angle);
-                        
-                        // Finally apply position offset to maintain current position
-                        return {
-                          x: rotatedPoint.x + offsetX,
-                          y: rotatedPoint.y + offsetY
-                        };
-                      })
-                    }
-                  : line
-              ));
-            }
+            // Faster rotation with less easing for more responsive feel
+            const angle = Math.atan2(mouseY - center.y, mouseX - center.x);
+            const currentRotation = selectedArrow.rotation || 0;
+            const rotationDelta = angle - currentRotation;
+            
+            // Reduced easing for faster rotation (from 0.3 to 0.5)
+            const easedRotation = currentRotation + rotationDelta * 0.5;
+            
+            setLines(prev => prev.map(line => 
+              line.id === selectedArrowId 
+                ? {
+                    ...line,
+                    rotation: easedRotation,
+                    points: line.points.map(point => rotatePoint(point, center, easedRotation - currentRotation))
+                  }
+                : line
+            ));
           }
         }
         return;
       }
       
       if (isDrawing) {
-        // Only allow drawing when arrow mode is active
         setCurrentLine(prev => [...prev!, { x: mouseX, y: mouseY }]);
       } else {
-        // Check for hover effects on arrows
+        // Check for hover effects on arrows with increased selection area
         const hoveredArrow = lines.find(line => 
-          line.type === 'arrow' && isPointInArrow(line, { x: mouseX, y: mouseY })
+          line.type === 'arrow' && isPointInArrow(line, { x: mouseX, y: mouseY }, 25)
         );
         setHoveredArrowId(hoveredArrow ? hoveredArrow.id : null);
       }
     }
   };
 
-  // Mouse up handler
   const handleMouseUp = () => {
     if (activeMode === 'crop' && isDrawing && cropFrame) {
-      // Finalize crop frame
       if (cropFrame.w < 0) {
         setCropFrame(prev => ({
           ...prev!,
@@ -1022,9 +806,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     }
     
     if (activeMode === 'arrow' && isDrawing && currentLine && currentLine.length > 1) {
-      // Only process drawing when arrow mode is active
-      // Create the line object with unique ID
-      const lineType = 'arrow'; // Always arrow when in arrow mode
+      const lineType = 'arrow';
       const newLine: Line = {
         points: [...currentLine],
         color: drawingColor,
@@ -1033,27 +815,18 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         id: lineIdCounter,
         rotation: 0,
         scale: 1,
-        center: getArrowCenter({ points: currentLine, color: drawingColor, size: brushSize, type: 'arrow', id: lineIdCounter }),
-        originalPoints: [...currentLine] // Store original points for scaling
+        center: getArrowCenter({ points: currentLine, color: drawingColor, size: brushSize, type: 'arrow', id: lineIdCounter })
       };
       
-      // Increment ID counter
       setLineIdCounter(prev => prev + 1);
-      
-      // Add to lines array
       setLines(prev => [...prev, newLine]);
-      
-      // Automatically select the newly drawn arrow so user can immediately rotate/resize it
       setSelectedArrowId(newLine.id);
-      
-      // Save to action history
       saveAction(newLine);
       setCurrentLine(null);
       const file = exportEditedFile();
       onEditedFile?.(file);
     }
     
-    // Reset all interaction states
     setIsDrawing(false);
     setIsDraggingCrop(false);
     setResizingCropHandle(null);
@@ -1063,7 +836,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     setInteractionMode(null);
   };
 
-  // Get resize handles for crop frame
   const getHandles = (obj: CropFrame) => {
     const { x, y, w, h } = obj;
     return [
@@ -1078,7 +850,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     ];
   };
 
-  // Resize crop frame helper
   const resizeObj = (obj: CropFrame, handle: string, mx: number, my: number) => {
     let { x, y, w, h } = obj;
     switch (handle) {
@@ -1120,12 +891,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     return { ...obj, x, y, w, h };
   };
 
-  // Arrow interaction helpers
-  // These functions enable moveable, rotatable, and resizable arrows
-  // - Click on an arrow to select it (shows handles)
-  // - Drag the center handle to move the arrow
-  // - Drag the green rotation handle to rotate the arrow
-  // - Drag the yellow resize handles to change arrow size
   const getArrowBounds = (line: Line) => {
     if (line.points.length < 2) return null;
     const from = line.points[0];
@@ -1147,7 +912,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     };
   };
 
-  const isPointInArrow = (line: Line, point: Point) => {
+  // Updated to accept a tolerance parameter for larger selection area
+  const isPointInArrow = (line: Line, point: Point, tolerance: number = 15) => {
     if (line.points.length < 2) return false;
     const from = line.points[0];
     const to = line.points[line.points.length - 1];
@@ -1179,23 +945,41 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     const dy = point.y - yy;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
-    // Check if point is within arrow thickness
+    // Use tolerance parameter for larger selection area
     const arrowThickness = Math.max(line.size * 4, 12);
-    return distance <= arrowThickness + 10; // Add some padding for easier selection
+    return distance <= arrowThickness + tolerance;
   };
 
   const getArrowHandles = (line: Line) => {
-    const bounds = getArrowBounds(line);
-    if (!bounds) return [];
-    
     const center = getArrowCenter(line);
     const handleSize = 8;
+    const rotation = line.rotation || 0;
     
     return [
-      { name: 'move', x: center.x, y: center.y, type: 'move' },
-      { name: 'rotate', x: center.x, y: center.y - 40, type: 'rotate' }, // Made rotation handle bigger and further away
-      { name: 'resize-start', x: bounds.minX, y: bounds.minY, type: 'resize' },
-      { name: 'resize-end', x: bounds.maxX, y: bounds.maxY, type: 'resize' }
+      { 
+        name: 'move', 
+        x: center.x, 
+        y: center.y, 
+        type: 'move' 
+      },
+      { 
+        name: 'rotate', 
+        x: center.x + 50 * Math.sin(rotation),
+        y: center.y - 50 * Math.cos(rotation), 
+        type: 'rotate' 
+      },
+      { 
+        name: 'resize-start', 
+        x: center.x - 40 * Math.cos(rotation),
+        y: center.y - 40 * Math.sin(rotation), 
+        type: 'resize' 
+      },
+      { 
+        name: 'resize-end', 
+        x: center.x + 40 * Math.cos(rotation),
+        y: center.y + 40 * Math.sin(rotation), 
+        type: 'resize' 
+      }
     ];
   };
 
@@ -1217,7 +1001,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     };
   };
 
-  // Touch gesture helpers
   const getDistance = (touch1: Touch, touch2: Touch) => {
     const dx = touch1.clientX - touch2.clientX;
     const dy = touch1.clientY - touch2.clientY;
@@ -1235,22 +1018,18 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     };
   };
 
-  // Draw arrow function
   const drawArrow = (ctx: CanvasRenderingContext2D, fromX: number, fromY: number, toX: number, toY: number) => {
-    // Extra thick arrow dimensions
-    const arrowThickness = Math.max(brushSize * 4, 12); // Much thicker - 4x brush size, minimum 12px
-    const headlen = Math.max(arrowThickness * 2.5, 25); // Well-proportioned arrowhead for thick shaft
+    const arrowThickness = Math.max(brushSize * 4, 12);
+    const headlen = Math.max(arrowThickness * 2.5, 25);
     const angle = Math.atan2(toY - fromY, toX - fromX);
     
-    // Professional drawing settings
     ctx.strokeStyle = drawingColor;
     ctx.fillStyle = drawingColor;
     ctx.lineWidth = arrowThickness;
-    ctx.lineCap = 'square'; // Clean, sharp line ends
-    ctx.lineJoin = 'miter'; // Sharp, clean joins
-    ctx.setLineDash([]); // Solid lines
+    ctx.lineCap = 'square';
+    ctx.lineJoin = 'miter';
+    ctx.setLineDash([]);
     
-    // Draw main arrow shaft with clean lines - stop well before the tip
     const shaftEndX = toX - headlen * 0.6 * Math.cos(angle);
     const shaftEndY = toY - headlen * 0.6 * Math.sin(angle);
     ctx.beginPath();
@@ -1258,7 +1037,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     ctx.lineTo(shaftEndX, shaftEndY);
     ctx.stroke();
     
-    // Draw professional arrowhead - sharp corners, extending to the very tip
     ctx.beginPath();
     ctx.moveTo(toX, toY);
     ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 8), toY - headlen * Math.sin(angle - Math.PI / 8));
@@ -1266,13 +1044,30 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     ctx.closePath();
     ctx.fill();
     
-    // Add subtle outline for professional look
     ctx.strokeStyle = drawingColor;
     ctx.lineWidth = 1;
     ctx.stroke();
   };
 
-  
+  const drawTransformedArrow = (ctx: CanvasRenderingContext2D, line: Line) => {
+    if (line.points.length < 2) return;
+    
+    const center = getArrowCenter(line);
+    const rotation = line.rotation || 0;
+    const scale = line.scale || 1;
+    
+    ctx.save();
+    ctx.translate(center.x, center.y);
+    ctx.rotate(rotation);
+    ctx.scale(scale, scale);
+    ctx.translate(-center.x, -center.y);
+    
+    const from = line.points[0];
+    const to = line.points[line.points.length - 1];
+    drawArrow(ctx, from.x, from.y, to.x, to.y);
+    
+    ctx.restore();
+  };
 
   // Draw everything on canvas
   useEffect(() => {
@@ -1284,34 +1079,27 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (image) {
-      // Fill the entire canvas with the image, maintaining aspect ratio
       const imgAspect = image.width / image.height;
       const canvasAspect = canvas.width / canvas.height;
       
       let drawWidth, drawHeight, offsetX, offsetY;
       
       if (imgAspect > canvasAspect) {
-        // Image is wider than canvas - fit to width
         drawWidth = canvas.width;
         drawHeight = canvas.width / imgAspect;
         offsetX = 0;
         offsetY = (canvas.height - drawHeight) / 2;
       } else {
-        // Image is taller than canvas - fit to height
         drawHeight = canvas.height;
         drawWidth = canvas.height * imgAspect;
         offsetX = (canvas.width - drawWidth) / 2;
         offsetY = 0;
       }
       
-      // Fill background with light grey
       ctx.fillStyle = '#f0f0f0';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw the image
       ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
     } else {
-      // Show upload placeholder
       ctx.fillStyle = '#f0f0f0';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = '#666666';
@@ -1336,66 +1124,53 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         });
         ctx.stroke();
       } else if (line.type === 'arrow' && line.points.length >= 2) {
-        const from = line.points[0];
-        const to = line.points[line.points.length - 1];
-        
         // Draw hover effect if this arrow is hovered
         if (hoveredArrowId === line.id && selectedArrowId !== line.id) {
           ctx.strokeStyle = line.color;
           ctx.lineWidth = line.size + 4;
           ctx.globalAlpha = 0.3;
-          drawArrow(ctx, from.x, from.y, to.x, to.y);
+          drawTransformedArrow(ctx, line);
           ctx.globalAlpha = 1.0;
         }
         
         // Draw the main arrow
-        drawArrow(ctx, from.x, from.y, to.x, to.y);
+        drawTransformedArrow(ctx, line);
         
-        // Show subtle selection indicator (no handles, just a slight highlight)
+        // Show subtle selection indicator
         if (selectedArrowId === line.id) {
           // Draw a subtle outline around the selected arrow
           ctx.strokeStyle = 'rgba(0, 123, 255, 0.5)';
           ctx.lineWidth = line.size + 2;
           ctx.globalAlpha = 0.3;
-          drawArrow(ctx, from.x, from.y, to.x, to.y);
+          drawTransformedArrow(ctx, line);
           ctx.globalAlpha = 1.0;
           
-          // Show two-finger gesture indicators
-          if (isTwoFingerTouch) {
-            const center = getArrowCenter(line);
-            
-            if (gestureType === 'rotate' && isRotatingArrow) {
-              // Show rotation indicator
-              ctx.fillStyle = 'rgba(40, 167, 69, 0.3)';
-              ctx.strokeStyle = '#28a745';
-              ctx.lineWidth = 3;
-              ctx.beginPath();
-              ctx.arc(center.x, center.y, 30, 0, 2 * Math.PI);
-              ctx.fill();
-              ctx.stroke();
-              
-              // Draw rotation arrows
-              ctx.fillStyle = '#28a745';
-              ctx.font = '16px Arial';
-              ctx.textAlign = 'center';
-              ctx.fillText('↻', center.x, center.y + 5);
-            } else if (gestureType === 'resize' && isResizingArrow) {
-              // Show resize indicator
-              ctx.fillStyle = 'rgba(255, 193, 7, 0.3)';
-              ctx.strokeStyle = '#ffc107';
-              ctx.lineWidth = 3;
-              ctx.beginPath();
-              ctx.arc(center.x, center.y, 30, 0, 2 * Math.PI);
-              ctx.fill();
-              ctx.stroke();
-              
-              // Draw resize arrows
-              ctx.fillStyle = '#ffc107';
-              ctx.font = '16px Arial';
-              ctx.textAlign = 'center';
-              ctx.fillText('⇅', center.x, center.y + 5);
-            }
-          }
+          // Draw rotation guide circle
+          const center = getArrowCenter(line);
+          ctx.fillStyle = 'rgba(40, 167, 69, 0.3)';
+          ctx.strokeStyle = '#28a745';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(center.x, center.y, 40, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.stroke();
+          
+          // Draw rotation handle
+          const rotation = line.rotation || 0;
+          const handleX = center.x + 50 * Math.sin(rotation);
+          const handleY = center.y - 50 * Math.cos(rotation);
+          
+          ctx.fillStyle = '#28a745';
+          ctx.beginPath();
+          ctx.arc(handleX, handleY, 8, 0, 2 * Math.PI);
+          ctx.fill();
+          
+          // Draw rotation direction indicator
+          ctx.fillStyle = 'white';
+          ctx.font = '14px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('↻', handleX, handleY);
         }
       }
     });
@@ -1408,7 +1183,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       ctx.lineJoin = 'round';
       ctx.fillStyle = drawingColor;
       
-      // Always check the current activeMode for drawing current line
       if (activeMode === 'arrow' && currentLine.length >= 2) {
         const from = currentLine[0];
         const to = currentLine[currentLine.length - 1];
@@ -1433,11 +1207,11 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       ctx.fillStyle = '#FF0000';
       handles.forEach((h) => {
         ctx.beginPath();
-        ctx.arc(h.x, h.y, 5, 0, 2 * Math.PI);
+        ctx.arc(h.x, h.y, 6, 0, 2 * Math.PI);
         ctx.fill();
       });
     }
-  }, [image, lines, currentLine, isDrawing, drawingColor, brushSize, activeMode, cropFrame, selectedArrowId, hoveredArrowId, isDraggingArrow, isRotatingArrow, isResizingArrow, isTwoFingerTouch, rotationCenter, interactionMode, gestureType]);
+  }, [image, lines, currentLine, isDrawing, drawingColor, brushSize, activeMode, cropFrame, selectedArrowId, hoveredArrowId, isDraggingArrow, isRotatingArrow, isResizingArrow, isTwoFingerTouch, rotationCenter, interactionMode]);
 
   const getCursor = () => {
     if (activeMode === 'crop') {
@@ -1453,24 +1227,11 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     return 'default';
   };
 
-  // if (isCameraOpen) {
-  //   <div className="flex flex-col items-center space-y-2">
-  //         <video ref={videoRef} className="rounded-lg border" playsInline />
-  //         <button
-  //           // onClick={takePicture}
-  //           className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md"
-  //         >
-  //           Take Picture
-  //         </button>
-  //   </div>
-  // }
-
   return (
     <div className={styles.imageEditorSimple}>
       {/* Fullscreen Camera Overlay */}
       {isCameraFullscreen && (
       <div className={styles.cameraFullscreen}>
-        {/* Video element */}
         <video
           ref={videoRef}
           autoPlay
@@ -1479,7 +1240,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
           className={styles.cameraVideo}
         />
 
-        {/* Controls overlay - positioned absolutely on top of video */}
         <div className={styles.cameraControlsOverlay}>
           <button className={styles.captureBtnFullscreen} onClick={captureImage}>
             <div className={styles.captureCircle}></div>
@@ -1487,11 +1247,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
           <button className={styles.closeCameraBtn} onClick={stopCamera}>
             <i className="fas fa-times"></i>
           </button>
-
-          {/* Camera flip button for mobile */}
-          {/* <button className={styles.flipCameraBtn} onClick={toggleCamera}>
-            <i className="fas fa-sync-alt"></i>
-          </button> */}
         </div>
       </div>
     )}
@@ -1526,9 +1281,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
               onTouchEnd={handleTouchEnd}
               style={{ 
                 cursor: getCursor(),
-                // width: "500px",   // fills parent
-                // height: "100%",  // fills parent
-                // display: "block" 
               }}
             />
           </div>
@@ -1542,11 +1294,10 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
           style={{ display: 'none' }}
         />
         
-        {/* Hidden canvas for camera capture */}
         <canvas ref={cameraCanvasRef} style={{ display: 'none' }} />
       </div>
     </div>
   );
 };
 
-export default ImageEditor;
+export default ImageEditor; 
