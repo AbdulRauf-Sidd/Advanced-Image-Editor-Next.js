@@ -171,8 +171,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     
     if (e.touches.length === 2) {
       setIsTwoFingerTouch(true);
-      const touch1 = e.touches[0];
-      const touch2 = e.touches[1];
+      const touch1 = e.nativeEvent.touches[0];
+      const touch2 = e.nativeEvent.touches[1];
       
       const angle = getAngle(touch1, touch2);
       const distance = getDistance(touch1, touch2);
@@ -240,8 +240,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     const rect = canvasRef.current.getBoundingClientRect();
     
     if (e.touches.length === 2 && isTwoFingerTouch && selectedArrowId !== null) {
-      const touch1 = e.touches[0];
-      const touch2 = e.touches[1];
+      const touch1 = e.nativeEvent.touches[0];
+      const touch2 = e.nativeEvent.touches[1];
       
       const currentAngle = getAngle(touch1, touch2);
       const currentDistance = getDistance(touch1, touch2);
