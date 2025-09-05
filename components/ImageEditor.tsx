@@ -72,6 +72,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawingColor, setDrawingColor] = useState('#FF0000');
   const [brushSize, setBrushSize] = useState(3);
+  const [currentArrowSize, setCurrentArrowSize] = useState(3);
   
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [cropFrame, setCropFrame] = useState<CropFrame | null>(null);
@@ -684,6 +685,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         setInteractionMode(null);
         setIsDrawing(true);
         setCurrentLine([{ x: mouseX, y: mouseY }]);
+        setCurrentArrowSize(3); // Reset arrow size when starting to draw
       }
     }
   };
@@ -774,7 +776,20 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       
       if (isDrawing) {
         setCurrentLine(prev => [...prev!, { x: mouseX, y: mouseY }]);
-      } else {
+        
+        // Calculate and update arrow size based on distance
+        // In the handleMouseMove function, replace the size calculation:
+// Calculate and update arrow size based on distance
+if (currentLine && currentLine.length > 1) {
+  const from = currentLine[0];
+  const to = { x: mouseX, y: mouseY };
+  const distance = Math.sqrt(Math.pow(to.x - from.x, 2) + Math.pow(to.y - from.y, 2));
+  
+  // Extremely subtle size increase (from 3 to 6 over the entire drawing area)
+  const newSize = Math.min(0.1, Math.max(3, 3 + distance / 150));
+  setCurrentArrowSize(newSize);
+}
+      } else {  
         // Check for hover effects on arrows with increased selection area
         const hoveredArrow = lines.find(line => 
           line.type === 'arrow' && isPointInArrow(line, { x: mouseX, y: mouseY }, 25)
@@ -810,12 +825,12 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       const newLine: Line = {
         points: [...currentLine],
         color: drawingColor,
-        size: brushSize,
+        size: currentArrowSize, // Use the dynamic size instead of brushSize
         type: lineType,
         id: lineIdCounter,
         rotation: 0,
         scale: 1,
-        center: getArrowCenter({ points: currentLine, color: drawingColor, size: brushSize, type: 'arrow', id: lineIdCounter })
+        center: getArrowCenter({ points: currentLine, color: drawingColor, size: currentArrowSize, type: 'arrow', id: lineIdCounter })
       };
       
       setLineIdCounter(prev => prev + 1);
@@ -1018,36 +1033,61 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     };
   };
 
-  const drawArrow = (ctx: CanvasRenderingContext2D, fromX: number, fromY: number, toX: number, toY: number) => {
-    const arrowThickness = Math.max(brushSize * 4, 12);
-    const headlen = Math.max(arrowThickness * 2.5, 25);
-    const angle = Math.atan2(toY - fromY, toX - fromX);
-    
-    ctx.strokeStyle = drawingColor;
-    ctx.fillStyle = drawingColor;
-    ctx.lineWidth = arrowThickness;
-    ctx.lineCap = 'square';
-    ctx.lineJoin = 'miter';
-    ctx.setLineDash([]);
-    
-    const shaftEndX = toX - headlen * 0.6 * Math.cos(angle);
-    const shaftEndY = toY - headlen * 0.6 * Math.sin(angle);
-    ctx.beginPath();
-    ctx.moveTo(fromX, fromY);
-    ctx.lineTo(shaftEndX, shaftEndY);
-    ctx.stroke();
-    
-    ctx.beginPath();
-    ctx.moveTo(toX, toY);
-    ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 8), toY - headlen * Math.sin(angle - Math.PI / 8));
-    ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 8), toY - headlen * Math.sin(angle + Math.PI / 8));
-    ctx.closePath();
-    ctx.fill();
-    
-    ctx.strokeStyle = drawingColor;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  };
+const drawArrow = (
+  ctx: CanvasRenderingContext2D,
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+  size: number
+) => {
+  // 1. Calculate distance between start and end
+  const dx = toX - fromX;
+  const dy = toY - fromY;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  // 2. Scale thickness and head size based on distance
+  // Start small, grow with distance
+  const arrowThickness = Math.max(size * 4, 6) + distance * 0.05;
+  const headlen = Math.max(arrowThickness * 0.05, 10) + distance * 0.15;
+
+  const angle = Math.atan2(dy, dx);
+
+  ctx.strokeStyle = drawingColor;
+  ctx.fillStyle = drawingColor;
+  ctx.lineWidth = arrowThickness;
+  ctx.lineCap = "square";
+  ctx.lineJoin = "miter";
+  ctx.setLineDash([]);
+
+  // Shaft
+  const shaftEndX = toX - headlen * 0.9 * Math.cos(angle);
+  const shaftEndY = toY - headlen * 0.9 * Math.sin(angle);
+  ctx.beginPath();
+  ctx.moveTo(fromX, fromY);
+  ctx.lineTo(shaftEndX, shaftEndY);
+  ctx.stroke();
+
+  // Arrow head
+  ctx.beginPath();
+  ctx.moveTo(toX, toY);
+  ctx.lineTo(
+    toX - headlen * Math.cos(angle - Math.PI / 8),
+    toY - headlen * Math.sin(angle - Math.PI / 8)
+  );
+  ctx.lineTo(
+    toX - headlen * Math.cos(angle + Math.PI / 8),
+    toY - headlen * Math.sin(angle + Math.PI / 8)
+  );
+  ctx.closePath();
+  ctx.fill();
+
+  // Border for head
+  ctx.strokeStyle = drawingColor;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+};
+
 
   const drawTransformedArrow = (ctx: CanvasRenderingContext2D, line: Line) => {
     if (line.points.length < 2) return;
@@ -1064,7 +1104,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     
     const from = line.points[0];
     const to = line.points[line.points.length - 1];
-    drawArrow(ctx, from.x, from.y, to.x, to.y);
+    drawArrow(ctx, from.x, from.y, to.x, to.y, line.size);
     
     ctx.restore();
   };
@@ -1186,7 +1226,9 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       if (activeMode === 'arrow' && currentLine.length >= 2) {
         const from = currentLine[0];
         const to = currentLine[currentLine.length - 1];
-        drawArrow(ctx, from.x, from.y, to.x, to.y);
+        
+        // Use the currentArrowSize for drawing
+        drawArrow(ctx, from.x, from.y, to.x, to.y, currentArrowSize);
       } else {
         ctx.beginPath();
         currentLine.forEach((pt, i) => {
@@ -1211,7 +1253,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         ctx.fill();
       });
     }
-  }, [image, lines, currentLine, isDrawing, drawingColor, brushSize, activeMode, cropFrame, selectedArrowId, hoveredArrowId, isDraggingArrow, isRotatingArrow, isResizingArrow, isTwoFingerTouch, rotationCenter, interactionMode]);
+  }, [image, lines, currentLine, isDrawing, drawingColor, brushSize, activeMode, cropFrame, selectedArrowId, hoveredArrowId, isDraggingArrow, isRotatingArrow, isResizingArrow, isTwoFingerTouch, rotationCenter, interactionMode, currentArrowSize]);
 
   const getCursor = () => {
     if (activeMode === 'crop') {
@@ -1300,4 +1342,4 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   );
 };
 
-export default ImageEditor; 
+export default ImageEditor;
