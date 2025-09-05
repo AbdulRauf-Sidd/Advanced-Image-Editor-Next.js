@@ -300,6 +300,9 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     setRotationCenter(null);
     
     handleMouseUp();
+    
+    // const file = exportEditedFile();
+    // onEditedFile?.(file);
   };
 
   const exportEditedFile = (): File | null => {
