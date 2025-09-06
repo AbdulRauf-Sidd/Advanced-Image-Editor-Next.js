@@ -70,7 +70,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const [lines, setLines] = useState<Line[]>([]);
   const [currentLine, setCurrentLine] = useState<Point[] | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [drawingColor, setDrawingColor] = useState('#FF0000');
+  const [drawingColor, setDrawingColor] = useState('#d63636');
   const [brushSize, setBrushSize] = useState(3);
   const [currentArrowSize, setCurrentArrowSize] = useState(3);
   
@@ -1050,38 +1050,64 @@ const drawArrow = (
   const distance = Math.sqrt(dx * dx + dy * dy);
 
   // 2. Scale thickness and head size based on distance
-  // Start small, grow with distance
-  const arrowThickness = Math.max(size * 4, 6) + distance * 0.05;
-  const headlen = Math.max(arrowThickness * 0.05, 10) + distance * 0.15;
+  const arrowThickness = Math.max(size * 1, 4) + distance * 0.05;
+  const headlen = Math.max(arrowThickness * 0.5, 0.1) + distance * 0.35;
 
   const angle = Math.atan2(dy, dx);
 
   ctx.strokeStyle = drawingColor;
   ctx.fillStyle = drawingColor;
-  ctx.lineWidth = arrowThickness;
-  ctx.lineCap = "square";
-  ctx.lineJoin = "miter";
   ctx.setLineDash([]);
 
-  // Shaft
-  const shaftEndX = toX - headlen * 0.9 * Math.cos(angle);
-  const shaftEndY = toY - headlen * 0.9 * Math.sin(angle);
-  ctx.beginPath();
-  ctx.moveTo(fromX, fromY);
-  ctx.lineTo(shaftEndX, shaftEndY);
-  ctx.stroke();
+  // Shaft (tapered)
+  const tailRatio = 0.85;
+  const shaftEndX = toX - headlen * tailRatio * Math.cos(angle);
+  const shaftEndY = toY - headlen * tailRatio * Math.sin(angle);
 
-  // Arrow head
+  const minTailThickness = arrowThickness * 0.9; // thin at far end
+  const maxTailThickness = arrowThickness * 1.3; // thicker near head
+
+   // Shaft (tapered slightly: 85% → 100%)
   ctx.beginPath();
-  ctx.moveTo(toX, toY);
-  ctx.lineTo(
-    toX - headlen * Math.cos(angle - Math.PI / 8),
-    toY - headlen * Math.sin(angle - Math.PI / 8)
+  // back (85%)
+  ctx.moveTo(
+    fromX - (minTailThickness / 2) * Math.sin(angle),
+    fromY + (minTailThickness / 2) * Math.cos(angle)
   );
   ctx.lineTo(
-    toX - headlen * Math.cos(angle + Math.PI / 8),
-    toY - headlen * Math.sin(angle + Math.PI / 8)
+    fromX + (minTailThickness / 2) * Math.sin(angle),
+    fromY - (minTailThickness / 2) * Math.cos(angle)
   );
+  // front (100%)
+  ctx.lineTo(
+    shaftEndX + (maxTailThickness / 2) * Math.sin(angle),
+    shaftEndY - (maxTailThickness / 2) * Math.cos(angle)
+  );
+  ctx.lineTo(
+    shaftEndX - (maxTailThickness / 2) * Math.sin(angle),
+    shaftEndY + (maxTailThickness / 2) * Math.cos(angle)
+  );
+  ctx.closePath();
+  ctx.fill();
+
+
+  // Arrow head with curved back
+  const leftX = toX - headlen * Math.cos(angle - Math.PI / 8);
+  const leftY = toY - headlen * Math.sin(angle - Math.PI / 8);
+  const rightX = toX - headlen * Math.cos(angle + Math.PI / 8);
+  const rightY = toY - headlen * Math.sin(angle + Math.PI / 8);
+
+  ctx.beginPath();
+  ctx.moveTo(toX, toY);       // tip
+  ctx.lineTo(leftX, leftY);   // left side
+
+  ctx.quadraticCurveTo(
+    toX - headlen * 0.8 * Math.cos(angle), // control point
+    toY - headlen * 0.8 * Math.sin(angle),
+    rightX,
+    rightY
+  );
+
   ctx.closePath();
   ctx.fill();
 
@@ -1090,6 +1116,8 @@ const drawArrow = (
   ctx.lineWidth = 1;
   ctx.stroke();
 };
+
+
 
 
   const drawTransformedArrow = (ctx: CanvasRenderingContext2D, line: Line) => {

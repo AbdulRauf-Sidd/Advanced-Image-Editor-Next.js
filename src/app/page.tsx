@@ -311,7 +311,7 @@ export default function Home() {
   };
 
   // Arrow color options
-  const arrowColors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#800080', '#000000', '#FFFFFF'];
+  const arrowColors = ['#d63636', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#800080', '#000000', '#FFFFFF'];
 
   if (isSubmitting) {
     return (
