@@ -1050,8 +1050,8 @@ const drawArrow = (
   const distance = Math.sqrt(dx * dx + dy * dy);
 
   // 2. Scale thickness and head size based on distance
-  const arrowThickness = Math.max(size * 1, 4) + distance * 0.05;
-  const headlen = Math.max(arrowThickness * 0.5, 0.1) + distance * 0.35;
+  const arrowThickness = Math.max(size * 1, 2) + distance * 0.05;
+  const headlen = Math.max(arrowThickness * 1.0, 0.1) + distance * 0.30;
 
   const angle = Math.atan2(dy, dx);
 
@@ -1060,12 +1060,12 @@ const drawArrow = (
   ctx.setLineDash([]);
 
   // Shaft (tapered)
-  const tailRatio = 0.85;
+  const tailRatio = 0.7;
   const shaftEndX = toX - headlen * tailRatio * Math.cos(angle);
   const shaftEndY = toY - headlen * tailRatio * Math.sin(angle);
 
   const minTailThickness = arrowThickness * 0.9; // thin at far end
-  const maxTailThickness = arrowThickness * 1.3; // thicker near head
+  const maxTailThickness = arrowThickness * 1.2; // thicker near head
 
    // Shaft (tapered slightly: 85% → 100%)
   ctx.beginPath();
