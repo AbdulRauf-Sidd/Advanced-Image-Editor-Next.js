@@ -326,6 +326,13 @@ export default function Home() {
 
     e.preventDefault();
     
+    // Console log the selected location and sub-location
+    console.log('=== FORM SUBMISSION ===');
+    console.log('Selected Location:', selectedLocation);
+    console.log('Selected Sub-Location:', selectedSubLocation);
+    console.log('Description:', description);
+    console.log('=======================');
+    
     // Validate inputs
     if (!description.trim()) {
       setSubmitStatus('Please provide a description');
@@ -350,10 +357,13 @@ export default function Home() {
       setSubmitStatus('Sending to API...');
     
       // ✅ Prepare FormData instead of JSON
-      const formData = new FormData();
-      formData.append('image', editedFile); // "image" will be req.formData().get("image")
-      formData.append('description', `${description} | Location: ${selectedLocation}`);
-      formData.append('location', selectedLocation);
+        const formData = new FormData();
+        formData.append('image', editedFile); // "image" will be req.formData().get("image")
+        formData.append('description', `${description} | Location: ${selectedLocation}${selectedSubLocation ? ` | Sub-Location: ${selectedSubLocation}` : ''}`);
+        formData.append('location', selectedLocation);
+        if (selectedSubLocation) {
+          formData.append('subLocation', selectedSubLocation);
+        }
     
       // ✅ Send to API endpoint as multipart/form-data
       const response = await fetch('/api/llm/analyze-image', {
@@ -377,6 +387,7 @@ export default function Home() {
         image: imageDataUrl, // Store as data URL
         description,
         location: selectedLocation,
+        subLocation: selectedSubLocation,
         analysisResult: result
       });
       
@@ -585,8 +596,8 @@ export default function Home() {
               onClick={() => setShowLocationDropdown(!showLocationDropdown)}
             >
               <div className="btn-content">
-                <i className="fas fa-map-marker-alt"></i>
-                <span>{selectedLocation || 'Location'}</span>
+              <i className="fas fa-map-marker-alt"></i>
+              <span>{selectedLocation || 'Location'}</span>
               </div>
               <i className={`fas fa-chevron-down ${showLocationDropdown ? 'rotate' : ''}`}></i>
             </button>
