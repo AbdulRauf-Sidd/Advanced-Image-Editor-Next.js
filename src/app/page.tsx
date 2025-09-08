@@ -478,8 +478,8 @@ export default function Home() {
     setHasCropFrame(hasFrame);
   };
 
-  // Arrow color options
-  const arrowColors = ['#d63636', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#800080', '#000000', '#FFFFFF'];
+  // Color options for all tools (arrow, circle, square)
+  const arrowColors = ['#d63636', '#FF8C00', '#0066CC', '#800080']; // red, orange, blue, purple
 
   if (isSubmitting) {
     return (

@@ -99,6 +99,11 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const [initialShapeData, setInitialShapeData] = useState<any>(null);
   const [isMovingShape, setIsMovingShape] = useState(false);
   const [moveOffset, setMoveOffset] = useState({ x: 0, y: 0 });
+  
+  // Drag detection states
+  const [dragStartPoint, setDragStartPoint] = useState<Point | null>(null);
+  const [hasDragged, setHasDragged] = useState(false);
+  const DRAG_THRESHOLD = 5; // Minimum pixels to move before considering it a drag
 
   const [touchStartAngle, setTouchStartAngle] = useState<number | null>(null);
   const [touchStartDistance, setTouchStartDistance] = useState<number | null>(null);
@@ -682,6 +687,10 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     const rect = canvasRef.current.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
+    
+    // Store the initial click point for drag detection
+    setDragStartPoint({ x: mouseX, y: mouseY });
+    setHasDragged(false);
 
     if (activeMode === 'crop') {
       if (cropFrame) {
@@ -810,6 +819,16 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         return;
       }
       
+      // Deselect any currently selected shape when clicking on empty space
+      if (selectedArrowId !== null) {
+        setSelectedArrowId(null);
+        setIsResizingShape(false);
+        setResizeHandle(null);
+        setInitialShapeData(null);
+        setIsMovingShape(false);
+        setMoveOffset({ x: 0, y: 0 });
+      }
+      
       // Start drawing new shape
       setIsDrawing(true);
       setCurrentLine([{ x: mouseX, y: mouseY }]);
@@ -823,6 +842,16 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     const rect = canvasRef.current.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
+    
+    // Check if we've dragged enough to consider it a drag
+    if (dragStartPoint && !hasDragged) {
+      const distance = Math.sqrt(
+        Math.pow(mouseX - dragStartPoint.x, 2) + Math.pow(mouseY - dragStartPoint.y, 2)
+      );
+      if (distance > DRAG_THRESHOLD) {
+        setHasDragged(true);
+      }
+    }
 
     if (activeMode === 'crop' && cropFrame) {
       if (resizingCropHandle) {
@@ -1021,7 +1050,7 @@ if (currentLine && currentLine.length > 1) {
         return line;
       }));
       return;
-    } else if ((activeMode === 'circle' || activeMode === 'square') && isDrawing && currentLine) {
+    } else if ((activeMode === 'circle' || activeMode === 'square') && isDrawing && currentLine && hasDragged) {
       // Update the current line with the new mouse position for real-time preview
       if (currentLine.length >= 1) {
         setCurrentLine([currentLine[0], { x: mouseX, y: mouseY }]);
@@ -1087,7 +1116,7 @@ if (currentLine && currentLine.length > 1) {
       setCurrentLine(null);
       const file = exportEditedFile();
       onEditedFile?.(file);
-    } else if ((activeMode === 'circle' || activeMode === 'square') && isDrawing && currentLine && currentLine.length >= 2) {
+    } else if ((activeMode === 'circle' || activeMode === 'square') && isDrawing && currentLine && currentLine.length >= 2 && hasDragged) {
       const startPoint = currentLine[0];
       const endPoint = currentLine[1];
       const center = {
@@ -1142,6 +1171,10 @@ if (currentLine && currentLine.length > 1) {
       setIsMovingShape(false);
       setMoveOffset({ x: 0, y: 0 });
     }
+    
+    // Reset drag detection states
+    setDragStartPoint(null);
+    setHasDragged(false);
     
     setIsDrawing(false);
     setIsDraggingCrop(false);
@@ -1678,7 +1711,7 @@ const drawSquare = (
         
         // Use the currentArrowSize for drawing
         drawArrow(ctx, from.x, from.y, to.x, to.y, currentArrowSize);
-      } else if (activeMode === 'circle' && currentLine.length >= 2) {
+      } else if (activeMode === 'circle' && currentLine.length >= 2 && hasDragged) {
         const startPoint = currentLine[0];
         const endPoint = currentLine[1];
         const center = {
@@ -1687,7 +1720,7 @@ const drawSquare = (
         };
         const radius = Math.sqrt(Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2)) / 2;
         drawCircle(ctx, center.x, center.y, radius, circleColor);
-      } else if (activeMode === 'square' && currentLine.length >= 2) {
+      } else if (activeMode === 'square' && currentLine.length >= 2 && hasDragged) {
         const startPoint = currentLine[0];
         const endPoint = currentLine[1];
         const center = {
@@ -1721,7 +1754,7 @@ const drawSquare = (
         ctx.fill();
       });
     }
-  }, [image, lines, currentLine, isDrawing, drawingColor, brushSize, activeMode, cropFrame, selectedArrowId, hoveredArrowId, isDraggingArrow, isRotatingArrow, isResizingArrow, isTwoFingerTouch, rotationCenter, interactionMode, currentArrowSize, circleColor, squareColor, isResizingShape, resizeHandle, initialShapeData, isMovingShape, moveOffset]);
+  }, [image, lines, currentLine, isDrawing, drawingColor, brushSize, activeMode, cropFrame, selectedArrowId, hoveredArrowId, isDraggingArrow, isRotatingArrow, isResizingArrow, isTwoFingerTouch, rotationCenter, interactionMode, currentArrowSize, circleColor, squareColor, isResizingShape, resizeHandle, initialShapeData, isMovingShape, moveOffset, hasDragged]);
 
   const getCursor = () => {
     if (isMovingShape) {

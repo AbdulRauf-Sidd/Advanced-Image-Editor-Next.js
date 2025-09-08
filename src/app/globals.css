@@ -1418,15 +1418,15 @@ body {
 }
 
 .arrow-color-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
   justify-content: center;
 }
 
 .arrow-color-option {
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   cursor: pointer;
   border: 2px solid transparent;
@@ -1502,15 +1502,15 @@ body {
 
 .arrow-color-options {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding: 16px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  padding: 12px;
 }
 
 .arrow-color-option {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   cursor: pointer;
   border: 2px solid transparent;
   transition: all 0.3s ease;
@@ -2343,16 +2343,15 @@ body {
 }
 
 .circle-color-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 12px;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  padding: 10px;
 }
 
 .circle-color-option {
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   cursor: pointer;
   border: 2px solid transparent;
@@ -2463,16 +2462,15 @@ body {
 }
 
 .square-color-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 12px;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  padding: 10px;
 }
 
 .square-color-option {
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   border-radius: 4px;
   cursor: pointer;
   border: 2px solid transparent;
