@@ -577,14 +577,58 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Description Box */}
-      <div className="description-box">
-        <textarea
-          placeholder="Describe your edited image here..."
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </div>
+       {/* Description Box */}
+       <div className="description-box">
+         <textarea
+           placeholder="Describe your edited image here..."
+           value={description}
+           onChange={(e) => setDescription(e.target.value)}
+         />
+         
+         {/* Voice Button in Description Box */}
+         <div className="mic-container description-mic">
+           <button 
+             className={`mic-btn ${isListening ? 'listening' : ''}`}
+             onClick={toggleMicrophone}
+             title={isListening ? 'Click to stop recording' : 'Click to start voice recording'}
+           >
+             <i className={`fas ${isListening ? 'fa-stop' : 'fa-microphone'}`}></i>
+             <span className="mic-text">
+               {isListening ? 'Stop' : 'Voice'}
+             </span>
+           </button>
+           {isListening && (
+             <div className="mic-status">
+               <div className="mic-indicator">
+                 <span className="mic-dot"></span>
+                 <span className="mic-dot"></span>
+                 <span className="mic-dot"></span>
+               </div>
+               <span className="mic-status-text">Listening...</span>
+             </div>
+           )}
+           {transcript && !isListening && (
+             <div className="mic-transcript">
+               <span className="mic-transcript-text">"{transcript}"</span>
+               <button 
+                 className="mic-clear-btn"
+                 onClick={() => setTranscript('')}
+                 title="Clear transcript"
+               >
+                 <i className="fas fa-times"></i>
+               </button>
+             </div>
+           )}
+           {!isSpeechSupported && (
+             <div className="mic-unsupported">
+               <span className="mic-unsupported-text">
+                 <i className="fas fa-info-circle"></i>
+                 Voice input not supported in this browser
+               </span>
+             </div>
+           )}
+         </div>
+       </div>
 
       {/* Submit Section */}
       <div className="submit-section">
@@ -677,50 +721,6 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Microphone Button */}
-          <div className="mic-container">
-            <button 
-              className={`mic-btn ${isListening ? 'listening' : ''}`}
-              onClick={toggleMicrophone}
-              title={isListening ? 'Click to stop recording' : 'Click to start voice recording'}
-            >
-              <i className={`fas ${isListening ? 'fa-stop' : 'fa-microphone'}`}></i>
-              <span className="mic-text">
-                {isListening ? 'Stop' : 'Voice'}
-              </span>
-            </button>
-            {isListening && (
-              <div className="mic-status">
-                <div className="mic-indicator">
-                  <span className="mic-dot"></span>
-                  <span className="mic-dot"></span>
-                  <span className="mic-dot"></span>
-                </div>
-                <span className="mic-status-text">Listening...</span>
-              </div>
-            )}
-            {transcript && !isListening && (
-              <div className="mic-transcript">
-                <span className="mic-transcript-text">"{transcript}"</span>
-                <button 
-                  className="mic-clear-btn"
-                  onClick={() => setTranscript('')}
-                  title="Clear transcript"
-                >
-                  <i className="fas fa-times"></i>
-                </button>
-              </div>
-            )}
-            {!isSpeechSupported && (
-              <div className="mic-unsupported">
-                <span className="mic-unsupported-text">
-                  <i className="fas fa-info-circle"></i>
-                  Voice input not supported in this browser
-                </span>
               </div>
             )}
           </div>
