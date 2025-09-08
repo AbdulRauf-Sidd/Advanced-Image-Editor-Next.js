@@ -584,8 +584,10 @@ export default function Home() {
               className="location-btn"
               onClick={() => setShowLocationDropdown(!showLocationDropdown)}
             >
-              <i className="fas fa-map-marker-alt"></i>
-              <span>{selectedLocation || 'Location'}</span>
+              <div className="btn-content">
+                <i className="fas fa-map-marker-alt"></i>
+                <span>{selectedLocation || 'Location'}</span>
+              </div>
               <i className={`fas fa-chevron-down ${showLocationDropdown ? 'rotate' : ''}`}></i>
             </button>
             
@@ -630,8 +632,10 @@ export default function Home() {
               onClick={() => selectedLocation && setShowSubLocationDropdown(!showSubLocationDropdown)}
               disabled={!selectedLocation}
             >
-              <i className="fas fa-layer-group"></i>
-              <span>{selectedSubLocation || 'Sub-Location'}</span>
+              <div className="btn-content">
+                <i className="fas fa-layer-group"></i>
+                <span>{selectedSubLocation || 'Sub-Location'}</span>
+              </div>
               <i className={`fas fa-chevron-down ${showSubLocationDropdown ? 'rotate' : ''}`}></i>
             </button>
             
