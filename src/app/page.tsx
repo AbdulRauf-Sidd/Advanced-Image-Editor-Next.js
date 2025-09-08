@@ -53,7 +53,7 @@ export default function Home() {
   ];
 
   // Test data
-  const testValues = ['V1', 'V2', 'V3', 'V4', 'V5'];
+  const testValues = ['V1', 'V2', 'V3', 'V4', 'V5', 'V6'];
 
   // Sub-location data
   const subLocations: { [key: string]: string[] } = {
@@ -378,17 +378,17 @@ export default function Home() {
       // ✅ Prepare FormData instead of JSON
         const formData = new FormData();
         formData.append('image', editedFile); // "image" will be req.formData().get("image")
-        formData.append('description', `${description} | Location: ${selectedLocation}${selectedSubLocation ? ` | Sub-Location: ${selectedSubLocation}` : ''}${selectedTest ? ` | Test: ${selectedTest}` : ''}`);
+        formData.append('description', `${description} | Location: ${selectedLocation} - ${selectedSubLocation}`);
         formData.append('location', selectedLocation);
         if (selectedSubLocation) {
           formData.append('subLocation', selectedSubLocation);
         }
         if (selectedTest) {
-          formData.append('test', selectedTest);
+          formData.append('version', selectedTest);
         }
     
       // ✅ Send to API endpoint as multipart/form-data
-      const response = await fetch('/api/llm/analyze-image', {
+      const response = await fetch('/api/llm/analyze-image2', {
         method: 'POST',
         body: formData,
       });
@@ -408,14 +408,12 @@ export default function Home() {
       setAnalysisData({
         image: imageDataUrl, // Store as data URL
         description,
-        location: selectedLocation,
-        subLocation: selectedSubLocation,
-        test: selectedTest,
+        location: `${selectedLocation} - ${selectedSubLocation}`,
         analysisResult: result
       });
       
       // ✅ Navigate to results page
-      router.push('/property-report');
+      router.push('/property-report2');
       
     } catch (error: any) {
       console.error('Submission error:', error);
