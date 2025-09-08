@@ -18,6 +18,9 @@ export default function Home() {
   const [showSubLocationDropdown, setShowSubLocationDropdown] = useState(false);
   const [subLocationSearch, setSubLocationSearch] = useState('');
   const [selectedSubLocation, setSelectedSubLocation] = useState<string>('');
+  const [showTestDropdown, setShowTestDropdown] = useState(false);
+  const [testSearch, setTestSearch] = useState('');
+  const [selectedTest, setSelectedTest] = useState<string>('');
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isSpeechSupported, setIsSpeechSupported] = useState(false);
@@ -26,6 +29,7 @@ export default function Home() {
   const drawingDropdownRef = useRef<HTMLDivElement>(null);
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const subLocationDropdownRef = useRef<HTMLDivElement>(null);
+  const testDropdownRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const [currentImage, setCurrentImage] = useState<HTMLImageElement | null>(null);
   const [editedFile, setEditedFile] = useState<File | null>(null);
@@ -47,6 +51,9 @@ export default function Home() {
     'Visible Plumbing & HVAC (when exposed)',
     'Exterior Site Materials (from outdoor photos)'
   ];
+
+  // Test data
+  const testValues = ['V1', 'V2', 'V3', 'V4', 'V5'];
 
   // Sub-location data
   const subLocations: { [key: string]: string[] } = {
@@ -137,6 +144,11 @@ export default function Home() {
   // Filtered sub-locations based on search
   const filteredSubLocations = currentSubLocations.filter(subLocation =>
     subLocation.toLowerCase().includes(subLocationSearch.toLowerCase())
+  );
+
+  // Filtered test values based on search
+  const filteredTestValues = testValues.filter(testValue =>
+    testValue.toLowerCase().includes(testSearch.toLowerCase())
   );
 
   // Initialize speech recognition
@@ -303,6 +315,12 @@ export default function Home() {
       if (subLocationDropdownRef.current && !subLocationDropdownRef.current.contains(target) && !isSubLocationButtonClick) {
         setShowSubLocationDropdown(false);
       }
+      
+      // Check if click is on test button or its dropdown
+      const isTestButtonClick = (event.target as Element)?.closest('.test-btn');
+      if (testDropdownRef.current && !testDropdownRef.current.contains(target) && !isTestButtonClick) {
+        setShowTestDropdown(false);
+      }
     };
 
     document.addEventListener('mouseup', handleClickOutside);
@@ -326,10 +344,11 @@ export default function Home() {
 
     e.preventDefault();
     
-    // Console log the selected location and sub-location
+    // Console log the selected location, sub-location, and test value
     console.log('=== FORM SUBMISSION ===');
     console.log('Selected Location:', selectedLocation);
     console.log('Selected Sub-Location:', selectedSubLocation);
+    console.log('Selected Test:', selectedTest);
     console.log('Description:', description);
     console.log('=======================');
     
@@ -359,10 +378,13 @@ export default function Home() {
       // ✅ Prepare FormData instead of JSON
         const formData = new FormData();
         formData.append('image', editedFile); // "image" will be req.formData().get("image")
-        formData.append('description', `${description} | Location: ${selectedLocation}${selectedSubLocation ? ` | Sub-Location: ${selectedSubLocation}` : ''}`);
+        formData.append('description', `${description} | Location: ${selectedLocation}${selectedSubLocation ? ` | Sub-Location: ${selectedSubLocation}` : ''}${selectedTest ? ` | Test: ${selectedTest}` : ''}`);
         formData.append('location', selectedLocation);
         if (selectedSubLocation) {
           formData.append('subLocation', selectedSubLocation);
+        }
+        if (selectedTest) {
+          formData.append('test', selectedTest);
         }
     
       // ✅ Send to API endpoint as multipart/form-data
@@ -388,6 +410,7 @@ export default function Home() {
         description,
         location: selectedLocation,
         subLocation: selectedSubLocation,
+        test: selectedTest,
         analysisResult: result
       });
       
@@ -715,6 +738,50 @@ export default function Home() {
                     >
                       <i className="fas fa-layer-group"></i>
                       <span>{subLocation}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Test Button with Dropdown */}
+          <div className="location-button-container">
+            <button 
+              className="location-btn test-btn"
+              onClick={() => setShowTestDropdown(!showTestDropdown)}
+            >
+              <div className="btn-content">
+                <i className="fas fa-vial"></i>
+                <span>{selectedTest || 'Test'}</span>
+              </div>
+              <i className={`fas fa-chevron-down ${showTestDropdown ? 'rotate' : ''}`}></i>
+            </button>
+            
+            {showTestDropdown && (
+              <div className="location-dropdown test-dropdown" ref={testDropdownRef}>
+                <div className="location-search-container">
+                  <input
+                    type="text"
+                    placeholder="Search test value..."
+                    value={testSearch}
+                    onChange={(e) => setTestSearch(e.target.value)}
+                    className="location-search-input"
+                  />
+                </div>
+                <div className="location-options">
+                  {filteredTestValues.map(testValue => (
+                    <div 
+                      key={testValue}
+                      className={`location-option ${selectedTest === testValue ? 'selected' : ''}`}
+                      onClick={() => {
+                        setSelectedTest(testValue);
+                        setShowTestDropdown(false);
+                        setTestSearch('');
+                      }}
+                    >
+                      <i className="fas fa-vial"></i>
+                      <span>{testValue}</span>
                     </div>
                   ))}
                 </div>
