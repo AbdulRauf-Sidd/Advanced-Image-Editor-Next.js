@@ -593,9 +593,6 @@ export default function Home() {
              title={isListening ? 'Click to stop recording' : 'Click to start voice recording'}
            >
              <i className={`fas ${isListening ? 'fa-stop' : 'fa-microphone'}`}></i>
-             <span className="mic-text">
-               {isListening ? 'Stop' : 'Voice'}
-             </span>
            </button>
            {isListening && (
              <div className="mic-status">
