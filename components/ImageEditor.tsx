@@ -15,11 +15,14 @@ interface Line {
   points: Point[];
   color: string;
   size: number;
-  type: 'draw' | 'arrow';
+  type: 'draw' | 'arrow' | 'circle' | 'square';
   id: number;
   rotation?: number;
   scale?: number;
   center?: Point;
+  radius?: number;
+  width?: number;
+  height?: number;
 }
 
 interface CropAction {
@@ -41,7 +44,7 @@ interface CropFrame {
 }
 
 interface ImageEditorProps {
-  activeMode: 'none' | 'crop' | 'arrow';
+  activeMode: 'none' | 'crop' | 'arrow' | 'circle' | 'square';
   onCropStateChange: (hasFrame: boolean) => void;
   onUndo: () => void;
   onRedo: () => void;
@@ -87,6 +90,15 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const [isResizingArrow, setIsResizingArrow] = useState(false);
   const [dragArrowOffset, setDragArrowOffset] = useState({ x: 0, y: 0 });
   const [interactionMode, setInteractionMode] = useState<'move' | 'rotate' | 'resize' | null>(null);
+  
+  // Circle and square states
+  const [circleColor, setCircleColor] = useState('#d63636');
+  const [squareColor, setSquareColor] = useState('#d63636');
+  const [isResizingShape, setIsResizingShape] = useState(false);
+  const [resizeHandle, setResizeHandle] = useState<string | null>(null);
+  const [initialShapeData, setInitialShapeData] = useState<any>(null);
+  const [isMovingShape, setIsMovingShape] = useState(false);
+  const [moveOffset, setMoveOffset] = useState({ x: 0, y: 0 });
 
   const [touchStartAngle, setTouchStartAngle] = useState<number | null>(null);
   const [touchStartDistance, setTouchStartDistance] = useState<number | null>(null);
@@ -115,6 +127,30 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     window.addEventListener('setArrowColor', handleArrowColorChange as EventListener);
     return () => {
       window.removeEventListener('setArrowColor', handleArrowColorChange as EventListener);
+    };
+  }, []);
+
+  // Circle color event listener
+  useEffect(() => {
+    const handleCircleColorChange = (e: CustomEvent) => {
+      setCircleColor(e.detail);
+    };
+
+    window.addEventListener('setCircleColor', handleCircleColorChange as EventListener);
+    return () => {
+      window.removeEventListener('setCircleColor', handleCircleColorChange as EventListener);
+    };
+  }, []);
+
+  // Square color event listener
+  useEffect(() => {
+    const handleSquareColorChange = (e: CustomEvent) => {
+      setSquareColor(e.detail);
+    };
+
+    window.addEventListener('setSquareColor', handleSquareColorChange as EventListener);
+    return () => {
+      window.removeEventListener('setSquareColor', handleSquareColorChange as EventListener);
     };
   }, []);
 
@@ -690,6 +726,94 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         setCurrentLine([{ x: mouseX, y: mouseY }]);
         setCurrentArrowSize(3); // Reset arrow size when starting to draw
       }
+    } else if (activeMode === 'circle' || activeMode === 'square') {
+      // Check if clicking on an existing shape
+      const clickedShape = lines.find(line => {
+        if (line.type === 'circle' && line.center && line.radius !== undefined) {
+          const distance = Math.sqrt(Math.pow(mouseX - line.center.x, 2) + Math.pow(mouseY - line.center.y, 2));
+          return distance <= line.radius + 10; // 10px tolerance
+        } else if (line.type === 'square' && line.center && line.width !== undefined && line.height !== undefined) {
+          const left = line.center.x - line.width / 2;
+          const right = line.center.x + line.width / 2;
+          const top = line.center.y - line.height / 2;
+          const bottom = line.center.y + line.height / 2;
+          return mouseX >= left - 10 && mouseX <= right + 10 && mouseY >= top - 10 && mouseY <= bottom + 10;
+        }
+        return false;
+      });
+      
+      if (clickedShape) {
+        setSelectedArrowId(clickedShape.id);
+        
+        // Check if clicking on a resize handle
+        const center = clickedShape.center || clickedShape.points[0];
+        const handleSize = 6;
+        const tolerance = 10;
+        
+        if (clickedShape.type === 'circle' && clickedShape.radius !== undefined) {
+          const handles = [
+            { x: center.x, y: center.y - clickedShape.radius - 5, name: 'top' },
+            { x: center.x + clickedShape.radius + 5, y: center.y, name: 'right' },
+            { x: center.x, y: center.y + clickedShape.radius + 5, name: 'bottom' },
+            { x: center.x - clickedShape.radius - 5, y: center.y, name: 'left' }
+          ];
+          
+          const clickedHandle = handles.find(handle => 
+            Math.abs(mouseX - handle.x) < tolerance && Math.abs(mouseY - handle.y) < tolerance
+          );
+          
+          if (clickedHandle) {
+            setIsResizingShape(true);
+            setResizeHandle(clickedHandle.name);
+            setInitialShapeData({
+              center: center,
+              radius: clickedShape.radius,
+              id: clickedShape.id
+            });
+            return;
+          }
+        } else if (clickedShape.type === 'square' && clickedShape.width !== undefined && clickedShape.height !== undefined) {
+          const handles = [
+            { x: center.x - clickedShape.width/2 - 5, y: center.y - clickedShape.height/2 - 5, name: 'top-left' },
+            { x: center.x + clickedShape.width/2 + 5, y: center.y - clickedShape.height/2 - 5, name: 'top-right' },
+            { x: center.x + clickedShape.width/2 + 5, y: center.y + clickedShape.height/2 + 5, name: 'bottom-right' },
+            { x: center.x - clickedShape.width/2 - 5, y: center.y + clickedShape.height/2 + 5, name: 'bottom-left' },
+            { x: center.x, y: center.y - clickedShape.height/2 - 5, name: 'top' },
+            { x: center.x + clickedShape.width/2 + 5, y: center.y, name: 'right' },
+            { x: center.x, y: center.y + clickedShape.height/2 + 5, name: 'bottom' },
+            { x: center.x - clickedShape.width/2 - 5, y: center.y, name: 'left' }
+          ];
+          
+          const clickedHandle = handles.find(handle => 
+            Math.abs(mouseX - handle.x) < tolerance && Math.abs(mouseY - handle.y) < tolerance
+          );
+          
+          if (clickedHandle) {
+            setIsResizingShape(true);
+            setResizeHandle(clickedHandle.name);
+            setInitialShapeData({
+              center: center,
+              width: clickedShape.width,
+              height: clickedShape.height,
+              id: clickedShape.id
+            });
+            return;
+          }
+        }
+        
+        // If no resize handle was clicked, start moving the shape
+        setIsMovingShape(true);
+        setMoveOffset({
+          x: mouseX - center.x,
+          y: mouseY - center.y
+        });
+        return;
+      }
+      
+      // Start drawing new shape
+      setIsDrawing(true);
+      setCurrentLine([{ x: mouseX, y: mouseY }]);
+      return;
     }
   };
 
@@ -799,6 +923,126 @@ if (currentLine && currentLine.length > 1) {
         );
         setHoveredArrowId(hoveredArrow ? hoveredArrow.id : null);
       }
+    } else if (isResizingShape && selectedArrowId !== null && initialShapeData) {
+      // Handle shape resizing
+      const center = initialShapeData.center;
+      
+      if (initialShapeData.radius !== undefined) {
+        // Circle resizing
+        let newRadius = initialShapeData.radius;
+        
+        switch (resizeHandle) {
+          case 'top':
+            newRadius = Math.max(10, center.y - mouseY);
+            break;
+          case 'right':
+            newRadius = Math.max(10, mouseX - center.x);
+            break;
+          case 'bottom':
+            newRadius = Math.max(10, mouseY - center.y);
+            break;
+          case 'left':
+            newRadius = Math.max(10, center.x - mouseX);
+            break;
+        }
+        
+        setLines(prev => prev.map(line => 
+          line.id === initialShapeData.id 
+            ? { ...line, radius: newRadius }
+            : line
+        ));
+      } else if (initialShapeData.width !== undefined && initialShapeData.height !== undefined) {
+        // Square resizing
+        let newWidth = initialShapeData.width;
+        let newHeight = initialShapeData.height;
+        
+        switch (resizeHandle) {
+          case 'top-left':
+            newWidth = Math.max(20, center.x - mouseX + initialShapeData.width / 2);
+            newHeight = Math.max(20, center.y - mouseY + initialShapeData.height / 2);
+            break;
+          case 'top-right':
+            newWidth = Math.max(20, mouseX - center.x + initialShapeData.width / 2);
+            newHeight = Math.max(20, center.y - mouseY + initialShapeData.height / 2);
+            break;
+          case 'bottom-right':
+            newWidth = Math.max(20, mouseX - center.x + initialShapeData.width / 2);
+            newHeight = Math.max(20, mouseY - center.y + initialShapeData.height / 2);
+            break;
+          case 'bottom-left':
+            newWidth = Math.max(20, center.x - mouseX + initialShapeData.width / 2);
+            newHeight = Math.max(20, mouseY - center.y + initialShapeData.height / 2);
+            break;
+          case 'top':
+            newHeight = Math.max(20, center.y - mouseY + initialShapeData.height / 2);
+            break;
+          case 'right':
+            newWidth = Math.max(20, mouseX - center.x + initialShapeData.width / 2);
+            break;
+          case 'bottom':
+            newHeight = Math.max(20, mouseY - center.y + initialShapeData.height / 2);
+            break;
+          case 'left':
+            newWidth = Math.max(20, center.x - mouseX + initialShapeData.width / 2);
+            break;
+        }
+        
+        setLines(prev => prev.map(line => 
+          line.id === initialShapeData.id 
+            ? { ...line, width: newWidth, height: newHeight }
+            : line
+        ));
+      }
+      return;
+    } else if (isMovingShape && selectedArrowId !== null) {
+      // Handle shape moving
+      const newCenterX = mouseX - moveOffset.x;
+      const newCenterY = mouseY - moveOffset.y;
+      
+      setLines(prev => prev.map(line => {
+        if (line.id === selectedArrowId) {
+          if (line.type === 'circle') {
+            return {
+              ...line,
+              center: { x: newCenterX, y: newCenterY },
+              points: [{ x: newCenterX, y: newCenterY }, line.points[1] || { x: newCenterX, y: newCenterY }]
+            };
+          } else if (line.type === 'square') {
+            return {
+              ...line,
+              center: { x: newCenterX, y: newCenterY },
+              points: [
+                { x: newCenterX - line.width! / 2, y: newCenterY - line.height! / 2 },
+                { x: newCenterX + line.width! / 2, y: newCenterY + line.height! / 2 }
+              ]
+            };
+          }
+        }
+        return line;
+      }));
+      return;
+    } else if ((activeMode === 'circle' || activeMode === 'square') && isDrawing && currentLine) {
+      // Update the current line with the new mouse position for real-time preview
+      if (currentLine.length >= 1) {
+        setCurrentLine([currentLine[0], { x: mouseX, y: mouseY }]);
+      }
+      return;
+    } else if (activeMode === 'circle' || activeMode === 'square') {
+      // Check for hover effects on shapes
+      const hoveredShape = lines.find(line => {
+        if (line.type === 'circle' && line.center && line.radius !== undefined) {
+          const distance = Math.sqrt(Math.pow(mouseX - line.center.x, 2) + Math.pow(mouseY - line.center.y, 2));
+          return distance <= line.radius + 10;
+        } else if (line.type === 'square' && line.center && line.width !== undefined && line.height !== undefined) {
+          const left = line.center.x - line.width / 2;
+          const right = line.center.x + line.width / 2;
+          const top = line.center.y - line.height / 2;
+          const bottom = line.center.y + line.height / 2;
+          return mouseX >= left - 10 && mouseX <= right + 10 && mouseY >= top - 10 && mouseY <= bottom + 10;
+        }
+        return false;
+      });
+      setHoveredArrowId(hoveredShape ? hoveredShape.id : null);
     }
   };
 
@@ -843,6 +1087,60 @@ if (currentLine && currentLine.length > 1) {
       setCurrentLine(null);
       const file = exportEditedFile();
       onEditedFile?.(file);
+    } else if ((activeMode === 'circle' || activeMode === 'square') && isDrawing && currentLine && currentLine.length >= 2) {
+      const startPoint = currentLine[0];
+      const endPoint = currentLine[1];
+      const center = {
+        x: (startPoint.x + endPoint.x) / 2,
+        y: (startPoint.y + endPoint.y) / 2
+      };
+      
+      let newLine: Line;
+      
+      if (activeMode === 'circle') {
+        const radius = Math.sqrt(Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2)) / 2;
+        newLine = {
+          points: [startPoint, endPoint],
+          color: circleColor,
+          size: 3,
+          type: 'circle',
+          id: lineIdCounter,
+          center: center,
+          radius: radius
+        };
+      } else { // square
+        const width = Math.abs(endPoint.x - startPoint.x);
+        const height = Math.abs(endPoint.y - startPoint.y);
+        newLine = {
+          points: [startPoint, endPoint],
+          color: squareColor,
+          size: 3,
+          type: 'square',
+          id: lineIdCounter,
+          center: center,
+          width: width,
+          height: height
+        };
+      }
+      
+      setLineIdCounter(prev => prev + 1);
+      setLines(prev => [...prev, newLine]);
+      setSelectedArrowId(newLine.id);
+      saveAction(newLine);
+      setCurrentLine(null);
+      const file = exportEditedFile();
+      onEditedFile?.(file);
+    }
+    
+    if (isResizingShape) {
+      setIsResizingShape(false);
+      setResizeHandle(null);
+      setInitialShapeData(null);
+    }
+    
+    if (isMovingShape) {
+      setIsMovingShape(false);
+      setMoveOffset({ x: 0, y: 0 });
     }
     
     setIsDrawing(false);
@@ -1117,6 +1415,44 @@ const drawArrow = (
   ctx.stroke();
 };
 
+const drawCircle = (
+  ctx: CanvasRenderingContext2D,
+  centerX: number,
+  centerY: number,
+  radius: number,
+  color: string
+) => {
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.setLineDash([]);
+  ctx.lineWidth = 3;
+  
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+  ctx.stroke();
+};
+
+const drawSquare = (
+  ctx: CanvasRenderingContext2D,
+  centerX: number,
+  centerY: number,
+  width: number,
+  height: number,
+  color: string
+) => {
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.setLineDash([]);
+  ctx.lineWidth = 3;
+  
+  const left = centerX - width / 2;
+  const top = centerY - height / 2;
+  
+  ctx.beginPath();
+  ctx.rect(left, top, width, height);
+  ctx.stroke();
+};
+
 
 
 
@@ -1243,6 +1579,88 @@ const drawArrow = (
           ctx.textBaseline = 'middle';
           ctx.fillText('↻', handleX, handleY);
         }
+      } else if (line.type === 'circle' && line.center && line.radius !== undefined) {
+        // Draw hover effect if this circle is hovered
+        if (hoveredArrowId === line.id && selectedArrowId !== line.id) {
+          ctx.strokeStyle = line.color;
+          ctx.lineWidth = line.size + 4;
+          ctx.globalAlpha = 0.3;
+          drawCircle(ctx, line.center.x, line.center.y, line.radius, line.color);
+          ctx.globalAlpha = 1.0;
+        }
+        
+        // Draw the main circle
+        drawCircle(ctx, line.center.x, line.center.y, line.radius, line.color);
+        
+        // Show selection indicator
+        if (selectedArrowId === line.id) {
+          // Draw selection outline
+          ctx.strokeStyle = 'rgba(0, 123, 255, 0.8)';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          ctx.beginPath();
+          ctx.arc(line.center.x, line.center.y, line.radius, 0, 2 * Math.PI);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // Draw resize handles
+          const handles = [
+            { x: line.center.x, y: line.center.y - line.radius - 5, name: 'top' },
+            { x: line.center.x + line.radius + 5, y: line.center.y, name: 'right' },
+            { x: line.center.x, y: line.center.y + line.radius + 5, name: 'bottom' },
+            { x: line.center.x - line.radius - 5, y: line.center.y, name: 'left' }
+          ];
+          
+          ctx.fillStyle = 'rgba(0, 123, 255, 0.8)';
+          handles.forEach(h => {
+            ctx.beginPath();
+            ctx.arc(h.x, h.y, 6, 0, 2 * Math.PI);
+            ctx.fill();
+          });
+        }
+      } else if (line.type === 'square' && line.center && line.width !== undefined && line.height !== undefined) {
+        // Draw hover effect if this square is hovered
+        if (hoveredArrowId === line.id && selectedArrowId !== line.id) {
+          ctx.strokeStyle = line.color;
+          ctx.lineWidth = line.size + 4;
+          ctx.globalAlpha = 0.3;
+          drawSquare(ctx, line.center.x, line.center.y, line.width, line.height, line.color);
+          ctx.globalAlpha = 1.0;
+        }
+        
+        // Draw the main square
+        drawSquare(ctx, line.center.x, line.center.y, line.width, line.height, line.color);
+        
+        // Show selection indicator
+        if (selectedArrowId === line.id) {
+          // Draw selection outline
+          ctx.strokeStyle = 'rgba(0, 123, 255, 0.8)';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
+          const left = line.center.x - line.width / 2;
+          const top = line.center.y - line.height / 2;
+          ctx.strokeRect(left, top, line.width, line.height);
+          ctx.setLineDash([]);
+          
+          // Draw resize handles
+          const handles = [
+            { x: line.center.x - line.width/2 - 5, y: line.center.y - line.height/2 - 5, name: 'top-left' },
+            { x: line.center.x + line.width/2 + 5, y: line.center.y - line.height/2 - 5, name: 'top-right' },
+            { x: line.center.x + line.width/2 + 5, y: line.center.y + line.height/2 + 5, name: 'bottom-right' },
+            { x: line.center.x - line.width/2 - 5, y: line.center.y + line.height/2 + 5, name: 'bottom-left' },
+            { x: line.center.x, y: line.center.y - line.height/2 - 5, name: 'top' },
+            { x: line.center.x + line.width/2 + 5, y: line.center.y, name: 'right' },
+            { x: line.center.x, y: line.center.y + line.height/2 + 5, name: 'bottom' },
+            { x: line.center.x - line.width/2 - 5, y: line.center.y, name: 'left' }
+          ];
+          
+          ctx.fillStyle = 'rgba(0, 123, 255, 0.8)';
+          handles.forEach(h => {
+            ctx.beginPath();
+            ctx.arc(h.x, h.y, 6, 0, 2 * Math.PI);
+            ctx.fill();
+          });
+        }
       }
     });
 
@@ -1260,6 +1678,25 @@ const drawArrow = (
         
         // Use the currentArrowSize for drawing
         drawArrow(ctx, from.x, from.y, to.x, to.y, currentArrowSize);
+      } else if (activeMode === 'circle' && currentLine.length >= 2) {
+        const startPoint = currentLine[0];
+        const endPoint = currentLine[1];
+        const center = {
+          x: (startPoint.x + endPoint.x) / 2,
+          y: (startPoint.y + endPoint.y) / 2
+        };
+        const radius = Math.sqrt(Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2)) / 2;
+        drawCircle(ctx, center.x, center.y, radius, circleColor);
+      } else if (activeMode === 'square' && currentLine.length >= 2) {
+        const startPoint = currentLine[0];
+        const endPoint = currentLine[1];
+        const center = {
+          x: (startPoint.x + endPoint.x) / 2,
+          y: (startPoint.y + endPoint.y) / 2
+        };
+        const width = Math.abs(endPoint.x - startPoint.x);
+        const height = Math.abs(endPoint.y - startPoint.y);
+        drawSquare(ctx, center.x, center.y, width, height, squareColor);
       } else {
         ctx.beginPath();
         currentLine.forEach((pt, i) => {
@@ -1284,10 +1721,14 @@ const drawArrow = (
         ctx.fill();
       });
     }
-  }, [image, lines, currentLine, isDrawing, drawingColor, brushSize, activeMode, cropFrame, selectedArrowId, hoveredArrowId, isDraggingArrow, isRotatingArrow, isResizingArrow, isTwoFingerTouch, rotationCenter, interactionMode, currentArrowSize]);
+  }, [image, lines, currentLine, isDrawing, drawingColor, brushSize, activeMode, cropFrame, selectedArrowId, hoveredArrowId, isDraggingArrow, isRotatingArrow, isResizingArrow, isTwoFingerTouch, rotationCenter, interactionMode, currentArrowSize, circleColor, squareColor, isResizingShape, resizeHandle, initialShapeData, isMovingShape, moveOffset]);
 
   const getCursor = () => {
-    if (activeMode === 'crop') {
+    if (isMovingShape) {
+      return 'grabbing';
+    } else if (isResizingShape) {
+      return 'nw-resize';
+    } else if (activeMode === 'crop' || activeMode === 'circle' || activeMode === 'square') {
       return 'crosshair';
     } else if (activeMode === 'arrow') {
       if (interactionMode === 'move') return 'grabbing';
@@ -1295,6 +1736,13 @@ const drawArrow = (
       if (hoveredArrowId !== null) return 'pointer';
       return 'default';
     } else if (activeMode === 'none') {
+      // Show move cursor when hovering over shapes
+      if (hoveredArrowId !== null) {
+        const hoveredShape = lines.find(line => line.id === hoveredArrowId);
+        if (hoveredShape && (hoveredShape.type === 'circle' || hoveredShape.type === 'square')) {
+          return 'grab';
+        }
+      }
       return 'default';
     }
     return 'default';

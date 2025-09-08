@@ -9,9 +9,11 @@ import { useAnalysisStore } from '@/lib/store';
 export default function Home() {
   const router = useRouter();
   const [description, setDescription] = useState('');
-  const [activeMode, setActiveMode] = useState<'none' | 'crop' | 'arrow'>('none');
+  const [activeMode, setActiveMode] = useState<'none' | 'crop' | 'arrow' | 'circle' | 'square'>('none');
   const [hasCropFrame, setHasCropFrame] = useState(false);
   const [showDrawingDropdown, setShowDrawingDropdown] = useState(false);
+  const [showCircleDropdown, setShowCircleDropdown] = useState(false);
+  const [showSquareDropdown, setShowSquareDropdown] = useState(false);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [locationSearch, setLocationSearch] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<string>('');
@@ -27,6 +29,8 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('');
   const drawingDropdownRef = useRef<HTMLDivElement>(null);
+  const circleDropdownRef = useRef<HTMLDivElement>(null);
+  const squareDropdownRef = useRef<HTMLDivElement>(null);
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const subLocationDropdownRef = useRef<HTMLDivElement>(null);
   const testDropdownRef = useRef<HTMLDivElement>(null);
@@ -304,6 +308,14 @@ export default function Home() {
         setShowDrawingDropdown(false);
       }
       
+      if (circleDropdownRef.current && !circleDropdownRef.current.contains(target)) {
+        setShowCircleDropdown(false);
+      }
+      
+      if (squareDropdownRef.current && !squareDropdownRef.current.contains(target)) {
+        setShowSquareDropdown(false);
+      }
+      
       // Check if click is on location button or its dropdown
       const isLocationButtonClick = (event.target as Element)?.closest('.location-btn');
       if (locationDropdownRef.current && !locationDropdownRef.current.contains(target) && !isLocationButtonClick) {
@@ -423,12 +435,26 @@ export default function Home() {
     }
   };
 
-  const handleActionClick = (mode: 'none' | 'crop' | 'arrow') => {
+  const handleActionClick = (mode: 'none' | 'crop' | 'arrow' | 'circle' | 'square') => {
     if (mode === 'arrow') {
       setShowDrawingDropdown(!showDrawingDropdown);
+      setShowCircleDropdown(false);
+      setShowSquareDropdown(false);
       setActiveMode(activeMode === 'arrow' ? 'none' : 'arrow');
+    } else if (mode === 'circle') {
+      setShowCircleDropdown(!showCircleDropdown);
+      setShowDrawingDropdown(false);
+      setShowSquareDropdown(false);
+      setActiveMode(activeMode === 'circle' ? 'none' : 'circle');
+    } else if (mode === 'square') {
+      setShowSquareDropdown(!showSquareDropdown);
+      setShowDrawingDropdown(false);
+      setShowCircleDropdown(false);
+      setActiveMode(activeMode === 'square' ? 'none' : 'square');
     } else {
       setShowDrawingDropdown(false);
+      setShowCircleDropdown(false);
+      setShowSquareDropdown(false);
       setActiveMode(activeMode === mode ? 'none' : mode);
     }
   };
@@ -565,6 +591,68 @@ export default function Home() {
                       const event = new CustomEvent('setArrowColor', { detail: color });
                       window.dispatchEvent(event);
                       setShowDrawingDropdown(false);
+                    }}
+                  ></div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Circle button with dropdown */}
+        <div className="circle-button-container" ref={circleDropdownRef}>
+          <button 
+            className={`action-btn circle-btn ${activeMode === 'circle' ? 'active' : ''}`}
+            onClick={() => handleActionClick('circle')}
+          >
+            <i className="fas fa-circle"></i>
+            <span className="btn-text">{activeMode === 'circle' ? '' : ''}</span>
+          </button>
+          
+          {showCircleDropdown && (
+            <div className="circle-dropdown">
+              <div className="circle-color-options">
+                {arrowColors.map(color => (
+                  <div 
+                    key={color}
+                    className="circle-color-option"
+                    style={{ backgroundColor: color }}
+                    onClick={() => {
+                      // Set the circle color in the ImageEditor
+                      const event = new CustomEvent('setCircleColor', { detail: color });
+                      window.dispatchEvent(event);
+                      setShowCircleDropdown(false);
+                    }}
+                  ></div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Square button with dropdown */}
+        <div className="square-button-container" ref={squareDropdownRef}>
+          <button 
+            className={`action-btn square-btn ${activeMode === 'square' ? 'active' : ''}`}
+            onClick={() => handleActionClick('square')}
+          >
+            <i className="fas fa-square"></i>
+            <span className="btn-text">{activeMode === 'square' ? '' : ''}</span>
+          </button>
+          
+          {showSquareDropdown && (
+            <div className="square-dropdown">
+              <div className="square-color-options">
+                {arrowColors.map(color => (
+                  <div 
+                    key={color}
+                    className="square-color-option"
+                    style={{ backgroundColor: color }}
+                    onClick={() => {
+                      // Set the square color in the ImageEditor
+                      const event = new CustomEvent('setSquareColor', { detail: color });
+                      window.dispatchEvent(event);
+                      setShowSquareDropdown(false);
                     }}
                   ></div>
                 ))}
