@@ -113,10 +113,7 @@ export default function PropertyReportBasic() {
             
             <h3>Total Estimated Cost:</h3>
             <p>${analysisResult.total_estimated_cost || '0'}</p>
-            
-            <h3>DIY Option:</h3>
-            <p>{analysisResult.diy_option || 'Not specified'}</p>
-            <p>DIY Cost: ${analysisResult.diy_cost || '0'}</p>
+        
           </div>
         </div>
       )}
