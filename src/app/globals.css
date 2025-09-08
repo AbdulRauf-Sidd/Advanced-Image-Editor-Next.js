@@ -424,8 +424,12 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   letter-spacing: 0.3px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  min-width: 140px;
+  width: 300px;
+  height: 60px;
   justify-content: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .location-btn:hover {
@@ -514,11 +518,13 @@ body {
 .location-option {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   padding: 12px 16px;
   cursor: pointer;
   transition: all 0.3s ease;
   border-bottom: 1px solid #f1f5f9;
+  text-align: center;
 }
 
 .location-option:last-child {
@@ -553,12 +559,19 @@ body {
   word-wrap: break-word;
   white-space: normal;
   line-height: 1.4;
+  text-align: center;
+  flex: 1;
 }
 
 /* Sub-Location Dropdown Styles */
 .sub-location-btn {
   background: linear-gradient(135deg, rgb(106, 17, 203) 0%, rgb(75, 108, 183) 100%);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 300px;
+  height: 60px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sub-location-btn:hover:not(.disabled) {
@@ -571,6 +584,11 @@ body {
   cursor: not-allowed;
   opacity: 0.6;
   box-shadow: 0 2px 10px rgba(148, 163, 184, 0.2);
+  width: 300px;
+  height: 60px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sub-location-btn.disabled:hover {
@@ -583,10 +601,10 @@ body {
 }
 
 .sub-location-dropdown {
-  margin-top: 8px;
-  margin-bottom: 0;
-  bottom: auto;
-  top: 100%;
+  margin-top: 0;
+  margin-bottom: 8px;
+  bottom: 100%;
+  top: auto;
 }
 
 /* Submit Button */

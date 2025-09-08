@@ -37,20 +37,20 @@ export default function Home() {
 
   // Location data
   const locations = [
-    'WALL & CEILING SURFACES (Interior)',
-    'WALL & CEILING SURFACES (Exterior)',
-    'FLOORING',
-    'TRIM & MOLDING',
-    'DOORS & WINDOWS',
-    'ROOFING (from exterior photos or attic views)',
-    'FIXTURES & BUILT-INS',
-    'VISIBLE PLUMBING & HVAC (when exposed)',
-    'EXTERIOR SITE MATERIALS (from outdoor photos)'
+    'Wall & Ceiling Surfaces (Interior)',
+    'Wall & Ceiling Surfaces (Exterior)',
+    'Flooring',
+    'Trim & Molding',
+    'Doors & Windows',
+    'Roofing (from exterior photos or attic views)',
+    'Fixtures & Built-ins',
+    'Visible Plumbing & HVAC (when exposed)',
+    'Exterior Site Materials (from outdoor photos)'
   ];
 
   // Sub-location data
   const subLocations: { [key: string]: string[] } = {
-    'WALL & CEILING SURFACES (Interior)': [
+    'Wall & Ceiling Surfaces (Interior)': [
       'Acoustic ceiling tiles',
       'Drywall',
       'Drop ceiling grid (T-bar)',
@@ -60,7 +60,7 @@ export default function Home() {
       'Tile (ceramic, porcelain, stone)',
       'Wood paneling'
     ],
-    'WALL & CEILING SURFACES (Exterior)': [
+    'Wall & Ceiling Surfaces (Exterior)': [
       'Brick veneer',
       'EIFS (synthetic stucco)',
       'Fiber cement siding (e.g., HardiePlank)',
@@ -69,7 +69,7 @@ export default function Home() {
       'Vinyl siding',
       'Wood siding (lap, shingle, T&G)'
     ],
-    'FLOORING': [
+    'Flooring': [
       'Carpet',
       'Concrete (finished or unfinished)',
       'Engineered wood',
@@ -80,7 +80,7 @@ export default function Home() {
       'Solid hardwood',
       'Stone (travertine, marble, etc.)'
     ],
-    'TRIM & MOLDING': [
+    'Trim & Molding': [
       'Baseboard (MDF, wood, PVC)',
       'Beadboard panels',
       'Casing (door/window trim)',
@@ -88,7 +88,7 @@ export default function Home() {
       'Crown molding',
       'Quarter round / shoe molding'
     ],
-    'DOORS & WINDOWS': [
+    'Doors & Windows': [
       'Exterior doors (fiberglass, steel, wood)',
       'Glass (single or double-pane)',
       'Interior doors (hollow-core, solid wood)',
@@ -96,26 +96,26 @@ export default function Home() {
       'Window screens',
       'Window sills'
     ],
-    'ROOFING (from exterior photos or attic views)': [
+    'Roofing (from exterior photos or attic views)': [
       'Asphalt shingles',
       'Flat roofing (TPO, EPDM, torch-down)',
       'Metal roofing',
       'Roof vents / flashing',
       'Tile roofing (clay or concrete)'
     ],
-    'FIXTURES & BUILT-INS': [
+    'Fixtures & Built-ins': [
       'Bathroom fixtures (toilet, tub, shower, sink)',
       'Cabinetry (wood, laminate)',
       'Countertops (stone, laminate, solid surface)',
       'Fireplace surrounds (brick, stone, tile, drywall)',
       'Light fixtures'
     ],
-    'VISIBLE PLUMBING & HVAC (when exposed)': [
+    'Visible Plumbing & HVAC (when exposed)': [
       'Ductwork (in attics, basements, crawlspaces)',
       'Exposed PEX or copper piping (under sinks, in walls)',
       'Grilles, diffusers, and return vents'
     ],
-    'EXTERIOR SITE MATERIALS (from outdoor photos)': [
+    'Exterior Site Materials (from outdoor photos)': [
       'Concrete flatwork (driveways, patios, walkways)',
       'Decking (wood, composite)',
       'Fencing (wood, vinyl, chain-link)',
