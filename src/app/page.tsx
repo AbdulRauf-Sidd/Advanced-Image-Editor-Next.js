@@ -724,7 +724,7 @@ export default function Home() {
 
           {/* Submit Button */}
           <button className="submit-btn" onClick={handleSubmit}>
-            Submit Image
+            Submit
           </button>
         </div>
       </div>
