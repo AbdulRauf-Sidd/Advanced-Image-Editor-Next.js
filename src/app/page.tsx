@@ -286,20 +286,28 @@ export default function Home() {
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (drawingDropdownRef.current && !drawingDropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      
+      if (drawingDropdownRef.current && !drawingDropdownRef.current.contains(target)) {
         setShowDrawingDropdown(false);
       }
-      if (locationDropdownRef.current && !locationDropdownRef.current.contains(event.target as Node)) {
+      
+      // Check if click is on location button or its dropdown
+      const isLocationButtonClick = (event.target as Element)?.closest('.location-btn');
+      if (locationDropdownRef.current && !locationDropdownRef.current.contains(target) && !isLocationButtonClick) {
         setShowLocationDropdown(false);
       }
-      if (subLocationDropdownRef.current && !subLocationDropdownRef.current.contains(event.target as Node)) {
+      
+      // Check if click is on sub-location button or its dropdown
+      const isSubLocationButtonClick = (event.target as Element)?.closest('.sub-location-btn');
+      if (subLocationDropdownRef.current && !subLocationDropdownRef.current.contains(target) && !isSubLocationButtonClick) {
         setShowSubLocationDropdown(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mouseup', handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mouseup', handleClickOutside);
     };
   }, []);
 
