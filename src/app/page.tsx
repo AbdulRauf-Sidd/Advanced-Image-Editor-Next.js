@@ -15,6 +15,9 @@ export default function Home() {
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [locationSearch, setLocationSearch] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<string>('');
+  const [showSubLocationDropdown, setShowSubLocationDropdown] = useState(false);
+  const [subLocationSearch, setSubLocationSearch] = useState('');
+  const [selectedSubLocation, setSelectedSubLocation] = useState<string>('');
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isSpeechSupported, setIsSpeechSupported] = useState(false);
@@ -22,6 +25,7 @@ export default function Home() {
   const [submitStatus, setSubmitStatus] = useState('');
   const drawingDropdownRef = useRef<HTMLDivElement>(null);
   const locationDropdownRef = useRef<HTMLDivElement>(null);
+  const subLocationDropdownRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const [currentImage, setCurrentImage] = useState<HTMLImageElement | null>(null);
   const [editedFile, setEditedFile] = useState<File | null>(null);
@@ -32,12 +36,107 @@ export default function Home() {
   const setAnalysisData = useAnalysisStore(state => state.setAnalysisData);
 
   // Location data
-  const locations = ['USA', 'Pakistan', 'India', 'China'];
+  const locations = [
+    'WALL & CEILING SURFACES (Interior)',
+    'WALL & CEILING SURFACES (Exterior)',
+    'FLOORING',
+    'TRIM & MOLDING',
+    'DOORS & WINDOWS',
+    'ROOFING (from exterior photos or attic views)',
+    'FIXTURES & BUILT-INS',
+    'VISIBLE PLUMBING & HVAC (when exposed)',
+    'EXTERIOR SITE MATERIALS (from outdoor photos)'
+  ];
+
+  // Sub-location data
+  const subLocations: { [key: string]: string[] } = {
+    'WALL & CEILING SURFACES (Interior)': [
+      'Acoustic ceiling tiles',
+      'Drywall',
+      'Drop ceiling grid (T-bar)',
+      'Exposed framing (after demo or in garages/attics)',
+      'Plaster',
+      'Shiplap / tongue-and-groove boards',
+      'Tile (ceramic, porcelain, stone)',
+      'Wood paneling'
+    ],
+    'WALL & CEILING SURFACES (Exterior)': [
+      'Brick veneer',
+      'EIFS (synthetic stucco)',
+      'Fiber cement siding (e.g., HardiePlank)',
+      'Stone veneer',
+      'Stucco',
+      'Vinyl siding',
+      'Wood siding (lap, shingle, T&G)'
+    ],
+    'FLOORING': [
+      'Carpet',
+      'Concrete (finished or unfinished)',
+      'Engineered wood',
+      'Laminate',
+      'Luxury vinyl plank (LVP)',
+      'Porcelain / ceramic tile',
+      'Sheet vinyl',
+      'Solid hardwood',
+      'Stone (travertine, marble, etc.)'
+    ],
+    'TRIM & MOLDING': [
+      'Baseboard (MDF, wood, PVC)',
+      'Beadboard panels',
+      'Casing (door/window trim)',
+      'Chair rail / wainscoting',
+      'Crown molding',
+      'Quarter round / shoe molding'
+    ],
+    'DOORS & WINDOWS': [
+      'Exterior doors (fiberglass, steel, wood)',
+      'Glass (single or double-pane)',
+      'Interior doors (hollow-core, solid wood)',
+      'Window frames (vinyl, aluminum, wood)',
+      'Window screens',
+      'Window sills'
+    ],
+    'ROOFING (from exterior photos or attic views)': [
+      'Asphalt shingles',
+      'Flat roofing (TPO, EPDM, torch-down)',
+      'Metal roofing',
+      'Roof vents / flashing',
+      'Tile roofing (clay or concrete)'
+    ],
+    'FIXTURES & BUILT-INS': [
+      'Bathroom fixtures (toilet, tub, shower, sink)',
+      'Cabinetry (wood, laminate)',
+      'Countertops (stone, laminate, solid surface)',
+      'Fireplace surrounds (brick, stone, tile, drywall)',
+      'Light fixtures'
+    ],
+    'VISIBLE PLUMBING & HVAC (when exposed)': [
+      'Ductwork (in attics, basements, crawlspaces)',
+      'Exposed PEX or copper piping (under sinks, in walls)',
+      'Grilles, diffusers, and return vents'
+    ],
+    'EXTERIOR SITE MATERIALS (from outdoor photos)': [
+      'Concrete flatwork (driveways, patios, walkways)',
+      'Decking (wood, composite)',
+      'Fencing (wood, vinyl, chain-link)',
+      'Garage doors',
+      'Retaining walls (block, wood, concrete)',
+      'Soffit, fascia, and gutters'
+    ]
+  };
 
   
   // Filtered locations based on search
   const filteredLocations = locations.filter(location =>
     location.toLowerCase().includes(locationSearch.toLowerCase())
+  );
+
+  // Get current sub-locations based on selected location
+  const currentSubLocations = selectedLocation ? subLocations[selectedLocation] || [] : [];
+  
+  // Filtered sub-locations based on search
+  const filteredSubLocations = currentSubLocations.filter(subLocation =>
+    subLocation.toLowerCase().includes(subLocationSearch.toLowerCase())
   );
 
   // Initialize speech recognition
@@ -192,6 +291,9 @@ export default function Home() {
       }
       if (locationDropdownRef.current && !locationDropdownRef.current.contains(event.target as Node)) {
         setShowLocationDropdown(false);
+      }
+      if (subLocationDropdownRef.current && !subLocationDropdownRef.current.contains(event.target as Node)) {
+        setShowSubLocationDropdown(false);
       }
     };
 
@@ -499,10 +601,56 @@ export default function Home() {
                         setSelectedLocation(location);
                         setShowLocationDropdown(false);
                         setLocationSearch('');
+                        setSelectedSubLocation(''); // Reset sub-location when main location changes
+                        setSubLocationSearch(''); // Reset sub-location search
+                        setShowSubLocationDropdown(false); // Hide sub-location dropdown initially
                       }}
                     >
                       <i className="fas fa-map-marker-alt"></i>
                       <span>{location}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Sub-Location Dropdown */}
+          <div className="location-button-container">
+            <button 
+              className={`location-btn sub-location-btn ${!selectedLocation ? 'disabled' : ''}`}
+              onClick={() => selectedLocation && setShowSubLocationDropdown(!showSubLocationDropdown)}
+              disabled={!selectedLocation}
+            >
+              <i className="fas fa-layer-group"></i>
+              <span>{selectedSubLocation || 'Sub-Location'}</span>
+              <i className={`fas fa-chevron-down ${showSubLocationDropdown ? 'rotate' : ''}`}></i>
+            </button>
+            
+            {showSubLocationDropdown && selectedLocation && (
+              <div className="location-dropdown sub-location-dropdown" ref={subLocationDropdownRef}>
+                <div className="location-search-container">
+                  <input
+                    type="text"
+                    placeholder="Search sub-location..."
+                    value={subLocationSearch}
+                    onChange={(e) => setSubLocationSearch(e.target.value)}
+                    className="location-search-input"
+                  />
+                </div>
+                <div className="location-options">
+                  {filteredSubLocations.map(subLocation => (
+                    <div 
+                      key={subLocation}
+                      className={`location-option ${selectedSubLocation === subLocation ? 'selected' : ''}`}
+                      onClick={() => {
+                        setSelectedSubLocation(subLocation);
+                        setShowSubLocationDropdown(false);
+                        setSubLocationSearch('');
+                      }}
+                    >
+                      <i className="fas fa-layer-group"></i>
+                      <span>{subLocation}</span>
                     </div>
                   ))}
                 </div>
