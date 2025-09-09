@@ -1092,8 +1092,17 @@ if (currentLine && currentLine.length > 1) {
         }));
       }
       setIsDrawing(false);
-      onCropStateChange(true);
+      
+      // Auto-apply crop immediately after drawing crop area
+      applyCrop();
       return;
+    }
+    
+    // Reset crop dragging and resizing states
+    if (activeMode === 'crop') {
+      setIsDraggingCrop(false);
+      setResizingCropHandle(null);
+      setDragCropOffset({ x: 0, y: 0 });
     }
     
     if (activeMode === 'arrow' && isDrawing && currentLine && currentLine.length > 1) {

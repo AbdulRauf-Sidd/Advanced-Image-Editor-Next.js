@@ -43,23 +43,23 @@ export default function Home() {
   // const router = useRouter();
   const setAnalysisData = useAnalysisStore(state => state.setAnalysisData);
 
-  // Location data
+  // Location data (sorted alphabetically)
   const locations = [
-    'Wall & Ceiling Surfaces (Interior)',
-    'Wall & Ceiling Surfaces (Exterior)',
-    'Flooring',
-    'Trim & Molding',
     'Doors & Windows',
-    'Roofing (from exterior photos or attic views)',
+    'Exterior Site Materials (from outdoor photos)',
     'Fixtures & Built-ins',
+    'Flooring',
+    'Roofing (from exterior photos or attic views)',
+    'Trim & Molding',
     'Visible Plumbing & HVAC (when exposed)',
-    'Exterior Site Materials (from outdoor photos)'
+    'Wall & Ceiling Surfaces (Exterior)',
+    'Wall & Ceiling Surfaces (Interior)'
   ];
 
   // Test data
   const testValues = ['V1', 'V2', 'V3', 'V4', 'V5', 'V6'];
 
-  // Sub-location data
+  // Sub-location data (sorted alphabetically)
   const subLocations: { [key: string]: string[] } = {
     'Wall & Ceiling Surfaces (Interior)': [
       'Acoustic ceiling tiles',
@@ -479,7 +479,7 @@ export default function Home() {
   };
 
   // Color options for all tools (arrow, circle, square)
-  const arrowColors = ['#0066CC', '#FF8C00', '#d63636', '#800080', '#00AA00']; // red, orange, blue, purple
+  const arrowColors = ['#d63636', '#FF8C00', '#0066CC', '#800080']; // red, orange, blue, purple
 
   if (isSubmitting) {
     return (
