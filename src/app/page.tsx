@@ -43,23 +43,23 @@ export default function Home() {
   // const router = useRouter();
   const setAnalysisData = useAnalysisStore(state => state.setAnalysisData);
 
-  // Location data (sorted alphabetically)
+  // Location data
   const locations = [
-    'Doors & Windows',
-    'Exterior Site Materials (from outdoor photos)',
-    'Fixtures & Built-ins',
-    'Flooring',
-    'Roofing (from exterior photos or attic views)',
-    'Trim & Molding',
-    'Visible Plumbing & HVAC (when exposed)',
+    'Wall & Ceiling Surfaces (Interior)',
     'Wall & Ceiling Surfaces (Exterior)',
-    'Wall & Ceiling Surfaces (Interior)'
+    'Flooring',
+    'Trim & Molding',
+    'Doors & Windows',
+    'Roofing (from exterior photos or attic views)',
+    'Fixtures & Built-ins',
+    'Visible Plumbing & HVAC (when exposed)',
+    'Exterior Site Materials (from outdoor photos)'
   ];
 
   // Test data
   const testValues = ['V1', 'V2', 'V3', 'V4', 'V5', 'V6'];
 
-  // Sub-location data (sorted alphabetically)
+  // Sub-location data
   const subLocations: { [key: string]: string[] } = {
     'Wall & Ceiling Surfaces (Interior)': [
       'Acoustic ceiling tiles',
