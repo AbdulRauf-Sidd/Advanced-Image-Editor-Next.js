@@ -1307,18 +1307,20 @@ body {
   
   .action-bar {
     flex-direction: row;
-    gap: 6px;
-    flex-wrap: nowrap;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
   }
   
   .action-btn {
-  flex: 1;
-    min-width: 60px;
-    height: 55px;
-    padding: 10px 6px;
-    font-size: 0.7rem;
-    gap: 4px;
-    border-radius: 10px;
+    flex: 0 0 calc(50% - 2px);
+    min-width: 50px;
+    max-width: 80px;
+    height: 50px;
+    padding: 8px 4px;
+    font-size: 0.65rem;
+    gap: 3px;
+    border-radius: 8px;
   }
   
   .btn-text {
@@ -1407,7 +1409,7 @@ body {
   z-index: 1000;
   padding: 15px;
   margin-top: 5px;
-  min-width: 200px;
+  min-width: 60px;
 }
 
 .arrow-dropdown-header {
@@ -1418,16 +1420,17 @@ body {
 }
 
 .arrow-color-options {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 6px;
   justify-content: center;
+  padding: 12px;
 }
 
 .arrow-color-option {
   width: 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: 4px;
   cursor: pointer;
   border: 2px solid transparent;
   transition: all 0.2s ease;
@@ -1442,17 +1445,21 @@ body {
 /* Mobile responsiveness for drawing tool dropdown */
 @media (max-width: 768px) {
   .arrow-dropdown {
-    right: 0px;
-    min-width: 180px;
-    margin: 0px 0px 0px -150px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 60px;
+    margin: 0;
   }
 }
 
 @media (max-width: 480px) {
   .arrow-dropdown {
-    right: -80px;
-    min-width: 160px;
-    margin: 0px 0px 0px -100px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 60px;
+    margin: 0;
   }
   
   .arrow-color-option {
@@ -1472,56 +1479,8 @@ body {
   min-width: 90px;
 }
 
-/* Drawing tool dropdown styles */
-.arrow-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  margin-top: 8px;
-  overflow: hidden;
-}
 
-.arrow-dropdown-header {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  padding: 12px 16px;
-  border-bottom: 1px solid #e2e8f0;
-  text-align: center;
-}
 
-.arrow-dropdown-header span {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #374151;
-}
-
-.arrow-color-options {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-  padding: 12px;
-}
-
-.arrow-color-option {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.arrow-color-option:hover {
-  transform: scale(1.1);
-  border-color: #3b82f6;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-}
 
 /* Make sure the drawing tool button itself has the same styling as other action buttons */
 .arrow-button-container .action-btn {
@@ -1603,9 +1562,11 @@ body {
   }
   
   .arrow-dropdown {
-    right: 0px;
-    min-width: 180px;
-    margin: 0px 0px 0px -150px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 60px;
+    margin: 0;
   }
   
   .arrow-button-container .action-btn {
@@ -1638,19 +1599,25 @@ body {
 
 @media (max-width: 480px) {
   .arrow-button-container {
-    min-width: 60px;
+    flex: 0 0 calc(50% - 2px);
+    min-width: 50px;
+    max-width: 80px;
   }
   
   .arrow-dropdown {
-    right: 0px;
-    min-width: 160px;
-    margin: 0px 0px 0px -150px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 60px;
+    margin: 0;
   }
   
   .arrow-button-container .action-btn {
-    min-width: 60px;
-    padding: 10px 6px;
-    font-size: 0.7rem;
+    width: 100%;
+    min-width: 50px;
+    max-width: 80px;
+    padding: 8px 4px;
+    font-size: 0.65rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1832,7 +1799,7 @@ body {
   }
   
   .location-dropdown {
-    min-width: 180px;
+    min-width: 60px;
   }
   
   .mic-btn {
@@ -1889,7 +1856,7 @@ body {
   }
   
   .location-dropdown {
-    min-width: 160px;
+    min-width: 60px;
   }
   
   .mic-btn {
@@ -2331,38 +2298,37 @@ body {
 .circle-dropdown {
   position: absolute;
   top: 100%;
-  left: 0;
   right: 0;
   background: white;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   z-index: 1000;
-  margin-top: 8px;
-  overflow: hidden;
+  padding: 15px;
+  margin-top: 5px;
+  min-width: 60px;
 }
 
 .circle-color-options {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 6px;
-  padding: 10px;
+  justify-content: center;
+  padding: 12px;
 }
 
 .circle-color-option {
   width: 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: 4px;
   cursor: pointer;
   border: 2px solid transparent;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .circle-color-option:hover {
-  transform: scale(1.1);
-  border-color: #3b82f6;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transform: scale(1.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Circle button styling */
@@ -2370,7 +2336,7 @@ body {
   width: 100%;
   min-width: 90px;
   padding: 15px 12px;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
   border: none;
   border-radius: 10px;
   color: white;
@@ -2383,7 +2349,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -2405,7 +2371,7 @@ body {
 
 .circle-button-container .action-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
 }
 
 .circle-button-container .action-btn:active {
@@ -2450,22 +2416,22 @@ body {
 .square-dropdown {
   position: absolute;
   top: 100%;
-  left: 0;
   right: 0;
   background: white;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   z-index: 1000;
-  margin-top: 8px;
-  overflow: hidden;
+  padding: 15px;
+  margin-top: 5px;
+  min-width: 60px;
 }
 
 .square-color-options {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 6px;
-  padding: 10px;
+  justify-content: center;
+  padding: 12px;
 }
 
 .square-color-option {
@@ -2475,13 +2441,12 @@ body {
   cursor: pointer;
   border: 2px solid transparent;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .square-color-option:hover {
-  transform: scale(1.1);
-  border-color: #3b82f6;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transform: scale(1.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Square button styling */
@@ -2489,7 +2454,7 @@ body {
   width: 100%;
   min-width: 90px;
   padding: 15px 12px;
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
   border: none;
   border-radius: 10px;
   color: white;
@@ -2502,7 +2467,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -2524,7 +2489,7 @@ body {
 
 .square-button-container .action-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
 }
 
 .square-button-container .action-btn:active {
@@ -2566,9 +2531,11 @@ body {
   
   .circle-dropdown,
   .square-dropdown {
-    right: 0px;
-    min-width: 180px;
-    margin: 0px 0px 0px -150px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 60px;
+    margin: 0;
   }
   
   .circle-button-container .action-btn,
@@ -2605,21 +2572,27 @@ body {
 @media (max-width: 480px) {
   .circle-button-container,
   .square-button-container {
-    min-width: 60px;
+    flex: 0 0 calc(50% - 2px);
+    min-width: 50px;
+    max-width: 80px;
   }
   
   .circle-dropdown,
   .square-dropdown {
-    right: 0px;
-    min-width: 160px;
-    margin: 0px 0px 0px -150px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 60px;
+    margin: 0;
   }
   
   .circle-button-container .action-btn,
   .square-button-container .action-btn {
-    min-width: 60px;
-    padding: 10px 6px;
-    font-size: 0.7rem;
+    width: 100%;
+    min-width: 50px;
+    max-width: 80px;
+    padding: 8px 4px;
+    font-size: 0.65rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -2649,6 +2622,52 @@ body {
   .square-color-option {
     width: 25px;
     height: 25px;
+  }
+}
+
+/* Extra small screens - ensure proper button layout */
+@media (max-width: 360px) {
+  .action-bar {
+    gap: 3px;
+    padding: 0 2px;
+  }
+  
+  .action-btn {
+    flex: 0 0 calc(50% - 1.5px);
+    min-width: 45px;
+    max-width: 75px;
+    height: 45px;
+    padding: 6px 3px;
+    font-size: 0.6rem;
+  }
+  
+  .arrow-button-container,
+  .circle-button-container,
+  .square-button-container {
+    flex: 0 0 calc(50% - 1.5px);
+    min-width: 45px;
+    max-width: 75px;
+  }
+  
+  .arrow-button-container .action-btn,
+  .circle-button-container .action-btn,
+  .square-button-container .action-btn {
+    width: 100%;
+    min-width: 45px;
+    max-width: 75px;
+    height: 45px;
+    padding: 6px 3px;
+    font-size: 0.6rem;
+  }
+  
+  .arrow-dropdown,
+  .circle-dropdown,
+  .square-dropdown {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 60px;
+    margin: 0;
   }
 }
 

@@ -479,7 +479,7 @@ export default function Home() {
   };
 
   // Color options for all tools (arrow, circle, square)
-  const arrowColors = ['#d63636', '#FF8C00', '#0066CC', '#800080']; // red, orange, blue, purple
+  const arrowColors = ['#0066CC', '#FF8C00', '#d63636', '#800080', '#00AA00']; // red, orange, blue, purple
 
   if (isSubmitting) {
     return (
