@@ -360,6 +360,63 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       
       ctx.drawImage(image, 0, 0, image.width, image.height);
     }
+    
+    // Force a re-render to ensure the canvas has the latest positions
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) {
+        // Clear and redraw everything to ensure latest positions
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        
+        // Redraw image
+        if (image) {
+          const imgAspect = image.width / image.height;
+          const canvasAspect = canvasRef.current.width / canvasRef.current.height;
+          
+          let drawWidth, drawHeight, offsetX, offsetY;
+          
+          if (imgAspect > canvasAspect) {
+            drawWidth = canvasRef.current.width;
+            drawHeight = canvasRef.current.width / imgAspect;
+            offsetX = 0;
+            offsetY = (canvasRef.current.height - drawHeight) / 2;
+          } else {
+            drawHeight = canvasRef.current.height;
+            drawWidth = canvasRef.current.height * imgAspect;
+            offsetX = (canvasRef.current.width - drawWidth) / 2;
+            offsetY = 0;
+          }
+          
+          ctx.fillStyle = '#f0f0f0';
+          ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+        }
+        
+        // Redraw all lines with current positions
+        lines.forEach(line => {
+          ctx.strokeStyle = line.color;
+          ctx.lineWidth = line.size;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.fillStyle = line.color;
+          
+          if (line.type === 'draw') {
+            ctx.beginPath();
+            line.points.forEach((pt, i) => {
+              if (i === 0) ctx.moveTo(pt.x, pt.y);
+              else ctx.lineTo(pt.x, pt.y);
+            });
+            ctx.stroke();
+          } else if (line.type === 'arrow' && line.points.length >= 2) {
+            drawTransformedArrow(ctx, line);
+          } else if (line.type === 'circle' && line.center && line.width !== undefined && line.height !== undefined) {
+            drawCircle(ctx, line.center.x, line.center.y, line.width, line.height, line.color);
+          } else if (line.type === 'square' && line.center && line.width !== undefined && line.height !== undefined) {
+            drawSquare(ctx, line.center.x, line.center.y, line.width, line.height, line.color);
+          }
+        });
+      }
+    }
   
     const dataUrl = canvas.toDataURL("image/png");
     const byteString = atob(dataUrl.split(",")[1]);
@@ -768,18 +825,14 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         
         // Check if clicking on a resize handle
         const center = clickedShape.center || clickedShape.points[0];
-        const handleSize = 6;
-        const tolerance = 10;
+        const handleSize = 8; // Increased for better visibility
+        const tolerance = 15; // Increased tolerance for easier handle detection
         
         if (clickedShape.type === 'circle' && clickedShape.width !== undefined && clickedShape.height !== undefined) {
           const handles = [
-            { x: center.x - clickedShape.width/2 - 5, y: center.y - clickedShape.height/2 - 5, name: 'top-left' },
             { x: center.x, y: center.y - clickedShape.height/2 - 5, name: 'top' },
-            { x: center.x + clickedShape.width/2 + 5, y: center.y - clickedShape.height/2 - 5, name: 'top-right' },
             { x: center.x + clickedShape.width/2 + 5, y: center.y, name: 'right' },
-            { x: center.x + clickedShape.width/2 + 5, y: center.y + clickedShape.height/2 + 5, name: 'bottom-right' },
             { x: center.x, y: center.y + clickedShape.height/2 + 5, name: 'bottom' },
-            { x: center.x - clickedShape.width/2 - 5, y: center.y + clickedShape.height/2 + 5, name: 'bottom-left' },
             { x: center.x - clickedShape.width/2 - 5, y: center.y, name: 'left' }
           ];
           
@@ -859,6 +912,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     const rect = canvasRef.current.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
+    
     
     // Check if we've dragged enough to consider it a drag
     if (dragStartPoint && !hasDragged) {
@@ -981,34 +1035,30 @@ if (currentLine && currentLine.length > 1) {
         let newWidth = initialShapeData.width;
         let newHeight = initialShapeData.height;
         
+        // Calculate the distance from center to mouse
+        const deltaX = mouseX - center.x;
+        const deltaY = mouseY - center.y;
+        
         switch (resizeHandle) {
-          case 'top-left':
-            newWidth = Math.max(20, center.x - mouseX + initialShapeData.width / 2);
-            newHeight = Math.max(20, center.y - mouseY + initialShapeData.height / 2);
-            break;
           case 'top':
-            newHeight = Math.max(20, center.y - mouseY + initialShapeData.height / 2);
-            break;
-          case 'top-right':
-            newWidth = Math.max(20, mouseX - center.x + initialShapeData.width / 2);
-            newHeight = Math.max(20, center.y - mouseY + initialShapeData.height / 2);
+            // Only resize height
+            newHeight = Math.max(20, 2 * Math.abs(deltaY));
+            newWidth = initialShapeData.width; // Keep original width
             break;
           case 'right':
-            newWidth = Math.max(20, mouseX - center.x + initialShapeData.width / 2);
-            break;
-          case 'bottom-right':
-            newWidth = Math.max(20, mouseX - center.x + initialShapeData.width / 2);
-            newHeight = Math.max(20, mouseY - center.y + initialShapeData.height / 2);
+            // Only resize width
+            newWidth = Math.max(20, 2 * Math.abs(deltaX));
+            newHeight = initialShapeData.height; // Keep original height
             break;
           case 'bottom':
-            newHeight = Math.max(20, mouseY - center.y + initialShapeData.height / 2);
-            break;
-          case 'bottom-left':
-            newWidth = Math.max(20, center.x - mouseX + initialShapeData.width / 2);
-            newHeight = Math.max(20, mouseY - center.y + initialShapeData.height / 2);
+            // Only resize height
+            newHeight = Math.max(20, 2 * Math.abs(deltaY));
+            newWidth = initialShapeData.width; // Keep original width
             break;
           case 'left':
-            newWidth = Math.max(20, center.x - mouseX + initialShapeData.width / 2);
+            // Only resize width
+            newWidth = Math.max(20, 2 * Math.abs(deltaX));
+            newHeight = initialShapeData.height; // Keep original height
             break;
         }
         
@@ -1084,6 +1134,19 @@ if (currentLine && currentLine.length > 1) {
                 { x: newCenterX - line.width! / 2, y: newCenterY - line.height! / 2 },
                 { x: newCenterX + line.width! / 2, y: newCenterY + line.height! / 2 }
               ]
+            };
+          } else if (line.type === 'arrow') {
+            // For arrows, update the points array with the new positions
+            const oldCenter = getArrowCenter(line);
+            const deltaX = newCenterX - oldCenter.x;
+            const deltaY = newCenterY - oldCenter.y;
+            
+            return {
+              ...line,
+              points: line.points.map(point => ({
+                x: point.x + deltaX,
+                y: point.y + deltaY
+              }))
             };
           }
         }
@@ -1222,6 +1285,16 @@ if (currentLine && currentLine.length > 1) {
     }
     
     if (isMovingShape) {
+      // Save the final position to action history
+      if (selectedArrowId !== null) {
+        const movedShape = lines.find(line => line.id === selectedArrowId);
+        if (movedShape) {
+          saveAction(movedShape);
+          // Update the exported file with the new position
+          const file = exportEditedFile();
+          onEditedFile?.(file);
+        }
+      }
       setIsMovingShape(false);
       setMoveOffset({ x: 0, y: 0 });
     }
@@ -1691,28 +1764,23 @@ const drawSquare = (
           ctx.stroke();
           ctx.setLineDash([]);
           
-          // Draw resize handles (8 handles like rectangles)
+          // Draw resize handles (4 edge handles only)
           const handles = [
-            { x: line.center.x - line.width/2 - 5, y: line.center.y - line.height/2 - 5, name: 'top-left' },
             { x: line.center.x, y: line.center.y - line.height/2 - 5, name: 'top' },
-            { x: line.center.x + line.width/2 + 5, y: line.center.y - line.height/2 - 5, name: 'top-right' },
             { x: line.center.x + line.width/2 + 5, y: line.center.y, name: 'right' },
-            { x: line.center.x + line.width/2 + 5, y: line.center.y + line.height/2 + 5, name: 'bottom-right' },
             { x: line.center.x, y: line.center.y + line.height/2 + 5, name: 'bottom' },
-            { x: line.center.x - line.width/2 - 5, y: line.center.y + line.height/2 + 5, name: 'bottom-left' },
             { x: line.center.x - line.width/2 - 5, y: line.center.y, name: 'left' }
           ];
           
           // Draw professional resize handles
           handles.forEach((h, index) => {
-            // Different styling for corner vs edge handles
-            const isCorner = ['top-left', 'top-right', 'bottom-left', 'bottom-right'].includes(h.name);
-            const handleSize = isCorner ? 8 : 6;
+            // All handles are edge handles now
+            const handleSize = 8; // Consistent size for all handles
             
             // Outer ring
             ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
             ctx.beginPath();
-            ctx.arc(h.x, h.y, handleSize + 2, 0, 2 * Math.PI);
+            ctx.arc(h.x, h.y, handleSize + 3, 0, 2 * Math.PI);
             ctx.fill();
             
             // Inner handle
@@ -1723,7 +1791,7 @@ const drawSquare = (
             
             // Border for better visibility
             ctx.strokeStyle = 'rgba(0, 123, 255, 1)';
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.arc(h.x, h.y, handleSize, 0, 2 * Math.PI);
             ctx.stroke();
@@ -1769,12 +1837,12 @@ const drawSquare = (
           handles.forEach((h, index) => {
             // Different styling for corner vs edge handles
             const isCorner = ['top-left', 'top-right', 'bottom-left', 'bottom-right'].includes(h.name);
-            const handleSize = isCorner ? 8 : 6;
+            const handleSize = isCorner ? 10 : 8; // Increased size for better visibility
             
             // Outer ring
             ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
             ctx.beginPath();
-            ctx.arc(h.x, h.y, handleSize + 2, 0, 2 * Math.PI);
+            ctx.arc(h.x, h.y, handleSize + 3, 0, 2 * Math.PI);
             ctx.fill();
             
             // Inner handle
@@ -1785,7 +1853,7 @@ const drawSquare = (
             
             // Border for better visibility
             ctx.strokeStyle = 'rgba(0, 123, 255, 1)';
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.arc(h.x, h.y, handleSize, 0, 2 * Math.PI);
             ctx.stroke();
@@ -1860,12 +1928,6 @@ const drawSquare = (
     } else if (isResizingShape) {
       // Different cursors for different resize handles
       switch (resizeHandle) {
-        case 'top-left':
-        case 'bottom-right':
-          return 'nw-resize';
-        case 'top-right':
-        case 'bottom-left':
-          return 'ne-resize';
         case 'top':
         case 'bottom':
           return 'ns-resize';
@@ -1873,7 +1935,7 @@ const drawSquare = (
         case 'right':
           return 'ew-resize';
         default:
-          return 'nw-resize';
+          return 'ns-resize';
       }
     } else if (activeMode === 'crop' || activeMode === 'circle' || activeMode === 'square') {
       return 'crosshair';
