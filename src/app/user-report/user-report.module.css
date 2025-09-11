@@ -81,23 +81,52 @@
   line-height: 1.1;
 }
 
+.reportSectionsContainer {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.reportSection {
+  background: white;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e5e7eb;
+}
+
+.sectionHeading {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #d63636;
+}
+
+.sectionHeadingText {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #d63636;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
 .contentGrid {
   display: grid;
   grid-template-columns: 1fr 3fr;
   gap: 2rem;
-  margin-bottom: 3rem;
-  max-width: 1400px;
+  margin-bottom: 0;
+  max-width: 100%;
   margin-left: auto;
   margin-right: auto;
-  padding: 0 2rem;
+  padding: 0;
 }
 
 .imageSection {
-  background: white;
-  border-radius: 1.5rem;
+  background: #f8fafc;
+  border-radius: 1rem;
   padding: 1.5rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
   position: relative;
   overflow: hidden;
 }
@@ -174,11 +203,11 @@
 }
 
 .descriptionSection {
-  background: white;
-  border-radius: 1.5rem;
+  background: #f8fafc;
+  border-radius: 1rem;
   padding: 1.5rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
   position: relative;
   overflow: hidden;
 }
@@ -212,17 +241,18 @@
 .section {
   margin-bottom: 1rem;
   padding: 1rem;
-  background: #f8fafc;
+  background: white;
   border-radius: 0.5rem;
   border-left: 3px solid #d63636;
   transition: all 0.3s ease;
   position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .section:hover {
-  background: #f1f5f9;
+  background: #f8fafc;
   transform: translateX(2px);
-  box-shadow: 0 2px 8px rgba(214, 54, 54, 0.1);
+  box-shadow: 0 4px 12px rgba(214, 54, 54, 0.15);
 }
 
 .section:last-child {
@@ -384,7 +414,6 @@
   .contentGrid {
     grid-template-columns: 1fr;
     gap: 2rem;
-    max-width: 1000px;
   }
   
   .mainHeading {
@@ -398,13 +427,16 @@
     padding-left: 1.5rem;
     padding-right: 1.5rem;
   }
+  
+  .reportSectionsContainer {
+    padding: 0 1.5rem;
+  }
 }
 
 @media (max-width: 768px) {
   .contentGrid {
     grid-template-columns: 1fr;
     gap: 1.5rem;
-    max-width: 1000px;
     display: flex;
     flex-direction: column;
   }
@@ -415,6 +447,18 @@
   
   .imageSection {
     order: 2;
+  }
+  
+  .reportSectionsContainer {
+    padding: 0 1rem;
+  }
+  
+  .reportSection {
+    padding: 1.5rem;
+  }
+  
+  .sectionHeadingText {
+    font-size: 1.5rem;
   }
   
   .headerContent {
@@ -471,6 +515,18 @@
   
   .imageSection {
     order: 2;
+  }
+  
+  .reportSectionsContainer {
+    padding: 0 0.75rem;
+  }
+  
+  .reportSection {
+    padding: 1rem;
+  }
+  
+  .sectionHeadingText {
+    font-size: 1.25rem;
   }
   
   .imageSection,

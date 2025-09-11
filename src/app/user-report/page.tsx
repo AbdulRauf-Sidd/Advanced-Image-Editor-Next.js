@@ -28,6 +28,23 @@ interface ReportData {
   };
 }
 
+interface ReportSection {
+  id: number;
+  heading: string;
+  image: string | File | null;
+  defect: string;
+  location: string;
+  estimatedCosts: {
+    materials: string;
+    labor: string;
+    estimatedTime: string;
+    totalLaborCost: string;
+    divOption: string;
+    recommendation: string;
+    totalEstimatedCost: string;
+  };
+}
+
 export default function UserReport() {
   const router = useRouter();
   const [currentDate, setCurrentDate] = useState('');
@@ -58,6 +75,40 @@ export default function UserReport() {
   });
 
   const [image, setImage] = useState<string | File | null>(null);
+  const [reportSections, setReportSections] = useState<ReportSection[]>([
+    {
+      id: 1,
+      heading: "Laundry Room Electrical Safety",
+      image: null,
+      defect: "The receptacles in the laundry area should be GFCI protected. It is a safety hazard and should be corrected, protected by GFCI receptacles.",
+      location: "Laundry Room",
+      estimatedCosts: {
+        materials: "GFCI receptacles: $30",
+        labor: "Electrical contractor services",
+        estimatedTime: "1 hour(s)",
+        totalLaborCost: "$100 per hour",
+        divOption: "This repair can be done by a homeowner with basic electrical knowledge. Replace the standard receptacles with GFCI receptacles following the manufacturer's instructions. Ensure power is turned off before starting. If unsure, consult a professional.",
+        recommendation: "The receptacles in the laundry area should be GFCI protected. It is a safety hazard and should be corrected, protected by GFCI receptacles.",
+        totalEstimatedCost: "$130"
+      }
+    },
+    {
+      id: 2,
+      heading: "Kitchen Electrical Outlet Inspection",
+      image: null,
+      defect: "The kitchen outlets require GFCI protection for safety compliance. This is a critical safety issue that needs immediate attention.",
+      location: "Kitchen",
+      estimatedCosts: {
+        materials: "GFCI outlets: $45",
+        labor: "Licensed electrician services",
+        estimatedTime: "2 hour(s)",
+        totalLaborCost: "$120 per hour",
+        divOption: "This repair requires intermediate electrical knowledge. Install GFCI outlets following local electrical codes and manufacturer guidelines. Always turn off power at the breaker before starting.",
+        recommendation: "All kitchen outlets should be GFCI protected to prevent electrical hazards. This is required by electrical code and essential for safety.",
+        totalEstimatedCost: "$285"
+      }
+    }
+  ]);
 
   useEffect(() => {
     const now = new Date();
@@ -70,12 +121,16 @@ export default function UserReport() {
     // Get image from analysis data if available
     if (analysisData?.image) {
       setImage(analysisData.image);
+      // Update the first report section with the image
+      setReportSections(prev => prev.map((section, index) => 
+        index === 0 ? { ...section, image: analysisData.image } : section
+      ));
     }
 
     // In a real application, you would fetch user property and report data from backend here
     // Example:
     // fetchUserProperty().then(setUserProperty);
-    // fetchReportData().then(setReportData);
+    // fetchReportSections().then(setReportSections);
   }, [analysisData]);
 
   const generatePDF = () => {
@@ -112,64 +167,77 @@ export default function UserReport() {
           </h1>
         </div>
 
-        {/* Content Grid */}
-        <div className={styles.contentGrid}>
-          {/* Left Side - Image */}
-          <div className={styles.imageSection}>
-            <h2 className={styles.imageTitle}>
-              <i className="fas fa-camera"></i>
-              Visual Evidence
-            </h2>
-            <div className={styles.imageContainer}>
-              {image ? (
-                <img 
-                  src={typeof image === 'string' ? image : URL.createObjectURL(image)} 
-                  alt="Property analysis" 
-                  className={styles.propertyImage}
-                  onError={(e) => {
-                    console.error('Image failed to load');
-                  }}
-                />
-              ) : (
-                <div className={styles.imagePlaceholder}>
-                  <i className="fas fa-image fa-3x mb-4"></i>
-                  <p>No image available</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Side - Description */}
-          <div className={styles.descriptionSection}>
-            <h2 className={styles.descriptionTitle}>
-              <i className="fas fa-clipboard-list"></i>
-              Analysis Details
-            </h2>
-            
-            <div className="space-y-6">
-              {/* Defect Section */}
-              <div className={styles.section}>
-                <h3 className={styles.sectionTitle}>
-                  <i className="fas fa-exclamation-triangle"></i>
-                  Defect
-                </h3>
-                <p className={styles.sectionContent}>
-                  {reportData.description.defect}, Location: {reportData.description.location}.
-                </p>
+        {/* Report Sections Container */}
+        <div className={styles.reportSectionsContainer}>
+          {reportSections.map((section, index) => (
+            <div key={section.id} className={styles.reportSection}>
+              {/* Section Heading */}
+              <div className={styles.sectionHeading}>
+                <h2 className={styles.sectionHeadingText}>
+                  {section.heading}
+                </h2>
               </div>
+              
+              <div className={styles.contentGrid}>
+                {/* Left Side - Image */}
+                <div className={styles.imageSection}>
+                  <h3 className={styles.imageTitle}>
+                    <i className="fas fa-camera"></i>
+                    Visual Evidence
+                  </h3>
+                  <div className={styles.imageContainer}>
+                    {section.image ? (
+                      <img 
+                        src={typeof section.image === 'string' ? section.image : URL.createObjectURL(section.image)} 
+                        alt="Property analysis" 
+                        className={styles.propertyImage}
+                        onError={(e) => {
+                          console.error('Image failed to load');
+                        }}
+                      />
+                    ) : (
+                      <div className={styles.imagePlaceholder}>
+                        <i className="fas fa-image fa-3x mb-4"></i>
+                        <p>No image available</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-              {/* Estimated Costs Section */}
-              <div className={styles.section}>
-                <h3 className={styles.sectionTitle}>
-                  <i className="fas fa-dollar-sign"></i>
-                  Estimated Costs
-                </h3>
-                <div className={styles.sectionContent}>
-                  <p><strong>Materials:</strong> {reportData.description.estimatedCosts.materials}, <strong>Labor:</strong> {reportData.description.estimatedCosts.labor}, <strong>Estimated Time:</strong> {reportData.description.estimatedCosts.estimatedTime}, <strong>Total Labor Cost:</strong> {reportData.description.estimatedCosts.totalLaborCost}, <strong>DIY Option:</strong> {reportData.description.estimatedCosts.divOption}, <strong>Recommendation:</strong> {reportData.description.estimatedCosts.recommendation}, <strong>Total Estimated Cost:</strong> {reportData.description.estimatedCosts.totalEstimatedCost}.</p>
+                {/* Right Side - Description */}
+                <div className={styles.descriptionSection}>
+                  <h3 className={styles.descriptionTitle}>
+                    <i className="fas fa-clipboard-list"></i>
+                    Analysis Details
+                  </h3>
+                  
+                  <div className="space-y-6">
+                    {/* Defect Section */}
+                    <div className={styles.section}>
+                      <h4 className={styles.sectionTitle}>
+                        <i className="fas fa-exclamation-triangle"></i>
+                        Defect
+                      </h4>
+                      <p className={styles.sectionContent}>
+                        {section.defect}, Location: {section.location}.
+                      </p>
+                    </div>
+
+                    {/* Estimated Costs Section */}
+                    <div className={styles.section}>
+                      <h4 className={styles.sectionTitle}>
+                        <i className="fas fa-dollar-sign"></i>
+                        Estimated Costs
+                      </h4>
+                      <div className={styles.sectionContent}>
+                        <p><strong>Materials:</strong> {section.estimatedCosts.materials}, <strong>Labor:</strong> {section.estimatedCosts.labor}, <strong>Estimated Time:</strong> {section.estimatedCosts.estimatedTime}, <strong>Total Labor Cost:</strong> {section.estimatedCosts.totalLaborCost}, <strong>DIY Option:</strong> {section.estimatedCosts.divOption}, <strong>Recommendation:</strong> {section.estimatedCosts.recommendation}, <strong>Total Estimated Cost:</strong> {section.estimatedCosts.totalEstimatedCost}.</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          ))}
         </div>
 
         {/* Action Buttons */}
