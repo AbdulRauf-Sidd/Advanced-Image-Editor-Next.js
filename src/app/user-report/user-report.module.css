@@ -280,6 +280,7 @@
   position: relative;
   overflow: hidden;
   letter-spacing: -0.025em;
+  gap: 0.75rem;
 }
 
 .actionButton::before {

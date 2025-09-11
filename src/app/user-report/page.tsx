@@ -20,7 +20,6 @@ interface ReportSection {
     labor: string;
     estimatedTime: string;
     totalLaborCost: string;
-    divOption: string;
     recommendation: string;
     totalEstimatedCost: string;
   };
@@ -69,7 +68,6 @@ export default function UserReport() {
         labor: analysisResult?.labor_type || "Labor services not specified",
         estimatedTime: analysisResult?.hours_required ? `${analysisResult.hours_required} hour(s)` : "Time not specified",
         totalLaborCost: analysisResult?.labor_rate ? `$${analysisResult.labor_rate} per hour` : "Rate not specified",
-        divOption: analysisResult?.diy_instructions || "DIY instructions not available",
         recommendation: analysisResult?.recommendation || "No specific recommendations available",
         totalEstimatedCost: analysisResult?.total_estimated_cost ? `$${analysisResult.total_estimated_cost}` : "Cost not calculated"
       }
@@ -203,7 +201,18 @@ export default function UserReport() {
                         Defect
                       </h4>
                       <p className={styles.sectionContent}>
-                        {section.defect}, Location: {section.location}.
+                        {section.defect}
+                      </p>
+                    </div>
+
+                    {/* Location Section */}
+                    <div className={styles.section}>
+                      <h4 className={styles.sectionTitle}>
+                        <i className="fas fa-map-marker-alt"></i>
+                        Location
+                      </h4>
+                      <p className={styles.sectionContent}>
+                        {section.location}
                       </p>
                     </div>
 
@@ -214,7 +223,7 @@ export default function UserReport() {
                         Estimated Costs
                       </h4>
                       <div className={styles.sectionContent}>
-                        <p><strong>Materials:</strong> {section.estimatedCosts.materials}, <strong>Labor:</strong> {section.estimatedCosts.labor}, <strong>Estimated Time:</strong> {section.estimatedCosts.estimatedTime}, <strong>Total Labor Cost:</strong> {section.estimatedCosts.totalLaborCost}, <strong>DIY Option:</strong> {section.estimatedCosts.divOption}, <strong>Recommendation:</strong> {section.estimatedCosts.recommendation}, <strong>Total Estimated Cost:</strong> {section.estimatedCosts.totalEstimatedCost}.</p>
+                        <p><strong>Materials:</strong> {section.estimatedCosts.materials}, <strong>Labor:</strong> {section.estimatedCosts.labor}, <strong>Estimated Time:</strong> {section.estimatedCosts.estimatedTime}, <strong>Total Labor Cost:</strong> {section.estimatedCosts.totalLaborCost}, <strong>Recommendation:</strong> {section.estimatedCosts.recommendation}, <strong>Total Estimated Cost:</strong> {section.estimatedCosts.totalEstimatedCost}.</p>
                       </div>
                     </div>
                   </div>
