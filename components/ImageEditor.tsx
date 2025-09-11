@@ -347,76 +347,72 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   };
 
   const exportEditedFile = (): File | null => {
-    let canvas = canvasRef.current;
-    if (!canvas) {
-      if (!image) return null;
+    if (!image) return null;
+    
+    // Create a new canvas with the same dimensions as the display canvas
+    const canvas = document.createElement('canvas');
+    const displayCanvas = canvasRef.current;
+    
+    if (!displayCanvas) return null;
+    
+    canvas.width = displayCanvas.width;
+    canvas.height = displayCanvas.height;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw the background
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw the image with the same scaling as the display canvas
+    if (image) {
+      const imgAspect = image.width / image.height;
+      const canvasAspect = canvas.width / canvas.height;
       
-      canvas = document.createElement('canvas');
-      canvas.width = image.width;
-      canvas.height = image.height;
+      let drawWidth, drawHeight, offsetX, offsetY;
       
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return null;
+      if (imgAspect > canvasAspect) {
+        drawWidth = canvas.width;
+        drawHeight = canvas.width / imgAspect;
+        offsetX = 0;
+        offsetY = (canvas.height - drawHeight) / 2;
+      } else {
+        drawHeight = canvas.height;
+        drawWidth = canvas.height * imgAspect;
+        offsetX = (canvas.width - drawWidth) / 2;
+        offsetY = 0;
+      }
       
-      ctx.drawImage(image, 0, 0, image.width, image.height);
+      ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
     }
     
-    // Force a re-render to ensure the canvas has the latest positions
-    if (canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
-      if (ctx) {
-        // Clear and redraw everything to ensure latest positions
-        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-        
-        // Redraw image
-        if (image) {
-          const imgAspect = image.width / image.height;
-          const canvasAspect = canvasRef.current.width / canvasRef.current.height;
-          
-          let drawWidth, drawHeight, offsetX, offsetY;
-          
-          if (imgAspect > canvasAspect) {
-            drawWidth = canvasRef.current.width;
-            drawHeight = canvasRef.current.width / imgAspect;
-            offsetX = 0;
-            offsetY = (canvasRef.current.height - drawHeight) / 2;
-          } else {
-            drawHeight = canvasRef.current.height;
-            drawWidth = canvasRef.current.height * imgAspect;
-            offsetX = (canvasRef.current.width - drawWidth) / 2;
-            offsetY = 0;
-          }
-          
-          ctx.fillStyle = '#f0f0f0';
-          ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-          ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
-        }
-        
-        // Redraw all lines with current positions
-        lines.forEach(line => {
-          ctx.strokeStyle = line.color;
-          ctx.lineWidth = line.size;
-          ctx.lineCap = 'round';
-          ctx.lineJoin = 'round';
-          ctx.fillStyle = line.color;
-          
-          if (line.type === 'draw') {
-            ctx.beginPath();
-            line.points.forEach((pt, i) => {
-              if (i === 0) ctx.moveTo(pt.x, pt.y);
-              else ctx.lineTo(pt.x, pt.y);
-            });
-            ctx.stroke();
-          } else if (line.type === 'arrow' && line.points.length >= 2) {
-            drawTransformedArrow(ctx, line);
-          } else if (line.type === 'circle' && line.center && line.width !== undefined && line.height !== undefined) {
-            drawCircle(ctx, line.center.x, line.center.y, line.width, line.height, line.color);
-          } else if (line.type === 'square' && line.center && line.width !== undefined && line.height !== undefined) {
-            drawSquare(ctx, line.center.x, line.center.y, line.width, line.height, line.color);
-          }
+    // Draw all lines with their current positions
+    lines.forEach(line => {
+      ctx.strokeStyle = line.color;
+      ctx.lineWidth = line.size;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.fillStyle = line.color;
+      
+      if (line.type === 'draw') {
+        ctx.beginPath();
+        line.points.forEach((pt, i) => {
+          if (i === 0) ctx.moveTo(pt.x, pt.y);
+          else ctx.lineTo(pt.x, pt.y);
         });
+        ctx.stroke();
+      } else if (line.type === 'arrow' && line.points.length >= 2) {
+        drawTransformedArrow(ctx, line);
+      } else if (line.type === 'circle' && line.center && line.width !== undefined && line.height !== undefined) {
+        drawCircle(ctx, line.center.x, line.center.y, line.width, line.height, line.color);
+      } else if (line.type === 'square' && line.center && line.width !== undefined && line.height !== undefined) {
+        drawSquare(ctx, line.center.x, line.center.y, line.width, line.height, line.color);
       }
-    }
+    });
   
     const dataUrl = canvas.toDataURL("image/png");
     const byteString = atob(dataUrl.split(",")[1]);
@@ -434,7 +430,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   useEffect(() => {
     const file = exportEditedFile();
     onEditedFile?.(file);
-  }, [image]);
+  }, [image, lines]);
 
   const saveAction = (action: Action) => {
     setActionHistory(prev => [...prev, action]);
@@ -967,17 +963,27 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
             const deltaX = newCenter.x - oldCenter.x;
             const deltaY = newCenter.y - oldCenter.y;
             
-            setLines(prev => prev.map(line => 
-              line.id === selectedArrowId 
-                ? {
-                    ...line,
-                    points: line.points.map(point => ({
-                      x: point.x + deltaX,
-                      y: point.y + deltaY
-                    }))
-                  }
-                : line
-            ));
+            setLines(prev => {
+              const updatedLines = prev.map(line => 
+                line.id === selectedArrowId 
+                  ? {
+                      ...line,
+                      points: line.points.map(point => ({
+                        x: point.x + deltaX,
+                        y: point.y + deltaY
+                      }))
+                    }
+                  : line
+              );
+              
+              // Export the file with updated positions
+              setTimeout(() => {
+                const file = exportEditedFile();
+                onEditedFile?.(file);
+              }, 0);
+              
+              return updatedLines;
+            });
           } else if (interactionMode === 'rotate') {
             // Faster rotation with less easing for more responsive feel
             const angle = Math.atan2(mouseY - center.y, mouseX - center.x);
@@ -987,15 +993,25 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
             // Reduced easing for faster rotation (from 0.3 to 0.5)
             const easedRotation = currentRotation + rotationDelta * 0.5;
             
-            setLines(prev => prev.map(line => 
-              line.id === selectedArrowId 
-                ? {
-                    ...line,
-                    rotation: easedRotation,
-                    points: line.points.map(point => rotatePoint(point, center, easedRotation - currentRotation))
-                  }
-                : line
-            ));
+            setLines(prev => {
+              const updatedLines = prev.map(line => 
+                line.id === selectedArrowId 
+                  ? {
+                      ...line,
+                      rotation: easedRotation,
+                      points: line.points.map(point => rotatePoint(point, center, easedRotation - currentRotation))
+                    }
+                  : line
+              );
+              
+              // Export the file with updated positions
+              setTimeout(() => {
+                const file = exportEditedFile();
+                onEditedFile?.(file);
+              }, 0);
+              
+              return updatedLines;
+            });
           }
         }
         return;
@@ -1062,11 +1078,21 @@ if (currentLine && currentLine.length > 1) {
             break;
         }
         
-        setLines(prev => prev.map(line => 
-          line.id === initialShapeData.id 
-            ? { ...line, width: newWidth, height: newHeight }
-            : line
-        ));
+        setLines(prev => {
+          const updatedLines = prev.map(line => 
+            line.id === initialShapeData.id 
+              ? { ...line, width: newWidth, height: newHeight }
+              : line
+          );
+          
+          // Export the file with updated positions
+          setTimeout(() => {
+            const file = exportEditedFile();
+            onEditedFile?.(file);
+          }, 0);
+          
+          return updatedLines;
+        });
       } else if (shape?.type === 'square' && initialShapeData.width !== undefined && initialShapeData.height !== undefined) {
         // Square resizing
         let newWidth = initialShapeData.width;
@@ -1103,11 +1129,21 @@ if (currentLine && currentLine.length > 1) {
             break;
         }
         
-        setLines(prev => prev.map(line => 
-          line.id === initialShapeData.id 
-            ? { ...line, width: newWidth, height: newHeight }
-            : line
-        ));
+        setLines(prev => {
+          const updatedLines = prev.map(line => 
+            line.id === initialShapeData.id 
+              ? { ...line, width: newWidth, height: newHeight }
+              : line
+          );
+          
+          // Export the file with updated positions
+          setTimeout(() => {
+            const file = exportEditedFile();
+            onEditedFile?.(file);
+          }, 0);
+          
+          return updatedLines;
+        });
       }
       return;
     } else if (isMovingShape && selectedArrowId !== null) {
@@ -1115,43 +1151,53 @@ if (currentLine && currentLine.length > 1) {
       const newCenterX = mouseX - moveOffset.x;
       const newCenterY = mouseY - moveOffset.y;
       
-      setLines(prev => prev.map(line => {
-        if (line.id === selectedArrowId) {
-          if (line.type === 'circle') {
-            return {
-              ...line,
-              center: { x: newCenterX, y: newCenterY },
-              points: [
-                { x: newCenterX - line.width! / 2, y: newCenterY - line.height! / 2 },
-                { x: newCenterX + line.width! / 2, y: newCenterY + line.height! / 2 }
-              ]
-            };
-          } else if (line.type === 'square') {
-            return {
-              ...line,
-              center: { x: newCenterX, y: newCenterY },
-              points: [
-                { x: newCenterX - line.width! / 2, y: newCenterY - line.height! / 2 },
-                { x: newCenterX + line.width! / 2, y: newCenterY + line.height! / 2 }
-              ]
-            };
-          } else if (line.type === 'arrow') {
-            // For arrows, update the points array with the new positions
-            const oldCenter = getArrowCenter(line);
-            const deltaX = newCenterX - oldCenter.x;
-            const deltaY = newCenterY - oldCenter.y;
-            
-            return {
-              ...line,
-              points: line.points.map(point => ({
-                x: point.x + deltaX,
-                y: point.y + deltaY
-              }))
-            };
+      setLines(prev => {
+        const updatedLines = prev.map(line => {
+          if (line.id === selectedArrowId) {
+            if (line.type === 'circle') {
+              return {
+                ...line,
+                center: { x: newCenterX, y: newCenterY },
+                points: [
+                  { x: newCenterX - line.width! / 2, y: newCenterY - line.height! / 2 },
+                  { x: newCenterX + line.width! / 2, y: newCenterY + line.height! / 2 }
+                ]
+              };
+            } else if (line.type === 'square') {
+              return {
+                ...line,
+                center: { x: newCenterX, y: newCenterY },
+                points: [
+                  { x: newCenterX - line.width! / 2, y: newCenterY - line.height! / 2 },
+                  { x: newCenterX + line.width! / 2, y: newCenterY + line.height! / 2 }
+                ]
+              };
+            } else if (line.type === 'arrow') {
+              // For arrows, update the points array with the new positions
+              const oldCenter = getArrowCenter(line);
+              const deltaX = newCenterX - oldCenter.x;
+              const deltaY = newCenterY - oldCenter.y;
+              
+              return {
+                ...line,
+                points: line.points.map(point => ({
+                  x: point.x + deltaX,
+                  y: point.y + deltaY
+                }))
+              };
+            }
           }
-        }
-        return line;
-      }));
+          return line;
+        });
+        
+        // Export the file with updated positions
+        setTimeout(() => {
+          const file = exportEditedFile();
+          onEditedFile?.(file);
+        }, 0);
+        
+        return updatedLines;
+      });
       return;
     } else if ((activeMode === 'circle' || activeMode === 'square') && isDrawing && currentLine && hasDragged) {
       // Update the current line with the new mouse position for real-time preview

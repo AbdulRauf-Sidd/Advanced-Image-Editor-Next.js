@@ -425,7 +425,7 @@ export default function Home() {
       });
       
       // ✅ Navigate to results page
-      router.push('/property-report2');
+      router.push('/user-report');
       
     } catch (error: any) {
       console.error('Submission error:', error);

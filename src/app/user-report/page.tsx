@@ -8,27 +8,6 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import styles from './user-report.module.css';
 
-interface UserProperty {
-  name: string;
-}
-
-interface ReportData {
-  heading: string;
-  description: {
-    heading: string;
-    defect: string;
-    location: string;
-    estimatedCosts: {
-      materials: string;
-      labor: string;
-      estimatedTime: string;
-      totalLaborCost: string;
-      divOption: string;
-      recommendation: string;
-      totalEstimatedCost: string;
-    };
-  };
-}
 
 interface ReportSection {
   id: number;
@@ -50,51 +29,13 @@ interface ReportSection {
 export default function UserReport() {
   const router = useRouter();
   const [currentDate, setCurrentDate] = useState('');
-  const { analysisData, clearAnalysisData } = useAnalysisStore();
-  
-  // User property data (this would come from backend)
-  const [userProperty, setUserProperty] = useState<UserProperty>({
-    name: "John Doe's Property" // This would be fetched from backend
-  });
-  
-  // Report data (this would come from backend)
-  const [reportData, setReportData] = useState<ReportData>({
-    heading: "Laundry Room Electrical Safety", // This would come from backend
-    description: {
-      heading: "Laundry Room Electrical Safety",
-      defect: "The receptacles in the laundry area should be GFCI protected. It is a safety hazard and should be corrected, protected by GFCI receptacles.",
-      location: "Laundry Room",
-      estimatedCosts: {
-        materials: "GFCI receptacles: $30",
-        labor: "Electrical contractor services",
-        estimatedTime: "1 hour(s)",
-        totalLaborCost: "$100 per hour",
-        divOption: "This repair can be done by a homeowner with basic electrical knowledge. Replace the standard receptacles with GFCI receptacles following the manufacturer's instructions. Ensure power is turned off before starting. If unsure, consult a professional.",
-        recommendation: "The receptacles in the laundry area should be GFCI protected. It is a safety hazard and should be corrected, protected by GFCI receptacles.",
-        totalEstimatedCost: "$130"
-      }
-    }
-  });
+  const { analysisData } = useAnalysisStore();
 
-  const [image, setImage] = useState<string | File | null>(null);
-  const [reportSections, setReportSections] = useState<ReportSection[]>([
-    {
-      id: 1,
-      heading: "Laundry Room Electrical Safety",
-      image: null,
-      defect: "The receptacles in the laundry area should be GFCI protected. It is a safety hazard and should be corrected, protected by GFCI receptacles.",
-      location: "Laundry Room",
-      estimatedCosts: {
-        materials: "GFCI receptacles: $30",
-        labor: "Electrical contractor services",
-        estimatedTime: "1 hour(s)",
-        totalLaborCost: "$100 per hour",
-        divOption: "This repair can be done by a homeowner with basic electrical knowledge. Replace the standard receptacles with GFCI receptacles following the manufacturer's instructions. Ensure power is turned off before starting. If unsure, consult a professional.",
-        recommendation: "The receptacles in the laundry area should be GFCI protected. It is a safety hazard and should be corrected, protected by GFCI receptacles.",
-        totalEstimatedCost: "$130"
-      }
+  useEffect(() => {
+    if (!analysisData) {
+      router.push('/');
     }
-  ]);
+  }, [analysisData, router]);
 
   useEffect(() => {
     const now = new Date();
@@ -103,21 +44,37 @@ export default function UserReport() {
       month: 'long',
       day: 'numeric'
     }));
+  }, []);
 
-    // Get image from analysis data if available
-    if (analysisData?.image) {
-      setImage(analysisData.image);
-      // Update the first report section with the image
-      setReportSections(prev => prev.map((section, index) => 
-        index === 0 ? { ...section, image: analysisData.image } : section
-      ));
+  if (!analysisData) {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+        <div>No analysis data found. Redirecting...</div>
+      </div>
+    );
+  }
+
+  const { image, description, location, analysisResult } = analysisData;
+
+  // Create report sections from analysis data
+  const reportSections: ReportSection[] = [
+    {
+      id: 1,
+      heading: analysisResult?.defect || "Property Analysis",
+      image: image,
+      defect: analysisResult?.defect || description || "No defect information available",
+      location: location || "Location not specified",
+      estimatedCosts: {
+        materials: analysisResult?.materials_names ? `${analysisResult.materials_names}: $${analysisResult.materials_total_cost || '0'}` : "Materials not specified",
+        labor: analysisResult?.labor_type || "Labor services not specified",
+        estimatedTime: analysisResult?.hours_required ? `${analysisResult.hours_required} hour(s)` : "Time not specified",
+        totalLaborCost: analysisResult?.labor_rate ? `$${analysisResult.labor_rate} per hour` : "Rate not specified",
+        divOption: analysisResult?.diy_instructions || "DIY instructions not available",
+        recommendation: analysisResult?.recommendation || "No specific recommendations available",
+        totalEstimatedCost: analysisResult?.total_estimated_cost ? `$${analysisResult.total_estimated_cost}` : "Cost not calculated"
+      }
     }
-
-    // In a real application, you would fetch user property and report data from backend here
-    // Example:
-    // fetchUserProperty().then(setUserProperty);
-    // fetchReportSections().then(setReportSections);
-  }, [analysisData]);
+  ];
 
   const generatePDF = async () => {
     try {
@@ -270,18 +227,18 @@ export default function UserReport() {
         {/* Action Buttons */}
         <div className={styles.actionButtons}>
           <button 
+            onClick={() => router.push('/')}
+            className={`${styles.actionButton} ${styles.secondaryButton}`}
+          >
+            <i className="fas fa-arrow-left mr-2"></i>
+            Back
+          </button>
+          <button 
             onClick={generatePDF}
             className={`${styles.actionButton} ${styles.primaryButton}`}
           >
             <i className="fas fa-file-pdf mr-2"></i>
             Generate PDF Report
-          </button>
-          <button 
-            onClick={() => router.push('/')}
-            className={`${styles.actionButton} ${styles.secondaryButton}`}
-          >
-            <i className="fas fa-edit mr-2"></i>
-            Edit Report
           </button>
         </div>
       </main>
