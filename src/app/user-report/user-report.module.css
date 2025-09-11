@@ -6,80 +6,7 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.header {
-  background: white;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border-bottom: 4px solid #d63636;
-  backdrop-filter: blur(10px);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
 
-.headerContent {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 0;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding-left: 2rem;
-  padding-right: 2rem;
-}
-
-.backButton {
-  display: flex;
-  align-items: center;
-  color: #6b7280;
-  text-decoration: none;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
-  border: 2px solid #e5e7eb;
-  background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.backButton:hover {
-  color: #d63636;
-  background: #fef2f2;
-  border-color: #d63636;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(214, 54, 54, 0.15);
-}
-
-.userInfo {
-  text-align: right;
-}
-
-.userName {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
-  letter-spacing: -0.025em;
-}
-
-.reportDate {
-  font-size: 0.9rem;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.mainHeading {
-  font-size: 3rem;
-  font-weight: 800;
-  margin-top: 4rem;
-  margin-bottom: 3rem;
-  margin-left: 2rem;
-  margin-right: 2rem;
-  text-align: center;
-  color: #d63636;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  letter-spacing: -0.025em;
-  line-height: 1.1;
-}
 
 .reportSectionsContainer {
   max-width: 1400px;
@@ -94,6 +21,9 @@
   margin-bottom: 2rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   border: 1px solid #e5e7eb;
+  /* PDF generation optimizations */
+  page-break-inside: avoid;
+  break-inside: avoid;
 }
 
 .sectionHeading {
@@ -383,6 +313,17 @@
   border-color: #dc2626;
 }
 
+.primaryButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.primaryButton:disabled:hover {
+  transform: none;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
 .secondaryButton {
   background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
   color: white;
@@ -394,20 +335,6 @@
   border-color: #6b7280;
 }
 
-.footer {
-  background: black;
-  margin-top: 4rem;
-  width: 100%;
-}
-
-.footerContent {
-  text-align: center;
-  color: white;
-  padding: 1.5rem 2rem;
-  font-weight: 500;
-  width: 100%;
-  box-sizing: border-box;
-}
 
 /* Responsive Design */
 @media (max-width: 1024px) {
@@ -416,17 +343,7 @@
     gap: 2rem;
   }
   
-  .mainHeading {
-    font-size: 2.5rem;
-    margin-top: 3rem;
-    margin-left: 1.5rem;
-    margin-right: 1.5rem;
-  }
   
-  .headerContent {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-  }
   
   .reportSectionsContainer {
     padding: 0 1.5rem;
@@ -461,24 +378,7 @@
     font-size: 1.5rem;
   }
   
-  .headerContent {
-    flex-direction: column;
-    gap: 1.5rem;
-    text-align: center;
-    padding: 1rem;
-  }
   
-  .userInfo {
-    text-align: center;
-  }
-  
-  .mainHeading {
-    font-size: 2rem;
-    margin-top: 2.5rem;
-    margin-bottom: 2rem;
-    margin-left: 1rem;
-    margin-right: 1rem;
-  }
   
   .actionButtons {
     flex-direction: column;
@@ -535,13 +435,6 @@
     border-radius: 1rem;
   }
   
-  .mainHeading {
-    font-size: 1.75rem;
-    margin-top: 2rem;
-    margin-bottom: 1.5rem;
-    margin-left: 0.75rem;
-    margin-right: 0.75rem;
-  }
   
   .sectionTitle {
     font-size: 1.125rem;
@@ -569,8 +462,4 @@
     height: 250px;
   }
   
-  .footerContent {
-    padding: 1rem;
-    font-size: 0.9rem;
-  }
 }

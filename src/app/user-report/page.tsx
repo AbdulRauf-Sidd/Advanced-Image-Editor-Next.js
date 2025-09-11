@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAnalysisStore } from '@/lib/store';
 import { CostItem } from '@/types/llm';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import styles from './user-report.module.css';
 
 interface UserProperty {
@@ -91,22 +93,6 @@ export default function UserReport() {
         recommendation: "The receptacles in the laundry area should be GFCI protected. It is a safety hazard and should be corrected, protected by GFCI receptacles.",
         totalEstimatedCost: "$130"
       }
-    },
-    {
-      id: 2,
-      heading: "Kitchen Electrical Outlet Inspection",
-      image: null,
-      defect: "The kitchen outlets require GFCI protection for safety compliance. This is a critical safety issue that needs immediate attention.",
-      location: "Kitchen",
-      estimatedCosts: {
-        materials: "GFCI outlets: $45",
-        labor: "Licensed electrician services",
-        estimatedTime: "2 hour(s)",
-        totalLaborCost: "$120 per hour",
-        divOption: "This repair requires intermediate electrical knowledge. Install GFCI outlets following local electrical codes and manufacturer guidelines. Always turn off power at the breaker before starting.",
-        recommendation: "All kitchen outlets should be GFCI protected to prevent electrical hazards. This is required by electrical code and essential for safety.",
-        totalEstimatedCost: "$285"
-      }
     }
   ]);
 
@@ -133,40 +119,81 @@ export default function UserReport() {
     // fetchReportSections().then(setReportSections);
   }, [analysisData]);
 
-  const generatePDF = () => {
-    alert("PDF generation functionality would be implemented here.");
+  const generatePDF = async () => {
+    try {
+      // Get the report section element
+      const reportElement = document.querySelector(`.${styles.reportSection}`);
+      
+      if (!reportElement) {
+        alert("Report content not found. Please try again.");
+        return;
+      }
+
+      // Show loading state
+      const button = document.querySelector(`.${styles.primaryButton}`) as HTMLButtonElement;
+      const originalText = button.innerHTML;
+      button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generating PDF...';
+      button.disabled = true;
+
+      // Create canvas from the report element
+      const canvas = await html2canvas(reportElement as HTMLElement, {
+        scale: 2, // Higher quality
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        width: reportElement.scrollWidth,
+        height: reportElement.scrollHeight,
+      });
+
+      // Create PDF
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      // Calculate dimensions to fit the content
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 295; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Add additional pages if content is longer than one page
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+
+      // Save the PDF
+      const fileName = `Property_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+
+      // Reset button state
+      button.innerHTML = originalText;
+      button.disabled = false;
+
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert("Error generating PDF. Please try again.");
+      
+      // Reset button state
+      const button = document.querySelector(`.${styles.primaryButton}`) as HTMLButtonElement;
+      button.innerHTML = '<i class="fas fa-file-pdf mr-2"></i>Generate PDF Report';
+      button.disabled = false;
+    }
   };
 
   return (
     <div className={styles.userReportContainer}>
-      {/* Header */}
-      <header className={styles.header}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className={styles.headerContent}>
-            <button 
-              onClick={() => router.push('/')}
-              className={styles.backButton}
-            >
-              <i className="fas fa-arrow-left mr-2"></i>
-              <span>Back to Editor</span>
-            </button>
-            <div className={styles.userInfo}>
-              <h1 className={styles.userName}>{userProperty.name}</h1>
-              <p className={styles.reportDate}>Report generated on {currentDate}</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="py-8">
-        {/* Heading with arrow color */}
-        <div className="text-center mb-12">
-          <h1 className={styles.mainHeading}>
-            {reportData.heading}
-          </h1>
-        </div>
-
         {/* Report Sections Container */}
         <div className={styles.reportSectionsContainer}>
           {reportSections.map((section, index) => (
@@ -258,15 +285,6 @@ export default function UserReport() {
           </button>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className={styles.footer}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className={styles.footerContent}>
-            © 2024 Property Repair Experts | Report generated on {currentDate}
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }
