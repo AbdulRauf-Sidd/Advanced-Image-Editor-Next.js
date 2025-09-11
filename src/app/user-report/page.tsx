@@ -104,9 +104,9 @@ export default function UserReport() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="py-8">
         {/* Heading with arrow color */}
-        <div className="mb-8">
+        <div className="text-center mb-12">
           <h1 className={styles.mainHeading}>
             {reportData.heading}
           </h1>
@@ -153,16 +153,9 @@ export default function UserReport() {
                   <i className="fas fa-exclamation-triangle"></i>
                   Defect
                 </h3>
-                <p className={styles.sectionContent}>{reportData.description.defect}</p>
-              </div>
-
-              {/* Location Section */}
-              <div className={styles.section}>
-                <h3 className={styles.sectionTitle}>
-                  <i className="fas fa-map-marker-alt"></i>
-                  Location
-                </h3>
-                <p className={styles.sectionContent}>{reportData.description.location}</p>
+                <p className={styles.sectionContent}>
+                  {reportData.description.defect}, Location: {reportData.description.location}.
+                </p>
               </div>
 
               {/* Estimated Costs Section */}
@@ -172,40 +165,8 @@ export default function UserReport() {
                   Estimated Costs
                 </h3>
                 <div className={styles.sectionContent}>
-                  <p><strong>Materials:</strong> {reportData.description.estimatedCosts.materials}</p>
-                  <p><strong>Labor:</strong> {reportData.description.estimatedCosts.labor}</p>
-                  <p><strong>Estimated Time:</strong> {reportData.description.estimatedCosts.estimatedTime}</p>
-                  <p><strong>Total Labor Cost:</strong> {reportData.description.estimatedCosts.totalLaborCost}</p>
+                  <p><strong>Materials:</strong> {reportData.description.estimatedCosts.materials}, <strong>Labor:</strong> {reportData.description.estimatedCosts.labor}, <strong>Estimated Time:</strong> {reportData.description.estimatedCosts.estimatedTime}, <strong>Total Labor Cost:</strong> {reportData.description.estimatedCosts.totalLaborCost}, <strong>DIY Option:</strong> {reportData.description.estimatedCosts.divOption}, <strong>Recommendation:</strong> {reportData.description.estimatedCosts.recommendation}, <strong>Total Estimated Cost:</strong> {reportData.description.estimatedCosts.totalEstimatedCost}.</p>
                 </div>
-              </div>
-
-              {/* DIY Option Section */}
-              <div className={styles.section}>
-                <h3 className={styles.sectionTitle}>
-                  <i className="fas fa-tools"></i>
-                  DIY Option
-                </h3>
-                <p className={styles.sectionContent}>{reportData.description.estimatedCosts.divOption}</p>
-              </div>
-
-              {/* Recommendation Section */}
-              <div className={styles.section}>
-                <h3 className={styles.sectionTitle}>
-                  <i className="fas fa-lightbulb"></i>
-                  Recommendation
-                </h3>
-                <p className={styles.sectionContent}>{reportData.description.estimatedCosts.recommendation}</p>
-              </div>
-
-              {/* Total Cost */}
-              <div className={styles.costHighlight}>
-                <h3 className={styles.sectionTitle}>
-                  <i className="fas fa-calculator"></i>
-                  Total Estimated Cost
-                </h3>
-                <p className={styles.totalCost}>
-                  {reportData.description.estimatedCosts.totalEstimatedCost}
-                </p>
               </div>
             </div>
           </div>
