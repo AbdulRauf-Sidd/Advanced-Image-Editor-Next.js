@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import ImageEditor from 'components/ImageEditor';
+import ImageEditor from '../../components/ImageEditor';
 import { useState, useRef, useEffect } from 'react';
 import { useAnalysisStore } from '@/lib/store';
 
@@ -10,6 +10,8 @@ export default function Home() {
   const router = useRouter();
   const [description, setDescription] = useState('');
   const [activeMode, setActiveMode] = useState<'none' | 'crop' | 'arrow' | 'circle' | 'square'>('none');
+  const [showImageEditor, setShowImageEditor] = useState(false);
+  const [selectedInspectionId, setSelectedInspectionId] = useState<number | null>(null);
   const [hasCropFrame, setHasCropFrame] = useState(false);
   const [showDrawingDropdown, setShowDrawingDropdown] = useState(false);
   const [showCircleDropdown, setShowCircleDropdown] = useState(false);
@@ -42,6 +44,37 @@ export default function Home() {
 
   // const router = useRouter();
   const setAnalysisData = useAnalysisStore(state => state.setAnalysisData);
+
+  // Sample inspection data
+  const inspections = [
+    { id: 1, inspectionName: "Kitchen Inspection", date: "2024-01-15", status: "Completed" as const },
+    { id: 2, inspectionName: "Bathroom Inspection", date: "2024-01-16", status: "In Progress" as const },
+    { id: 3, inspectionName: "Living Room Inspection", date: "2024-01-17", status: "Pending" as const },
+    { id: 4, inspectionName: "Bedroom Inspection", date: "2024-01-18", status: "Completed" as const },
+    { id: 5, inspectionName: "Basement Inspection", date: "2024-01-19", status: "Cancelled" as const },
+    { id: 6, inspectionName: "Attic Inspection", date: "2024-01-20", status: "Pending" as const },
+    { id: 7, inspectionName: "Garage Inspection", date: "2024-01-21", status: "In Progress" as const },
+    { id: 8, inspectionName: "Exterior Inspection", date: "2024-01-22", status: "Completed" as const },
+  ];
+
+  // Handle row click to open ImageEditor
+  const handleRowClick = (id: number) => {
+    setSelectedInspectionId(id);
+    setShowImageEditor(true);
+  };
+
+  // Handle Add Inspection button click
+  const handleAddInspection = () => {
+    const newId = Math.max(...inspections.map(i => i.id)) + 1;
+    setSelectedInspectionId(newId);
+    setShowImageEditor(true);
+  };
+
+  // Handle back to table
+  const handleBackToTable = () => {
+    setShowImageEditor(false);
+    setSelectedInspectionId(null);
+  };
 
   // Location data (sorted alphabetically)
   const locations = [
@@ -519,6 +552,104 @@ export default function Home() {
     );
   }
 
+  // Show table page by default
+  if (!showImageEditor) {
+    return (
+      <div className="app-container">
+        {/* Header Section - Same style as ImageEditor */}
+        <div className="heading-section">
+          <div className="heading-content">
+            <i className="fas fa-clipboard-list heading-icon"></i>
+            <h1>Inspections</h1>
+            <p>Manage your property inspections efficiently</p>
+          </div>
+        </div>
+
+        {/* Action Bar */}
+        <div className="action-bar">
+          <button 
+            className="action-btn add-btn"
+            onClick={handleAddInspection}
+          >
+            <i className="fas fa-plus"></i>
+            <span className="btn-text">Add Inspection</span>
+          </button>
+        </div>
+
+        {/* Table Section */}
+        <div className="table-section">
+          <div className="table-container">
+            <table className="inspections-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Inspection Name</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inspections.map((inspection) => (
+                  <tr
+                    key={inspection.id}
+                    className="table-row"
+                    onClick={() => handleRowClick(inspection.id)}
+                  >
+                    <td className="id-cell">
+                      <span className="id-badge">{inspection.id}</span>
+                    </td>
+                    <td className="name-cell">
+                      <div className="inspection-info">
+                        <i className="fas fa-search inspection-icon"></i>
+                        <span className="inspection-name">{inspection.inspectionName}</span>
+                      </div>
+                    </td>
+                    <td className="date-cell">
+                      <span className="date-text">{inspection.date}</span>
+                    </td>
+                    <td className="status-cell">
+                      <span
+                        className={`status-badge status-${inspection.status.toLowerCase().replace(' ', '-')}`}
+                      >
+                        {inspection.status}
+                      </span>
+                    </td>
+                    <td className="actions-cell">
+                      <div className="action-buttons">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRowClick(inspection.id);
+                          }}
+                          className="action-btn-small edit-btn"
+                          title="Edit Inspection"
+                        >
+                          <i className="fas fa-pencil-alt"></i>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            console.log("Document action for inspection:", inspection.id);
+                          }}
+                          className="action-btn-small document-btn"
+                          title="View Documents"
+                        >
+                          <i className="fas fa-file-alt"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show ImageEditor when a row is clicked
   return (
     <div className="app-container">
       {/* First Heading */}
@@ -527,12 +658,17 @@ export default function Home() {
           <i className="fas fa-image heading-icon"></i>
           <h1>Advanced Image Editor</h1>
           <p>Edit your images with drawing and cropping tools</p>
+          {selectedInspectionId && (
+            <p className="text-sm text-gray-600 mt-1">
+              Inspection ID: {selectedInspectionId}
+            </p>
+          )}
         </div>
       </div>
 
               {/* Action Options Bar */}
         <div className="action-bar">
-          <button className="action-btn back-btn" onClick={() => router.back()}>
+          <button className="action-btn back-btn" onClick={handleBackToTable}>
             <i className="fas fa-arrow-left"></i>
             {/* <span className="btn-text">Back</span> */}
           </button>
