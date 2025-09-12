@@ -30,6 +30,8 @@ export default function Home() {
   const [isSpeechSupported, setIsSpeechSupported] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('');
+  const [showAddInspectionPopup, setShowAddInspectionPopup] = useState(false);
+  const [newInspectionName, setNewInspectionName] = useState('');
   const drawingDropdownRef = useRef<HTMLDivElement>(null);
   const circleDropdownRef = useRef<HTMLDivElement>(null);
   const squareDropdownRef = useRef<HTMLDivElement>(null);
@@ -67,6 +69,40 @@ export default function Home() {
   const handleBackToTable = () => {
     setShowImageEditor(false);
     setSelectedInspectionId(null);
+  };
+
+  // Handle add inspection popup
+  const handleAddInspection = () => {
+    setShowAddInspectionPopup(true);
+  };
+
+  // Handle save new inspection
+  const handleSaveInspection = () => {
+    if (newInspectionName.trim()) {
+      // Add new inspection to the list
+      const newInspection = {
+        id: inspections.length + 1,
+        inspectionName: newInspectionName.trim(),
+        date: new Date().toISOString().split('T')[0],
+        status: 'Pending' as const
+      };
+      
+      // In a real app, you would save this to a database
+      console.log('New inspection added:', newInspection);
+      
+      // Reset form and close popup
+      setNewInspectionName('');
+      setShowAddInspectionPopup(false);
+      
+      // You could also update the inspections array here if needed
+      // setInspections([...inspections, newInspection]);
+    }
+  };
+
+  // Handle cancel add inspection
+  const handleCancelInspection = () => {
+    setNewInspectionName('');
+    setShowAddInspectionPopup(false);
   };
 
   // Location data (sorted alphabetically)
@@ -558,6 +594,21 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Action Bar with Add Inspection Button */}
+        <div className="action-bar">
+          <div className="action-bar-content">
+            <div className="action-bar-left">
+              {/* Empty space for future content */}
+            </div>
+            <div className="action-bar-right">
+              <button className="add-btn" onClick={handleAddInspection}>
+                <i className="fas fa-plus"></i>
+                <span className="btn-text">Add Inspection</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
 
         {/* Table Section */}
         <div className="table-section">
@@ -581,7 +632,7 @@ export default function Home() {
                   >
                     <td className="id-cell">
                       <span className="id-badge">
-                        <i className="fas fa-pencil-alt"></i>
+                        {inspection.id.toString().padStart(4, '0')}
                       </span>
                     </td>
                     <td className="name-cell">
@@ -612,12 +663,12 @@ export default function Home() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            console.log("Report action for inspection:", inspection.id);
+                            console.log("Document action for inspection:", inspection.id);
                           }}
                           className="action-btn-small document-btn"
-                          title="View Report"
+                          title="View Document"
                         >
-                          <i className="fas fa-chart-bar"></i>
+                          <i className="fas fa-file-alt"></i>
                         </button>
                       </div>
                     </td>
@@ -627,6 +678,54 @@ export default function Home() {
             </table>
           </div>
         </div>
+
+        {/* Add Inspection Popup */}
+        {showAddInspectionPopup && (
+          <div className="popup-overlay">
+            <div className="popup-content">
+              <div className="popup-header">
+                <h3>Add New Inspection</h3>
+                <button 
+                  className="popup-close-btn"
+                  onClick={handleCancelInspection}
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              
+              <div className="popup-body">
+                <div className="form-group">
+                  <label htmlFor="inspectionName">Inspection Name</label>
+                  <input
+                    type="text"
+                    id="inspectionName"
+                    value={newInspectionName}
+                    onChange={(e) => setNewInspectionName(e.target.value)}
+                    placeholder="Enter inspection name..."
+                    className="form-input"
+                    autoFocus
+                  />
+                </div>
+              </div>
+              
+              <div className="popup-footer">
+                <button 
+                  className="popup-btn cancel-btn"
+                  onClick={handleCancelInspection}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="popup-btn save-btn"
+                  onClick={handleSaveInspection}
+                  disabled={!newInspectionName.trim()}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
