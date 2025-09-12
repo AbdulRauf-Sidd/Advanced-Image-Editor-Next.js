@@ -63,13 +63,6 @@ export default function Home() {
     setShowImageEditor(true);
   };
 
-  // Handle Add Inspection button click
-  const handleAddInspection = () => {
-    const newId = Math.max(...inspections.map(i => i.id)) + 1;
-    setSelectedInspectionId(newId);
-    setShowImageEditor(true);
-  };
-
   // Handle back to table
   const handleBackToTable = () => {
     setShowImageEditor(false);
@@ -565,16 +558,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Action Bar */}
-        <div className="action-bar">
-          <button 
-            className="action-btn add-btn"
-            onClick={handleAddInspection}
-          >
-            <i className="fas fa-plus"></i>
-            <span className="btn-text">Add Inspection</span>
-          </button>
-        </div>
 
         {/* Table Section */}
         <div className="table-section">
@@ -597,13 +580,12 @@ export default function Home() {
                     onClick={() => handleRowClick(inspection.id)}
                   >
                     <td className="id-cell">
-                      <span className="id-badge">{inspection.id}</span>
+                      <span className="id-badge">
+                        <i className="fas fa-pencil-alt"></i>
+                      </span>
                     </td>
                     <td className="name-cell">
-                      <div className="inspection-info">
-                        <i className="fas fa-search inspection-icon"></i>
-                        <span className="inspection-name">{inspection.inspectionName}</span>
-                      </div>
+                      <span className="inspection-name">{inspection.inspectionName}</span>
                     </td>
                     <td className="date-cell">
                       <span className="date-text">{inspection.date}</span>
@@ -630,12 +612,12 @@ export default function Home() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            console.log("Document action for inspection:", inspection.id);
+                            console.log("Report action for inspection:", inspection.id);
                           }}
                           className="action-btn-small document-btn"
-                          title="View Documents"
+                          title="View Report"
                         >
-                          <i className="fas fa-file-alt"></i>
+                          <i className="fas fa-chart-bar"></i>
                         </button>
                       </div>
                     </td>
