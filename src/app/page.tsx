@@ -25,6 +25,9 @@ export default function Home() {
   const [showTestDropdown, setShowTestDropdown] = useState(false);
   const [testSearch, setTestSearch] = useState('');
   const [selectedTest, setSelectedTest] = useState<string>('');
+  const [showLocationDropdown2, setShowLocationDropdown2] = useState(false);
+  const [locationSearch2, setLocationSearch2] = useState('');
+  const [selectedLocation2, setSelectedLocation2] = useState<string>('');
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isSpeechSupported, setIsSpeechSupported] = useState(false);
@@ -38,6 +41,7 @@ export default function Home() {
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const subLocationDropdownRef = useRef<HTMLDivElement>(null);
   const testDropdownRef = useRef<HTMLDivElement>(null);
+  const locationDropdownRef2 = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const [currentImage, setCurrentImage] = useState<HTMLImageElement | null>(null);
   const [editedFile, setEditedFile] = useState<File | null>(null);
@@ -105,98 +109,144 @@ export default function Home() {
     setShowAddInspectionPopup(false);
   };
 
-  // Location data (sorted alphabetically)
+
+  // Section data (sorted alphabetically)
   const locations = [
-    'Doors & Windows',
-    'Exterior Site Materials (from outdoor photos)',
-    'Fixtures & Built-ins',
-    'Flooring',
-    'Roofing (from exterior photos or attic views)',
-    'Trim & Molding',
-    'Visible Plumbing & HVAC (when exposed)',
-    'Wall & Ceiling Surfaces (Exterior)',
-    'Wall & Ceiling Surfaces (Interior)'
+    'AC / Cooling',
+    'Built-In Appliances',
+    'Electrical',
+    'Exterior',
+    'Foundation & Structure',
+    'Furnace / Heater',
+    'Grounds',
+    'Insulation & Ventilation',
+    'Interior',
+    'Plumbing',
+    'Roof',
+    'Swimming Pool & Spa'
   ];
 
   // Test data
   const testValues = ['V1', 'V2', 'V3', 'V4', 'V5', 'V6'];
 
-  // Sub-location data (sorted alphabetically)
+  // Location data (sorted alphabetically)
+  const locations2 = [
+    'Addition', 'All Locations', 'Apartment', 'Attic', 'Back Porch', 'Back Room', 'Balcony',
+    'Bedroom 1', 'Bedroom 2', 'Bedroom 3', 'Bedroom 4', 'Bedroom 5', 'Both Locations', 'Breakfast',
+    'Carport', 'Carport Entry', 'Closet', 'Crawlspace', 'Dining', 'Downstairs', 'Downstairs Bathroom',
+    'Downstairs Bathroom Closet', 'Downstairs Hallway', 'Downstairs Hall Closet', 'Driveway', 'Entry',
+    'Family Room', 'Front Entry', 'Front of House', 'Front Porch', 'Front Room', 'Garage', 'Garage Entry',
+    'Garage Storage Closet', 'Guest Bathroom', 'Guest Bedroom', 'Guest Bedroom Closet', 'Half Bathroom',
+    'Hallway', 'Heater Operation Temp', 'HVAC Closet', 'Keeping Room', 'Kitchen', 'Kitchen Pantry',
+    'Left Side of House', 'Left Wall', 'Living Room', 'Living Room Closet', 'Laundry Room',
+    'Laundry Room Closet', 'Master Bathroom', 'Master Bedroom', 'Master Closet', 'Most Locations',
+    'Multiple Locations', 'Office', 'Office Closet', 'Outdoor Storage', 'Patio', 'Rear Entry',
+    'Rear of House', 'Rear Wall', 'Right Side of House', 'Right Wall', 'Shop', 'Side Entry', 'Staircase',
+    'Sun Room', 'Top of Stairs', 'Upstairs Bathroom', 'Upstairs Bedroom 1', 'Upstairs Bedroom 1 Closet',
+    'Upstairs Bedroom 2', 'Upstairs Bedroom 2 Closet', 'Upstairs Bedroom 3', 'Upstairs Bedroom 3 Closet',
+    'Upstairs Bedroom 4', 'Upstairs Bedroom 4 Closet', 'Upstairs Hallway', 'Upstairs Laundry Room',
+    'Utility Room', 'Water Heater Closet', 'Water Heater Output Temp'
+  ];
+
+  // Sub-location data (hierarchical structure)
   const subLocations: { [key: string]: string[] } = {
-    'Wall & Ceiling Surfaces (Interior)': [
-      'Acoustic ceiling tiles',
-      'Drywall',
-      'Drop ceiling grid (T-bar)',
-      'Exposed framing (after demo or in garages/attics)',
-      'Plaster',
-      'Shiplap / tongue-and-groove boards',
-      'Tile (ceramic, porcelain, stone)',
-      'Wood paneling'
+    'Grounds': [
+      'Vegetation, Grading, & Drainage',
+      'Sidewalks, Porches, Driveways'
     ],
-    'Wall & Ceiling Surfaces (Exterior)': [
-      'Brick veneer',
-      'EIFS (synthetic stucco)',
-      'Fiber cement siding (e.g., HardiePlank)',
-      'Stone veneer',
-      'Stucco',
-      'Vinyl siding',
-      'Wood siding (lap, shingle, T&G)'
+    'Foundation & Structure': [
+      'Foundation',
+      'Crawlspace',
+      'Floor Structure',
+      'Wall Structure',
+      'Ceiling Structure'
     ],
-    'Flooring': [
-      'Carpet',
-      'Concrete (finished or unfinished)',
-      'Engineered wood',
-      'Laminate',
-      'Luxury vinyl plank (LVP)',
-      'Porcelain / ceramic tile',
-      'Sheet vinyl',
-      'Solid hardwood',
-      'Stone (travertine, marble, etc.)'
+    'Roof': [
+      'Coverings',
+      'Flashing & Seals',
+      'Roof Penetrations',
+      'Roof Structure & Attic'
     ],
-    'Trim & Molding': [
-      'Baseboard (MDF, wood, PVC)',
-      'Beadboard panels',
-      'Casing (door/window trim)',
-      'Chair rail / wainscoting',
-      'Crown molding',
-      'Quarter round / shoe molding'
+    'Exterior': [
+      'Exterior Doors',
+      'Exterior Windows',
+      'Siding, Flashing, & Trim',
+      'Brick/Stone Veneer',
+      'Vinyl Siding',
+      'Soffit & Fascia',
+      'Wall Penetrations',
+      'Doorbell',
+      'Exterior Support Columns',
+      'Steps, Stairways, & Railings'
     ],
-    'Doors & Windows': [
-      'Exterior doors (fiberglass, steel, wood)',
-      'Glass (single or double-pane)',
-      'Interior doors (hollow-core, solid wood)',
-      'Window frames (vinyl, aluminum, wood)',
-      'Window screens',
-      'Window sills'
+    'Interior': [
+      'Doors',
+      'Windows',
+      'Floors',
+      'Walls',
+      'Ceilings',
+      'Countertops & Cabinets',
+      'Trim'
     ],
-    'Roofing (from exterior photos or attic views)': [
-      'Asphalt shingles',
-      'Flat roofing (TPO, EPDM, torch-down)',
-      'Metal roofing',
-      'Roof vents / flashing',
-      'Tile roofing (clay or concrete)'
+    'Insulation & Ventilation': [
+      'Attic Access',
+      'Insulation',
+      'Vapor Barrier',
+      'Ventilation & Exhaust'
     ],
-    'Fixtures & Built-ins': [
-      'Bathroom fixtures (toilet, tub, shower, sink)',
-      'Cabinetry (wood, laminate)',
-      'Countertops (stone, laminate, solid surface)',
-      'Fireplace surrounds (brick, stone, tile, drywall)',
-      'Light fixtures'
+    'AC / Cooling': [
+      'Air Conditioning',
+      'Thermostats',
+      'Distribution System'
     ],
-    'Visible Plumbing & HVAC (when exposed)': [
-      'Ductwork (in attics, basements, crawlspaces)',
-      'Exposed PEX or copper piping (under sinks, in walls)',
-      'Grilles, diffusers, and return vents'
+    'Furnace / Heater': [
+      'Forced Air Furnace'
     ],
-    'Exterior Site Materials (from outdoor photos)': [
-      'Concrete flatwork (driveways, patios, walkways)',
-      'Decking (wood, composite)',
-      'Fencing (wood, vinyl, chain-link)',
-      'Garage doors',
-      'Retaining walls (block, wood, concrete)',
-      'Soffit, fascia, and gutters'
+    'Electrical': [
+      'Sub Panel',
+      'Service Panel',
+      'Branch Wiring & Breakers',
+      'Exterior Lighting',
+      'Fixtures, Fans, Switches, & Receptacles',
+      'GFCI & AFCI',
+      '240 Volt Receptacle',
+      'Smoke / Carbon Monoxide Alarms',
+      'Service Entrance'
+    ],
+    'Plumbing': [
+      'Water Heater',
+      'Drain, Waste, & Vents',
+      'Water Supply',
+      'Water Spigot',
+      'Gas Supply',
+      'Vents & Flues',
+      'Fixtures,Sinks, Tubs, & Toilets'
+    ],
+    'Built-In Appliances': [
+      'Refrigerator',
+      'Dishwasher',
+      'Garbage Disposal',
+      'Microwave',
+      'Range Hood',
+      'Range, Oven & Cooktop'
+    ],
+    'Swimming Pool & Spa': [
+      'Equipment',
+      'Electrical',
+      'Safety Devices',
+      'Coping & Decking',
+      'Vessel Surface',
+      'Drains',
+      'Control Valves',
+      'Filter',
+      'Pool Plumbing',
+      'Pumps',
+      'Spa Controls & Equipment',
+      'Heating',
+      'Diving Board & Slide'
     ]
   };
+
 
   
   // Filtered locations based on search
@@ -215,6 +265,11 @@ export default function Home() {
   // Filtered test values based on search
   const filteredTestValues = testValues.filter(testValue =>
     testValue.toLowerCase().includes(testSearch.toLowerCase())
+  );
+
+  // Filtered locations2 based on search
+  const filteredLocations2 = locations2.filter(location2 =>
+    location2.toLowerCase().includes(locationSearch2.toLowerCase())
   );
 
   // Initialize speech recognition
@@ -378,6 +433,7 @@ export default function Home() {
         setShowSquareDropdown(false);
       }
       
+      
       // Check if click is on location button or its dropdown
       const isLocationButtonClick = (event.target as Element)?.closest('.location-btn');
       if (locationDropdownRef.current && !locationDropdownRef.current.contains(target) && !isLocationButtonClick) {
@@ -394,6 +450,12 @@ export default function Home() {
       const isTestButtonClick = (event.target as Element)?.closest('.test-btn');
       if (testDropdownRef.current && !testDropdownRef.current.contains(target) && !isTestButtonClick) {
         setShowTestDropdown(false);
+      }
+      
+      // Check if click is on location2 button or its dropdown
+      const isLocation2ButtonClick = (event.target as Element)?.closest('.location2-btn');
+      if (locationDropdownRef2.current && !locationDropdownRef2.current.contains(target) && !isLocation2ButtonClick) {
+        setShowLocationDropdown2(false);
       }
     };
 
@@ -420,9 +482,10 @@ export default function Home() {
     
     // Console log the selected location, sub-location, and test value
     console.log('=== FORM SUBMISSION ===');
-    console.log('Selected Location:', selectedLocation);
-    console.log('Selected Sub-Location:', selectedSubLocation);
+    console.log('Selected Section:', selectedLocation);
+    console.log('Selected Sub-Section:', selectedSubLocation);
     console.log('Selected Test:', selectedTest);
+    console.log('Selected Location:', selectedLocation2);
     console.log('Description:', description);
     console.log('=======================');
     
@@ -432,8 +495,9 @@ export default function Home() {
       return;
     }
 
+
     if (!selectedLocation) {
-      setSubmitStatus('Please select a location');
+      setSubmitStatus('Please select a section');
       return;
     }
 
@@ -452,8 +516,9 @@ export default function Home() {
       // ✅ Prepare FormData instead of JSON
         const formData = new FormData();
         formData.append('image', editedFile); // "image" will be req.formData().get("image")
-        formData.append('description', `${description} | Location: ${selectedLocation} - ${selectedSubLocation}`);
+        formData.append('description', `${description} | Section: ${selectedLocation} - ${selectedSubLocation} | Location: ${selectedLocation2}`);
         formData.append('location', selectedLocation);
+        formData.append('location2', selectedLocation2);
         if (selectedSubLocation) {
           formData.append('subLocation', selectedSubLocation);
         }
@@ -482,7 +547,7 @@ export default function Home() {
       setAnalysisData({
         image: imageDataUrl, // Store as data URL
         description,
-        location: `${selectedLocation} - ${selectedSubLocation}`,
+        location: `${selectedLocation} - ${selectedSubLocation} | ${selectedLocation2}`,
         analysisResult: result
       });
       
@@ -583,8 +648,8 @@ export default function Home() {
 
   // Show table page by default
   if (!showImageEditor) {
-    return (
-      <div className="app-container">
+  return (
+    <div className="app-container">
         {/* Header Section - Same style as ImageEditor */}
         <div className="heading-section">
           <div className="heading-content">
@@ -733,6 +798,40 @@ export default function Home() {
   // Show ImageEditor when a row is clicked
   return (
     <div className="app-container">
+      <style jsx>{`
+        .location-btn, .main-location-btn, .section-btn, .sub-location-btn, .test-btn, .location2-btn {
+          background: linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%) !important;
+          color: white !important;
+          border: none !important;
+          padding: 18px 24px !important;
+          border-radius: 12px !important;
+          font-size: 16px !important;
+          font-weight: 600 !important;
+          cursor: pointer !important;
+          transition: all 0.3s ease !important;
+          box-shadow: 0 4px 20px rgba(75, 108, 183, 0.3) !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: space-between !important;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+          letter-spacing: 0.3px !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          width: 300px !important;
+          height: 60px !important;
+          white-space: nowrap !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+        }
+        .location-btn:hover, .main-location-btn:hover, .section-btn:hover, .sub-location-btn:hover, .test-btn:hover, .location2-btn:hover {
+          transform: translateY(-3px) !important;
+          box-shadow: 0 8px 30px rgba(75, 108, 183, 0.4) !important;
+          background: linear-gradient(135deg, rgb(106, 17, 203) 0%, rgb(75, 108, 183) 100%) !important;
+        }
+        .location-btn:active, .main-location-btn:active, .section-btn:active, .sub-location-btn:active, .test-btn:active, .location2-btn:active {
+          transform: translateY(-1px) !important;
+          box-shadow: 0 4px 20px rgba(75, 108, 183, 0.3) !important;
+        }
+      `}</style>
       {/* First Heading */}
       <div className="heading-section">
         <div className="heading-content">
@@ -956,15 +1055,39 @@ export default function Home() {
       {/* Submit Section */}
       <div className="submit-section">
         <div className="submit-controls">
-          {/* Location Button with Dropdown */}
+
+          {/* Section Button with Dropdown */}
           <div className="location-button-container">
             <button 
-              className="location-btn"
+              className="location-btn section-btn"
               onClick={() => setShowLocationDropdown(!showLocationDropdown)}
+              style={{
+                background: 'linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%) !important',
+                color: 'white !important',
+                border: 'none !important',
+                padding: '18px 24px !important',
+                borderRadius: '12px !important',
+                fontSize: '16px !important',
+                fontWeight: '600 !important',
+                cursor: 'pointer !important',
+                transition: 'all 0.3s ease !important',
+                boxShadow: '0 4px 20px rgba(75, 108, 183, 0.3) !important',
+                display: 'flex !important',
+                alignItems: 'center !important',
+                justifyContent: 'space-between !important',
+                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif !important',
+                letterSpacing: '0.3px !important',
+                border: '1px solid rgba(255, 255, 255, 0.1) !important',
+                width: '300px !important',
+                height: '60px !important',
+                whiteSpace: 'nowrap !important',
+                overflow: 'hidden !important',
+                textOverflow: 'ellipsis !important'
+              }}
             >
               <div className="btn-content">
               <i className="fas fa-map-marker-alt"></i>
-              <span>{selectedLocation || 'Location'}</span>
+              <span>{selectedLocation || 'Section'}</span>
               </div>
               <i className={`fas fa-chevron-down ${showLocationDropdown ? 'rotate' : ''}`}></i>
             </button>
@@ -1009,10 +1132,34 @@ export default function Home() {
               className={`location-btn sub-location-btn ${!selectedLocation ? 'disabled' : ''}`}
               onClick={() => selectedLocation && setShowSubLocationDropdown(!showSubLocationDropdown)}
               disabled={!selectedLocation}
+              style={{
+                background: 'linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%) !important',
+                color: 'white !important',
+                border: 'none !important',
+                padding: '18px 24px !important',
+                borderRadius: '12px !important',
+                fontSize: '16px !important',
+                fontWeight: '600 !important',
+                cursor: 'pointer !important',
+                transition: 'all 0.3s ease !important',
+                boxShadow: '0 4px 20px rgba(75, 108, 183, 0.3) !important',
+                display: 'flex !important',
+                alignItems: 'center !important',
+                justifyContent: 'space-between !important',
+                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif !important',
+                letterSpacing: '0.3px !important',
+                border: '1px solid rgba(255, 255, 255, 0.1) !important',
+                width: '300px !important',
+                height: '60px !important',
+                whiteSpace: 'nowrap !important',
+                overflow: 'hidden !important',
+                textOverflow: 'ellipsis !important',
+                opacity: !selectedLocation ? '0.5 !important' : '1 !important'
+              }}
             >
               <div className="btn-content">
                 <i className="fas fa-layer-group"></i>
-                <span>{selectedSubLocation || 'Sub-Location'}</span>
+                <span>{selectedSubLocation || 'Sub Section'}</span>
               </div>
               <i className={`fas fa-chevron-down ${showSubLocationDropdown ? 'rotate' : ''}`}></i>
             </button>
@@ -1053,6 +1200,29 @@ export default function Home() {
             <button 
               className="location-btn test-btn"
               onClick={() => setShowTestDropdown(!showTestDropdown)}
+              style={{
+                background: 'linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%) !important',
+                color: 'white !important',
+                border: 'none !important',
+                padding: '18px 24px !important',
+                borderRadius: '12px !important',
+                fontSize: '16px !important',
+                fontWeight: '600 !important',
+                cursor: 'pointer !important',
+                transition: 'all 0.3s ease !important',
+                boxShadow: '0 4px 20px rgba(75, 108, 183, 0.3) !important',
+                display: 'flex !important',
+                alignItems: 'center !important',
+                justifyContent: 'space-between !important',
+                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif !important',
+                letterSpacing: '0.3px !important',
+                border: '1px solid rgba(255, 255, 255, 0.1) !important',
+                width: '300px !important',
+                height: '60px !important',
+                whiteSpace: 'nowrap !important',
+                overflow: 'hidden !important',
+                textOverflow: 'ellipsis !important'
+              }}
             >
               <div className="btn-content">
                 <i className="fas fa-vial"></i>
@@ -1085,6 +1255,72 @@ export default function Home() {
                     >
                       <i className="fas fa-vial"></i>
                       <span>{testValue}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+           {/* Location Button with Dropdown */}
+          <div className="location-button-container">
+            <button 
+              className="location-btn location2-btn"
+              onClick={() => setShowLocationDropdown2(!showLocationDropdown2)}
+              style={{
+                background: 'linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%) !important',
+                color: 'white !important',
+                border: 'none !important',
+                padding: '18px 24px !important',
+                borderRadius: '12px !important',
+                fontSize: '16px !important',
+                fontWeight: '600 !important',
+                cursor: 'pointer !important',
+                transition: 'all 0.3s ease !important',
+                boxShadow: '0 4px 20px rgba(75, 108, 183, 0.3) !important',
+                display: 'flex !important',
+                alignItems: 'center !important',
+                justifyContent: 'space-between !important',
+                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif !important',
+                letterSpacing: '0.3px !important',
+                border: '1px solid rgba(255, 255, 255, 0.1) !important',
+                width: '300px !important',
+                height: '60px !important',
+                whiteSpace: 'nowrap !important',
+                overflow: 'hidden !important',
+                textOverflow: 'ellipsis !important'
+              }}
+            >
+              <div className="btn-content">
+                <i className="fas fa-map-marker-alt"></i>
+                <span>{selectedLocation2 || 'Location'}</span>
+              </div>
+              <i className={`fas fa-chevron-down ${showLocationDropdown2 ? 'rotate' : ''}`}></i>
+            </button>
+            
+            {showLocationDropdown2 && (
+              <div className="location-dropdown location2-dropdown" ref={locationDropdownRef2}>
+                <div className="location-search-container">
+                  <input
+                    type="text"
+                    placeholder="Search locations..."
+                    value={locationSearch2}
+                    onChange={(e) => setLocationSearch2(e.target.value)}
+                    className="location-search-input"
+                  />
+                </div>
+                <div className="location-options">
+                  {filteredLocations2.map(location2 => (
+                    <div 
+                      key={location2}
+                      className={`location-option ${selectedLocation2 === location2 ? 'selected' : ''}`}
+                      onClick={() => {
+                        setSelectedLocation2(location2);
+                        setShowLocationDropdown2(false);
+                        setLocationSearch2('');
+                      }}
+                    >
+                      <i className="fas fa-map-marker-alt"></i>
+                      <span>{location2}</span>
                     </div>
                   ))}
                 </div>

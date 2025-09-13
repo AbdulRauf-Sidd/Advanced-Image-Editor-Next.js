@@ -411,11 +411,13 @@ body {
   flex-wrap: wrap;
 }
 
-/* Location Button and Dropdown */
+/* Main Location Button and Dropdown */
 .location-button-container {
   position: relative;
 }
 
+
+/* Section Button and Dropdown */
 .location-btn {
   background: linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%);
   color: white;
@@ -440,32 +442,156 @@ body {
   text-overflow: ellipsis;
 }
 
-.location-btn .btn-content {
+/* Ensure both main-location-btn and section-btn look identical */
+.main-location-btn,
+.section-btn,
+.location-btn {
+  background: linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 18px 24px !important;
+  border-radius: 12px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 20px rgba(75, 108, 183, 0.3) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  letter-spacing: 0.3px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  width: 300px !important;
+  height: 60px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.location-btn .btn-content,
+.main-location-btn .btn-content,
+.section-btn .btn-content {
   display: flex;
   align-items: center;
   gap: 10px;
   flex: 1;
 }
 
-.location-btn .fa-chevron-down {
+.location-btn .fa-chevron-down,
+.main-location-btn .fa-chevron-down,
+.section-btn .fa-chevron-down {
   margin-left: auto;
   flex-shrink: 0;
 }
 
-.location-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 30px rgba(75, 108, 183, 0.4);
-  background: linear-gradient(135deg, rgb(106, 17, 203) 0%, rgb(75, 108, 183) 100%);
+.location-btn:hover,
+.main-location-btn:hover,
+.section-btn:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 8px 30px rgba(75, 108, 183, 0.4) !important;
+  background: linear-gradient(135deg, rgb(106, 17, 203) 0%, rgb(75, 108, 183) 100%) !important;
 }
 
-.location-btn:active {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(75, 108, 183, 0.3);
+.location-btn:active,
+.main-location-btn:active,
+.section-btn:active {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 20px rgba(75, 108, 183, 0.3) !important;
 }
 
-.location-btn:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(75, 108, 183, 0.3), 0 4px 20px rgba(75, 108, 183, 0.3);
+.location-btn:focus,
+.main-location-btn:focus,
+.section-btn:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(75, 108, 183, 0.3), 0 4px 20px rgba(75, 108, 183, 0.3) !important;
+}
+
+/* Force identical styling for all dropdown buttons */
+.submit-controls .location-button-container button {
+  background: linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 18px 24px !important;
+  border-radius: 12px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 20px rgba(75, 108, 183, 0.3) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  letter-spacing: 0.3px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  width: 300px !important;
+  height: 60px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.submit-controls .location-button-container button:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 8px 30px rgba(75, 108, 183, 0.4) !important;
+  background: linear-gradient(135deg, rgb(106, 17, 203) 0%, rgb(75, 108, 183) 100%) !important;
+}
+
+.submit-controls .location-button-container button:active {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 20px rgba(75, 108, 183, 0.3) !important;
+}
+
+/* ULTRA SPECIFIC - Force identical styling for dropdown buttons */
+body div.submit-section div.submit-controls div.location-button-container button.location-btn,
+body div.submit-section div.submit-controls div.location-button-container button.main-location-btn,
+body div.submit-section div.submit-controls div.location-button-container button.section-btn,
+body div.submit-section div.submit-controls div.location-button-container button.sub-location-btn,
+body div.submit-section div.submit-controls div.location-button-container button.test-btn,
+body div.submit-section div.submit-controls div.location-button-container button.location2-btn {
+  background: linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 18px 24px !important;
+  border-radius: 12px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 20px rgba(75, 108, 183, 0.3) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  letter-spacing: 0.3px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  width: 300px !important;
+  height: 60px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+body div.submit-section div.submit-controls div.location-button-container button.location-btn:hover,
+body div.submit-section div.submit-controls div.location-button-container button.main-location-btn:hover,
+body div.submit-section div.submit-controls div.location-button-container button.section-btn:hover,
+body div.submit-section div.submit-controls div.location-button-container button.sub-location-btn:hover,
+body div.submit-section div.submit-controls div.location-button-container button.test-btn:hover,
+body div.submit-section div.submit-controls div.location-button-container button.location2-btn:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 8px 30px rgba(75, 108, 183, 0.4) !important;
+  background: linear-gradient(135deg, rgb(106, 17, 203) 0%, rgb(75, 108, 183) 100%) !important;
+}
+
+body div.submit-section div.submit-controls div.location-button-container button.location-btn:active,
+body div.submit-section div.submit-controls div.location-button-container button.main-location-btn:active,
+body div.submit-section div.submit-controls div.location-button-container button.section-btn:active,
+body div.submit-section div.submit-controls div.location-button-container button.sub-location-btn:active,
+body div.submit-section div.submit-controls div.location-button-container button.test-btn:active,
+body div.submit-section div.submit-controls div.location-button-container button.location2-btn:active {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 20px rgba(75, 108, 183, 0.3) !important;
 }
 
 .location-btn i {
@@ -583,7 +709,7 @@ body {
   flex: 1;
 }
 
-/* Sub-Location Dropdown Styles */
+/* Sub-Section Dropdown Styles */
 .sub-location-btn {
   background: linear-gradient(135deg, rgb(106, 17, 203) 0%, rgb(75, 108, 183) 100%);
   border: 1px solid rgba(255, 255, 255, 0.2);
