@@ -22,9 +22,6 @@ export default function Home() {
   const [showSubLocationDropdown, setShowSubLocationDropdown] = useState(false);
   const [subLocationSearch, setSubLocationSearch] = useState('');
   const [selectedSubLocation, setSelectedSubLocation] = useState<string>('');
-  const [showTestDropdown, setShowTestDropdown] = useState(false);
-  const [testSearch, setTestSearch] = useState('');
-  const [selectedTest, setSelectedTest] = useState<string>('');
   const [showLocationDropdown2, setShowLocationDropdown2] = useState(false);
   const [locationSearch2, setLocationSearch2] = useState('');
   const [selectedLocation2, setSelectedLocation2] = useState<string>('');
@@ -40,7 +37,6 @@ export default function Home() {
   const squareDropdownRef = useRef<HTMLDivElement>(null);
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const subLocationDropdownRef = useRef<HTMLDivElement>(null);
-  const testDropdownRef = useRef<HTMLDivElement>(null);
   const locationDropdownRef2 = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const [currentImage, setCurrentImage] = useState<HTMLImageElement | null>(null);
@@ -126,8 +122,6 @@ export default function Home() {
     'Swimming Pool & Spa'
   ];
 
-  // Test data
-  const testValues = ['V1', 'V2', 'V3', 'V4', 'V5', 'V6'];
 
   // Location data (sorted alphabetically)
   const locations2 = [
@@ -262,10 +256,6 @@ export default function Home() {
     subLocation.toLowerCase().includes(subLocationSearch.toLowerCase())
   );
 
-  // Filtered test values based on search
-  const filteredTestValues = testValues.filter(testValue =>
-    testValue.toLowerCase().includes(testSearch.toLowerCase())
-  );
 
   // Filtered locations2 based on search
   const filteredLocations2 = locations2.filter(location2 =>
@@ -446,11 +436,6 @@ export default function Home() {
         setShowSubLocationDropdown(false);
       }
       
-      // Check if click is on test button or its dropdown
-      const isTestButtonClick = (event.target as Element)?.closest('.test-btn');
-      if (testDropdownRef.current && !testDropdownRef.current.contains(target) && !isTestButtonClick) {
-        setShowTestDropdown(false);
-      }
       
       // Check if click is on location2 button or its dropdown
       const isLocation2ButtonClick = (event.target as Element)?.closest('.location2-btn');
@@ -480,11 +465,10 @@ export default function Home() {
 
     e.preventDefault();
     
-    // Console log the selected location, sub-location, and test value
+    // Console log the selected location, sub-location
     console.log('=== FORM SUBMISSION ===');
     console.log('Selected Section:', selectedLocation);
     console.log('Selected Sub-Section:', selectedSubLocation);
-    console.log('Selected Test:', selectedTest);
     console.log('Selected Location:', selectedLocation2);
     console.log('Description:', description);
     console.log('=======================');
@@ -521,9 +505,6 @@ export default function Home() {
         formData.append('location2', selectedLocation2);
         if (selectedSubLocation) {
           formData.append('subLocation', selectedSubLocation);
-        }
-        if (selectedTest) {
-          formData.append('version', selectedTest);
         }
     
       // ✅ Send to API endpoint as multipart/form-data
@@ -799,7 +780,7 @@ export default function Home() {
   return (
     <div className="app-container">
       <style jsx>{`
-        .location-btn, .main-location-btn, .section-btn, .sub-location-btn, .test-btn, .location2-btn {
+        .location-btn, .main-location-btn, .section-btn, .sub-location-btn, .location2-btn {
           background: linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%) !important;
           color: white !important;
           border: none !important;
@@ -822,12 +803,12 @@ export default function Home() {
           overflow: hidden !important;
           text-overflow: ellipsis !important;
         }
-        .location-btn:hover, .main-location-btn:hover, .section-btn:hover, .sub-location-btn:hover, .test-btn:hover, .location2-btn:hover {
+        .location-btn:hover, .main-location-btn:hover, .section-btn:hover, .sub-location-btn:hover, .location2-btn:hover {
           transform: translateY(-3px) !important;
           box-shadow: 0 8px 30px rgba(75, 108, 183, 0.4) !important;
           background: linear-gradient(135deg, rgb(106, 17, 203) 0%, rgb(75, 108, 183) 100%) !important;
         }
-        .location-btn:active, .main-location-btn:active, .section-btn:active, .sub-location-btn:active, .test-btn:active, .location2-btn:active {
+        .location-btn:active, .main-location-btn:active, .section-btn:active, .sub-location-btn:active, .location2-btn:active {
           transform: translateY(-1px) !important;
           box-shadow: 0 4px 20px rgba(75, 108, 183, 0.3) !important;
         }
@@ -1262,72 +1243,6 @@ export default function Home() {
             )}
           </div>
 
-          {/* Test Button with Dropdown */}
-          <div className="location-button-container">
-            <button 
-              className="location-btn test-btn"
-              onClick={() => setShowTestDropdown(!showTestDropdown)}
-              style={{
-                background: 'linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%) !important',
-                color: 'white !important',
-                border: 'none !important',
-                padding: '18px 24px !important',
-                borderRadius: '12px !important',
-                fontSize: '16px !important',
-                fontWeight: '600 !important',
-                cursor: 'pointer !important',
-                transition: 'all 0.3s ease !important',
-                boxShadow: '0 4px 20px rgba(75, 108, 183, 0.3) !important',
-                display: 'flex !important',
-                alignItems: 'center !important',
-                justifyContent: 'space-between !important',
-                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif !important',
-                letterSpacing: '0.3px !important',
-                border: '1px solid rgba(255, 255, 255, 0.1) !important',
-                width: '300px !important',
-                height: '60px !important',
-                whiteSpace: 'nowrap !important',
-                overflow: 'hidden !important',
-                textOverflow: 'ellipsis !important'
-              }}
-            >
-              <div className="btn-content">
-                <i className="fas fa-vial"></i>
-                <span>{selectedTest || 'Test'}</span>
-              </div>
-              <i className={`fas fa-chevron-down ${showTestDropdown ? 'rotate' : ''}`}></i>
-            </button>
-            
-            {showTestDropdown && (
-              <div className="location-dropdown test-dropdown" ref={testDropdownRef}>
-                <div className="location-search-container">
-                  <input
-                    type="text"
-                    placeholder="Search test value..."
-                    value={testSearch}
-                    onChange={(e) => setTestSearch(e.target.value)}
-                    className="location-search-input"
-                  />
-                </div>
-                <div className="location-options">
-                  {filteredTestValues.map(testValue => (
-                    <div 
-                      key={testValue}
-                      className={`location-option ${selectedTest === testValue ? 'selected' : ''}`}
-                      onClick={() => {
-                        setSelectedTest(testValue);
-                        setShowTestDropdown(false);
-                        setTestSearch('');
-                      }}
-                    >
-                      <i className="fas fa-vial"></i>
-                      <span>{testValue}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
 
           {/* Submit Button */}
           <button className="submit-btn" onClick={handleSubmit}>

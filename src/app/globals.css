@@ -548,7 +548,6 @@ body div.submit-section div.submit-controls div.location-button-container button
 body div.submit-section div.submit-controls div.location-button-container button.main-location-btn,
 body div.submit-section div.submit-controls div.location-button-container button.section-btn,
 body div.submit-section div.submit-controls div.location-button-container button.sub-location-btn,
-body div.submit-section div.submit-controls div.location-button-container button.test-btn,
 body div.submit-section div.submit-controls div.location-button-container button.location2-btn {
   background: linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%) !important;
   color: white !important;
@@ -577,7 +576,6 @@ body div.submit-section div.submit-controls div.location-button-container button
 body div.submit-section div.submit-controls div.location-button-container button.main-location-btn:hover,
 body div.submit-section div.submit-controls div.location-button-container button.section-btn:hover,
 body div.submit-section div.submit-controls div.location-button-container button.sub-location-btn:hover,
-body div.submit-section div.submit-controls div.location-button-container button.test-btn:hover,
 body div.submit-section div.submit-controls div.location-button-container button.location2-btn:hover {
   transform: translateY(-3px) !important;
   box-shadow: 0 8px 30px rgba(75, 108, 183, 0.4) !important;
@@ -588,7 +586,6 @@ body div.submit-section div.submit-controls div.location-button-container button
 body div.submit-section div.submit-controls div.location-button-container button.main-location-btn:active,
 body div.submit-section div.submit-controls div.location-button-container button.section-btn:active,
 body div.submit-section div.submit-controls div.location-button-container button.sub-location-btn:active,
-body div.submit-section div.submit-controls div.location-button-container button.test-btn:active,
 body div.submit-section div.submit-controls div.location-button-container button.location2-btn:active {
   transform: translateY(-1px) !important;
   box-shadow: 0 4px 20px rgba(75, 108, 183, 0.3) !important;
