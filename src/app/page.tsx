@@ -1056,6 +1056,73 @@ export default function Home() {
       <div className="submit-section">
         <div className="submit-controls">
 
+          {/* Location Button with Dropdown */}
+          <div className="location-button-container">
+            <button 
+              className="location-btn location2-btn"
+              onClick={() => setShowLocationDropdown2(!showLocationDropdown2)}
+              style={{
+                background: 'linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%) !important',
+                color: 'white !important',
+                border: 'none !important',
+                padding: '18px 24px !important',
+                borderRadius: '12px !important',
+                fontSize: '16px !important',
+                fontWeight: '600 !important',
+                cursor: 'pointer !important',
+                transition: 'all 0.3s ease !important',
+                boxShadow: '0 4px 20px rgba(75, 108, 183, 0.3) !important',
+                display: 'flex !important',
+                alignItems: 'center !important',
+                justifyContent: 'space-between !important',
+                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif !important',
+                letterSpacing: '0.3px !important',
+                border: '1px solid rgba(255, 255, 255, 0.1) !important',
+                width: '300px !important',
+                height: '60px !important',
+                whiteSpace: 'nowrap !important',
+                overflow: 'hidden !important',
+                textOverflow: 'ellipsis !important'
+              }}
+            >
+              <div className="btn-content">
+                <i className="fas fa-map-marker-alt"></i>
+                <span>{selectedLocation2 || 'Location'}</span>
+              </div>
+              <i className={`fas fa-chevron-down ${showLocationDropdown2 ? 'rotate' : ''}`}></i>
+            </button>
+            
+            {showLocationDropdown2 && (
+              <div className="location-dropdown location2-dropdown" ref={locationDropdownRef2}>
+                <div className="location-search-container">
+                  <input
+                    type="text"
+                    placeholder="Search locations..."
+                    value={locationSearch2}
+                    onChange={(e) => setLocationSearch2(e.target.value)}
+                    className="location-search-input"
+                  />
+                </div>
+                <div className="location-options">
+                  {filteredLocations2.map(location2 => (
+                    <div 
+                      key={location2}
+                      className={`location-option ${selectedLocation2 === location2 ? 'selected' : ''}`}
+                      onClick={() => {
+                        setSelectedLocation2(location2);
+                        setShowLocationDropdown2(false);
+                        setLocationSearch2('');
+                      }}
+                    >
+                      <i className="fas fa-map-marker-alt"></i>
+                      <span>{location2}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Section Button with Dropdown */}
           <div className="location-button-container">
             <button 
@@ -1255,72 +1322,6 @@ export default function Home() {
                     >
                       <i className="fas fa-vial"></i>
                       <span>{testValue}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-           {/* Location Button with Dropdown */}
-          <div className="location-button-container">
-            <button 
-              className="location-btn location2-btn"
-              onClick={() => setShowLocationDropdown2(!showLocationDropdown2)}
-              style={{
-                background: 'linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%) !important',
-                color: 'white !important',
-                border: 'none !important',
-                padding: '18px 24px !important',
-                borderRadius: '12px !important',
-                fontSize: '16px !important',
-                fontWeight: '600 !important',
-                cursor: 'pointer !important',
-                transition: 'all 0.3s ease !important',
-                boxShadow: '0 4px 20px rgba(75, 108, 183, 0.3) !important',
-                display: 'flex !important',
-                alignItems: 'center !important',
-                justifyContent: 'space-between !important',
-                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif !important',
-                letterSpacing: '0.3px !important',
-                border: '1px solid rgba(255, 255, 255, 0.1) !important',
-                width: '300px !important',
-                height: '60px !important',
-                whiteSpace: 'nowrap !important',
-                overflow: 'hidden !important',
-                textOverflow: 'ellipsis !important'
-              }}
-            >
-              <div className="btn-content">
-                <i className="fas fa-map-marker-alt"></i>
-                <span>{selectedLocation2 || 'Location'}</span>
-              </div>
-              <i className={`fas fa-chevron-down ${showLocationDropdown2 ? 'rotate' : ''}`}></i>
-            </button>
-            
-            {showLocationDropdown2 && (
-              <div className="location-dropdown location2-dropdown" ref={locationDropdownRef2}>
-                <div className="location-search-container">
-                  <input
-                    type="text"
-                    placeholder="Search locations..."
-                    value={locationSearch2}
-                    onChange={(e) => setLocationSearch2(e.target.value)}
-                    className="location-search-input"
-                  />
-                </div>
-                <div className="location-options">
-                  {filteredLocations2.map(location2 => (
-                    <div 
-                      key={location2}
-                      className={`location-option ${selectedLocation2 === location2 ? 'selected' : ''}`}
-                      onClick={() => {
-                        setSelectedLocation2(location2);
-                        setShowLocationDropdown2(false);
-                        setLocationSearch2('');
-                      }}
-                    >
-                      <i className="fas fa-map-marker-alt"></i>
-                      <span>{location2}</span>
                     </div>
                   ))}
                 </div>
