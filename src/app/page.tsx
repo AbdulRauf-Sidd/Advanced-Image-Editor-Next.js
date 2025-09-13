@@ -11,7 +11,7 @@ export default function Home() {
   const [description, setDescription] = useState('');
   const [activeMode, setActiveMode] = useState<'none' | 'crop' | 'arrow' | 'circle' | 'square'>('none');
   const [showImageEditor, setShowImageEditor] = useState(false);
-  const [selectedInspectionId, setSelectedInspectionId] = useState<number | null>(null);
+  const [selectedInspectionId, setSelectedInspectionId] = useState<string>('');
   const [hasCropFrame, setHasCropFrame] = useState(false);
   const [showDrawingDropdown, setShowDrawingDropdown] = useState(false);
   const [showCircleDropdown, setShowCircleDropdown] = useState(false);
@@ -43,24 +43,49 @@ export default function Home() {
   const [editedFile, setEditedFile] = useState<File | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [inspections, setInspections] = useState<Inspection[]>([]);
+  const [newInspectionSubmitting, setNewInspectionSubmitting] = useState(false)
 
   // const router = useRouter();
   const setAnalysisData = useAnalysisStore(state => state.setAnalysisData);
 
-  // Sample inspection data
-  const inspections = [
-    { id: 1, inspectionName: "Kitchen Inspection", date: "2024-01-15", status: "Completed" as const },
-    { id: 2, inspectionName: "Bathroom Inspection", date: "2024-01-16", status: "In Progress" as const },
-    { id: 3, inspectionName: "Living Room Inspection", date: "2024-01-17", status: "Pending" as const },
-    { id: 4, inspectionName: "Bedroom Inspection", date: "2024-01-18", status: "Completed" as const },
-    { id: 5, inspectionName: "Basement Inspection", date: "2024-01-19", status: "Cancelled" as const },
-    { id: 6, inspectionName: "Attic Inspection", date: "2024-01-20", status: "Pending" as const },
-    { id: 7, inspectionName: "Garage Inspection", date: "2024-01-21", status: "In Progress" as const },
-    { id: 8, inspectionName: "Exterior Inspection", date: "2024-01-22", status: "Completed" as const },
-  ];
+  type Inspection = {
+  id: string;
+  inspectionName: string;
+  date: string;
+  status: "Completed" | "Pending" | "In Progress"; // restrict if you know statuses
+};
+
+
+  async function fetchInspections() {
+    try {
+      const res = await fetch("/api/inspections");
+      if (!res.ok) {
+        throw new Error("Failed to fetch inspections");
+      }
+      const data = await res.json();
+
+      // Map DB fields → UI-friendly fields
+      const mapped: Inspection[] = data.map((i: any) => ({
+        id: i._id, // MongoDB returns _id
+        inspectionName: i.name,
+        date: i.date,
+        status: i.status,
+      }));
+
+      setInspections(mapped);
+    } catch (err) {
+      console.error("Error fetching inspections:", err);
+    }
+  }
+
+  useEffect(() => {
+
+    fetchInspections();
+  }, []);
 
   // Handle row click to open ImageEditor
-  const handleRowClick = (id: number) => {
+  const handleRowClick = (id: string) => {
     setSelectedInspectionId(id);
     setShowImageEditor(true);
   };
@@ -68,7 +93,7 @@ export default function Home() {
   // Handle back to table
   const handleBackToTable = () => {
     setShowImageEditor(false);
-    setSelectedInspectionId(null);
+    setSelectedInspectionId('');
   };
 
   // Handle add inspection popup
@@ -77,22 +102,59 @@ export default function Home() {
   };
 
   // Handle save new inspection
-  const handleSaveInspection = () => {
+  const handleSaveInspection = async () => {
     if (newInspectionName.trim()) {
+      if (newInspectionSubmitting) {
+        return
+      } 
+        
+      setNewInspectionSubmitting(true)
+
       // Add new inspection to the list
-      const newInspection = {
-        id: inspections.length + 1,
-        inspectionName: newInspectionName.trim(),
-        date: new Date().toISOString().split('T')[0],
-        status: 'Pending' as const
-      };
+        const name = newInspectionName.trim();
+        const date = new Date().toISOString().split('T')[0];
+        const status = 'In progress'
       
       // In a real app, you would save this to a database
-      console.log('New inspection added:', newInspection);
+      // const id = createInspection(newInspection)
+      try {
+      const res = await fetch("/api/inspections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, status, date }),
+      });
+
+      if (!res.ok) {
+          // If the response status is not OK (e.g., 400, 500), log the status and response text
+          const errorText = await res.text();
+          console.error(
+            "Failed to create inspection. Status:",
+            res.status,
+            "Response:",
+            errorText
+          );
+          alert("Failed to create inspection. Check the console for details.");
+          setNewInspectionSubmitting(false)
+          return;
+        }
+      
+        const data = await res.json();
+        console.log("Inspection created successfully:", data);
+        console.log("Inspection created with id: " + data.id);
+        fetchInspections();
+      } catch (error) {
+        // Log any network or unexpected errors
+        console.error("Error creating inspection:", error);
+        alert("An error occurred. Check the console for details.");
+        setNewInspectionSubmitting(false)
+      }
+
+
       
       // Reset form and close popup
       setNewInspectionName('');
       setShowAddInspectionPopup(false);
+      setNewInspectionSubmitting(false);
       
       // You could also update the inspections array here if needed
       // setInspections([...inspections, newInspection]);
@@ -104,6 +166,11 @@ export default function Home() {
     setNewInspectionName('');
     setShowAddInspectionPopup(false);
   };
+
+  const handleDocumentClick = async (id: string) => {
+    console.log("Document action for inspection:", id);
+    router.push(`/inspection_report/${id}`);
+  }
 
 
   // Section data (sorted alphabetically)
@@ -471,6 +538,7 @@ export default function Home() {
     console.log('Selected Sub-Section:', selectedSubLocation);
     console.log('Selected Location:', selectedLocation2);
     console.log('Description:', description);
+    console.log('Inspection ID', selectedInspectionId)
     console.log('=======================');
     
     // Validate inputs
@@ -500,11 +568,13 @@ export default function Home() {
       // ✅ Prepare FormData instead of JSON
         const formData = new FormData();
         formData.append('image', editedFile); // "image" will be req.formData().get("image")
-        formData.append('description', `${description} | Section: ${selectedLocation} - ${selectedSubLocation} | Location: ${selectedLocation2}`);
-        formData.append('location', selectedLocation);
-        formData.append('location2', selectedLocation2);
+        formData.append('imageFile', editedFile); // "image" will be req.formData().get("image")
+        formData.append('description', `${description}`)
+        formData.append('section', selectedLocation);
+        formData.append('location', selectedLocation2);
+        formData.append('inspection_id', selectedInspectionId);
         if (selectedSubLocation) {
-          formData.append('subLocation', selectedSubLocation);
+          formData.append('sub_section', selectedSubLocation);
         }
     
       // ✅ Send to API endpoint as multipart/form-data
@@ -526,9 +596,13 @@ export default function Home() {
       
       // ✅ Store all data in global state
       setAnalysisData({
+        inspectionId: selectedInspectionId,
+        imageFile: editedFile,
         image: imageDataUrl, // Store as data URL
         description,
-        location: `${selectedLocation} - ${selectedSubLocation} | ${selectedLocation2}`,
+        location: selectedLocation2,
+        section: selectedLocation,
+        subSection: selectedSubLocation,
         analysisResult: result
       });
       
@@ -699,17 +773,8 @@ export default function Home() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleRowClick(inspection.id);
-                          }}
-                          className="action-btn-small edit-btn"
-                          title="Edit Inspection"
-                        >
-                          <i className="fas fa-pencil-alt"></i>
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            console.log("Document action for inspection:", inspection.id);
+                            handleDocumentClick(inspection.id);
+                            
                           }}
                           className="action-btn-small document-btn"
                           title="View Document"
@@ -1045,7 +1110,6 @@ export default function Home() {
               style={{
                 background: 'linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%) !important',
                 color: 'white !important',
-                border: 'none !important',
                 padding: '18px 24px !important',
                 borderRadius: '12px !important',
                 fontSize: '16px !important',
@@ -1112,7 +1176,6 @@ export default function Home() {
               style={{
                 background: 'linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%) !important',
                 color: 'white !important',
-                border: 'none !important',
                 padding: '18px 24px !important',
                 borderRadius: '12px !important',
                 fontSize: '16px !important',
@@ -1183,7 +1246,6 @@ export default function Home() {
               style={{
                 background: 'linear-gradient(135deg, rgb(75, 108, 183) 0%, rgb(106, 17, 203) 100%) !important',
                 color: 'white !important',
-                border: 'none !important',
                 padding: '18px 24px !important',
                 borderRadius: '12px !important',
                 fontSize: '16px !important',

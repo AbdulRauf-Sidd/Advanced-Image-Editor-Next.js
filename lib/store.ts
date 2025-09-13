@@ -1,15 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { CostItem } from '@/types/llm';
 
-interface AnalysisData {
-  image: File | string | null;
-  description: string;
-  location: string;
-  analysisResult: any | null;
-  timestamp: number;
-  // estimated_costs: CostItem[];
-}
+  interface AnalysisData {
+    inspectionId: string;
+    imageFile: File;
+    image: File | string | null;
+    description: string;
+    location: string;
+    section: string;
+    subSection: string;
+    analysisResult: any;
+    timestamp: number;
+    // estimated_costs: CostItem[];
+  }
 
 interface AnalysisState {
   analysisData: AnalysisData | null;

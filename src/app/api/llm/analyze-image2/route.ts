@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { inspect } from 'util';
+
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
@@ -25,11 +27,13 @@ interface AnalysisResult {
 export async function POST(request: NextRequest) {
   try {
     // 👇 Detect whether the request is JSON or FormData
+    let inspetctionId: string | undefined;
     let imageUrl: string | undefined;
     let description: string | undefined;
     let location: string | undefined;
     let file: File | null = null;
-    let version: string | undefined;
+    let section: string | undefined;
+    let subSection: string | undefined;
 
 
     const contentType = request.headers.get('content-type') || '';
@@ -37,18 +41,21 @@ export async function POST(request: NextRequest) {
     if (contentType.includes('application/json')) {
       // Case 1: Hosted image URL
       const body = await request.json();
+      inspetctionId = body.inspection_id
       imageUrl = body.imageUrl;
       description = body.description;
       location = body.location;
-      version = body.version;
+      section = body.section
+      subSection = body.sub_section
     } else if (contentType.includes('multipart/form-data')) {
       // Case 2: Uploaded image file
       const form = await request.formData();
       file = form.get('image') as File | null;
+      inspetctionId = form.get('inspection_id') as string | undefined
       description = form.get('description') as string | undefined;
-      imageUrl = form.get('imageUrl') as string | undefined; // optional if both supported
       location = form.get('location') as string | undefined;
-      version = form.get('version') as string | undefined;
+      section = form.get('section') as string | undefined;
+      subSection = form.get('sub_section') as string | undefined;
     } else {
       return NextResponse.json<ErrorResponse>({
         error: 'Unsupported content type',
@@ -82,21 +89,8 @@ export async function POST(request: NextRequest) {
     let assistant_ids: string | undefined;
     
     // let assistant_id = process.env.OPENAI_ASSISTANT_ID;
-    if (version === 'V2') {
-      assistant_ids = process.env.OPENAI_ASSISTANT_ID2; // Example for version 2
-    } else if (version === 'V3') {
-      assistant_ids = process.env.OPENAI_ASSISTANT_ID3;
-    } else if (version === 'V4') {
-      assistant_ids = process.env.OPENAI_ASSISTANT_ID4; // Replace with actual version 4 assistant ID   
-    } else if (version === 'V5') {
-      assistant_ids = process.env.OPENAI_ASSISTANT_ID5; // Replace with actual version 5 assistant ID   
-    } else if (version === 'V6') {
-      assistant_ids = process.env.OPENAI_ASSISTANT_ID6; // Replace with actual version 6 assistant ID
-    } else {
-      assistant_ids = process.env.OPENAI_ASSISTANT_ID; // Default to version 1
-    }
-
- 
+    
+    assistant_ids = process.env.OPENAI_ASSISTANT_ID; // Default to version 1
     
     const thread = await openai.beta.threads.create();
     // ✅ Build message content

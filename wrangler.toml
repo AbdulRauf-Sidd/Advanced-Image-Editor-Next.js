@@ -1,0 +1,7 @@
+name = "my-nextjs-app"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "MY_KV"
+id = "bbf7fbc9124141d9b91ae1d351b967de"  # Get this from Cloudflare dashboard
+preview_id = "your-preview-id"  # For development
