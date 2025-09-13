@@ -14,6 +14,7 @@ interface AnalysisData {
 interface AnalysisState {
   analysisData: AnalysisData | null;
   setAnalysisData: (data: Omit<AnalysisData, 'timestamp'>) => void;
+  updateAnalysisData: (data: AnalysisData) => void;
   clearAnalysisData: () => void;
 }
 
@@ -45,6 +46,7 @@ export const useAnalysisStore = create<AnalysisState>()(
           });
         }
       },
+      updateAnalysisData: (data) => set({ analysisData: data }),
       clearAnalysisData: () => set({ analysisData: null }),
     }),
     {

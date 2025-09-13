@@ -336,6 +336,127 @@
   border-color: #6b7280;
 }
 
+.editButton {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: 2px solid transparent;
+}
+
+.editButton:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border-color: #3b82f6;
+}
+
+.saveButton {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: 2px solid transparent;
+}
+
+.saveButton:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  border-color: #10b981;
+}
+
+.cancelButton {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: 2px solid transparent;
+}
+
+.cancelButton:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  border-color: #ef4444;
+}
+
+.saveReportButton {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border: 2px solid transparent;
+}
+
+.saveReportButton:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  border-color: #8b5cf6;
+}
+
+/* Editable Elements Styles */
+.editableText {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+  resize: vertical;
+  background: white;
+  transition: border-color 0.3s ease;
+}
+
+.editableText:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.editableInput {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: white;
+  transition: border-color 0.3s ease;
+}
+
+.editableInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.editableCosts {
+  margin: 20px 0;
+}
+
+.costEditRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.costEditRow:last-child {
+  margin-bottom: 0;
+}
+
+.costEditRow label {
+  min-width: 120px;
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+}
+
+.costInput {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: white;
+  transition: border-color 0.3s ease;
+}
+
+.costInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
 
 
 /* Responsive Design */
@@ -462,6 +583,31 @@
   
   .imagePlaceholder {
     height: 250px;
+  }
+  
+  /* Mobile responsive for editable elements */
+  .costEditRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  
+  .costEditRow label {
+    min-width: auto;
+    margin-bottom: 4px;
+  }
+  
+  .costInput {
+    width: 100%;
+  }
+  
+  .editableText {
+    min-height: 80px;
+    font-size: 13px;
+  }
+  
+  .editableInput {
+    font-size: 13px;
   }
   
 }

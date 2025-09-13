@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAnalysisStore } from '@/lib/store';
 import { CostItem } from '@/types/llm';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import styles from './user-report.module.css';
 
 
@@ -28,11 +26,35 @@ interface ReportSection {
 export default function UserReport() {
   const router = useRouter();
   const [currentDate, setCurrentDate] = useState('');
-  const { analysisData } = useAnalysisStore();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedData, setEditedData] = useState({
+    defect: '',
+    location: '',
+    materials: '',
+    labor: '',
+    estimatedTime: '',
+    totalLaborCost: '',
+    recommendation: '',
+    totalEstimatedCost: ''
+  });
+  const { analysisData, updateAnalysisData } = useAnalysisStore();
 
   useEffect(() => {
     if (!analysisData) {
       router.push('/');
+    } else {
+      // Initialize edited data with current analysis data
+      const { analysisResult } = analysisData;
+      setEditedData({
+        defect: analysisResult?.defect || '',
+        location: analysisData.location || '',
+        materials: analysisResult?.materials_names ? `${analysisResult.materials_names}: $${analysisResult.materials_total_cost || '0'}` : '',
+        labor: analysisResult?.labor_type || '',
+        estimatedTime: analysisResult?.hours_required ? `${analysisResult.hours_required} hour(s)` : '',
+        totalLaborCost: analysisResult?.labor_rate ? `$${analysisResult.labor_rate} per hour` : '',
+        recommendation: analysisResult?.recommendation || '',
+        totalEstimatedCost: analysisResult?.total_estimated_cost ? `$${analysisResult.total_estimated_cost}` : ''
+      });
     }
   }, [analysisData, router]);
 
@@ -44,6 +66,65 @@ export default function UserReport() {
       day: 'numeric'
     }));
   }, []);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleSave = () => {
+    // Update the analysis data with edited values
+    if (analysisData) {
+      const updatedAnalysisData = {
+        ...analysisData,
+        location: editedData.location,
+        analysisResult: {
+          ...analysisData.analysisResult,
+          defect: editedData.defect,
+          recommendation: editedData.recommendation,
+          materials_names: editedData.materials.split(':')[0] || '',
+          materials_total_cost: editedData.materials.split('$')[1] || '0',
+          labor_type: editedData.labor,
+          hours_required: editedData.estimatedTime.split(' ')[0] || '0',
+          labor_rate: editedData.totalLaborCost.split('$')[1]?.split(' ')[0] || '0',
+          total_estimated_cost: editedData.totalEstimatedCost.split('$')[1] || '0'
+        }
+      };
+      updateAnalysisData(updatedAnalysisData);
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    // Reset edited data to original values
+    if (analysisData) {
+      const { analysisResult } = analysisData;
+      setEditedData({
+        defect: analysisResult?.defect || '',
+        location: analysisData.location || '',
+        materials: analysisResult?.materials_names ? `${analysisResult.materials_names}: $${analysisResult.materials_total_cost || '0'}` : '',
+        labor: analysisResult?.labor_type || '',
+        estimatedTime: analysisResult?.hours_required ? `${analysisResult.hours_required} hour(s)` : '',
+        totalLaborCost: analysisResult?.labor_rate ? `$${analysisResult.labor_rate} per hour` : '',
+        recommendation: analysisResult?.recommendation || '',
+        totalEstimatedCost: analysisResult?.total_estimated_cost ? `$${analysisResult.total_estimated_cost}` : ''
+      });
+    }
+    setIsEditing(false);
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setEditedData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSaveReport = () => {
+    console.log('Save Report clicked!');
+    console.log('Current analysis data:', analysisData);
+    console.log('Edited data:', editedData);
+    console.log('Report saved successfully!');
+  };
 
   if (!analysisData) {
     return (
@@ -59,91 +140,21 @@ export default function UserReport() {
   const reportSections: ReportSection[] = [
     {
       id: 1,
-      heading: analysisResult?.defect || "Property Analysis",
+      heading: isEditing ? editedData.defect || "Property Analysis" : (analysisResult?.defect || "Property Analysis"),
       image: image,
-      defect: analysisResult?.defect || description || "No defect information available",
-      location: location || "Location not specified",
+      defect: isEditing ? editedData.defect : (analysisResult?.defect || description || "No defect information available"),
+      location: isEditing ? editedData.location : (location || "Location not specified"),
       estimatedCosts: {
-        materials: analysisResult?.materials_names ? `${analysisResult.materials_names}: $${analysisResult.materials_total_cost || '0'}` : "Materials not specified",
-        labor: analysisResult?.labor_type || "Labor services not specified",
-        estimatedTime: analysisResult?.hours_required ? `${analysisResult.hours_required} hour(s)` : "Time not specified",
-        totalLaborCost: analysisResult?.labor_rate ? `$${analysisResult.labor_rate} per hour` : "Rate not specified",
-        recommendation: analysisResult?.recommendation || "No specific recommendations available",
-        totalEstimatedCost: analysisResult?.total_estimated_cost ? `$${analysisResult.total_estimated_cost}` : "Cost not calculated"
+        materials: isEditing ? editedData.materials : (analysisResult?.materials_names ? `${analysisResult.materials_names}: $${analysisResult.materials_total_cost || '0'}` : "Materials not specified"),
+        labor: isEditing ? editedData.labor : (analysisResult?.labor_type || "Labor services not specified"),
+        estimatedTime: isEditing ? editedData.estimatedTime : (analysisResult?.hours_required ? `${analysisResult.hours_required} hour(s)` : "Time not specified"),
+        totalLaborCost: isEditing ? editedData.totalLaborCost : (analysisResult?.labor_rate ? `$${analysisResult.labor_rate} per hour` : "Rate not specified"),
+        recommendation: isEditing ? editedData.recommendation : (analysisResult?.recommendation || "No specific recommendations available"),
+        totalEstimatedCost: isEditing ? editedData.totalEstimatedCost : (analysisResult?.total_estimated_cost ? `$${analysisResult.total_estimated_cost}` : "Cost not calculated")
       }
     }
   ];
 
-  const generatePDF = async () => {
-    try {
-      // Get the report section element
-      const reportElement = document.querySelector(`.${styles.reportSection}`);
-      
-      if (!reportElement) {
-        alert("Report content not found. Please try again.");
-        return;
-      }
-
-      // Show loading state
-      const button = document.querySelector(`.${styles.primaryButton}`) as HTMLButtonElement;
-      const originalText = button.innerHTML;
-      button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generating PDF...';
-      button.disabled = true;
-
-      // Create canvas from the report element
-      const canvas = await html2canvas(reportElement as HTMLElement, {
-        scale: 2, // Higher quality
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        width: reportElement.scrollWidth,
-        height: reportElement.scrollHeight,
-      });
-
-      // Create PDF
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      // Calculate dimensions to fit the content
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 295; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      // Add first page
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      // Add additional pages if content is longer than one page
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-
-      // Save the PDF
-      const fileName = `Property_Report_${new Date().toISOString().split('T')[0]}.pdf`;
-      pdf.save(fileName);
-
-      // Reset button state
-      button.innerHTML = originalText;
-      button.disabled = false;
-
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert("Error generating PDF. Please try again.");
-      
-      // Reset button state
-      const button = document.querySelector(`.${styles.primaryButton}`) as HTMLButtonElement;
-      button.innerHTML = '<i class="fas fa-file-pdf mr-2"></i>Generate PDF Report';
-      button.disabled = false;
-    }
-  };
 
   return (
     <div className={styles.userReportContainer}>
@@ -200,9 +211,18 @@ export default function UserReport() {
                         <i className="fas fa-exclamation-triangle"></i>
                         Defect
                       </h4>
+                      {isEditing ? (
+                        <textarea
+                          className={styles.editableText}
+                          value={editedData.defect}
+                          onChange={(e) => handleInputChange('defect', e.target.value)}
+                          placeholder="Enter defect description..."
+                        />
+                      ) : (
                       <p className={styles.sectionContent}>
                         {section.defect}
                       </p>
+                      )}
                     </div>
 
                     {/* Location Section */}
@@ -211,9 +231,19 @@ export default function UserReport() {
                         <i className="fas fa-map-marker-alt"></i>
                         Location
                       </h4>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          className={styles.editableInput}
+                          value={editedData.location}
+                          onChange={(e) => handleInputChange('location', e.target.value)}
+                          placeholder="Enter location..."
+                        />
+                      ) : (
                       <p className={styles.sectionContent}>
                         {section.location}
                       </p>
+                      )}
                     </div>
 
                     {/* Estimated Costs Section */}
@@ -223,7 +253,72 @@ export default function UserReport() {
                         Estimated Costs
                       </h4>
                       <div className={styles.sectionContent}>
+                        {isEditing ? (
+                          <div className={styles.editableCosts}>
+                            <div className={styles.costEditRow}>
+                              <label>Materials:</label>
+                              <input
+                                type="text"
+                                className={styles.costInput}
+                                value={editedData.materials}
+                                onChange={(e) => handleInputChange('materials', e.target.value)}
+                                placeholder="e.g., Wood trim, finishing nails: $45"
+                              />
+                            </div>
+                            <div className={styles.costEditRow}>
+                              <label>Labor:</label>
+                              <input
+                                type="text"
+                                className={styles.costInput}
+                                value={editedData.labor}
+                                onChange={(e) => handleInputChange('labor', e.target.value)}
+                                placeholder="e.g., Carpentry"
+                              />
+                            </div>
+                            <div className={styles.costEditRow}>
+                              <label>Estimated Time:</label>
+                              <input
+                                type="text"
+                                className={styles.costInput}
+                                value={editedData.estimatedTime}
+                                onChange={(e) => handleInputChange('estimatedTime', e.target.value)}
+                                placeholder="e.g., 1 hour(s)"
+                              />
+                            </div>
+                            <div className={styles.costEditRow}>
+                              <label>Total Labor Cost:</label>
+                              <input
+                                type="text"
+                                className={styles.costInput}
+                                value={editedData.totalLaborCost}
+                                onChange={(e) => handleInputChange('totalLaborCost', e.target.value)}
+                                placeholder="e.g., $60 per hour"
+                              />
+                            </div>
+                            <div className={styles.costEditRow}>
+                              <label>Recommendation:</label>
+                              <textarea
+                                className={styles.editableText}
+                                value={editedData.recommendation}
+                                onChange={(e) => handleInputChange('recommendation', e.target.value)}
+                                placeholder="Enter recommendation..."
+                                rows={3}
+                              />
+                            </div>
+                            <div className={styles.costEditRow}>
+                              <label>Total Estimated Cost:</label>
+                              <input
+                                type="text"
+                                className={styles.costInput}
+                                value={editedData.totalEstimatedCost}
+                                onChange={(e) => handleInputChange('totalEstimatedCost', e.target.value)}
+                                placeholder="e.g., $105"
+                              />
+                            </div>
+                          </div>
+                        ) : (
                         <p><strong>Materials:</strong> {section.estimatedCosts.materials}, <strong>Labor:</strong> {section.estimatedCosts.labor}, <strong>Estimated Time:</strong> {section.estimatedCosts.estimatedTime}, <strong>Total Labor Cost:</strong> {section.estimatedCosts.totalLaborCost}, <strong>Recommendation:</strong> {section.estimatedCosts.recommendation}, <strong>Total Estimated Cost:</strong> {section.estimatedCosts.totalEstimatedCost}.</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -242,12 +337,40 @@ export default function UserReport() {
             <i className="fas fa-arrow-left mr-2"></i>
             Back
           </button>
+          
+          {!isEditing ? (
+            <button 
+              onClick={handleEdit}
+              className={`${styles.actionButton} ${styles.editButton}`}
+            >
+              <i className="fas fa-edit mr-2"></i>
+              Edit
+            </button>
+          ) : (
+            <>
+              <button 
+                onClick={handleCancel}
+                className={`${styles.actionButton} ${styles.cancelButton}`}
+              >
+                <i className="fas fa-times mr-2"></i>
+                Cancel
+              </button>
+              <button 
+                onClick={handleSave}
+                className={`${styles.actionButton} ${styles.saveButton}`}
+              >
+                <i className="fas fa-save mr-2"></i>
+                Save
+              </button>
+            </>
+          )}
+          
           <button 
-            onClick={generatePDF}
-            className={`${styles.actionButton} ${styles.primaryButton}`}
+            onClick={handleSaveReport}
+            className={`${styles.actionButton} ${styles.saveReportButton}`}
           >
-            <i className="fas fa-file-pdf mr-2"></i>
-            Generate PDF Report
+            <i className="fas fa-save mr-2"></i>
+            Save Report
           </button>
         </div>
       </main>
