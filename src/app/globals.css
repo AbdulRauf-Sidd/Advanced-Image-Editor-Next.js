@@ -5,6 +5,13 @@
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css');
 @import url('../../table-styles.css');
 
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2ecc71;
+  --text-color: #333;
+  --background-color: #f9f9f9;
+}
+
 * {
   margin: 0;
   padding: 0;
