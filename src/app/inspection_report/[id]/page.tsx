@@ -132,18 +132,100 @@ export default function InspectionReportPage() {
                     <h2 className={styles.sectionHeadingTextStart}>Section 1 - Inspection Scope, Client Responsibilities, and Repair Estimates</h2>
                   </div>
                   <div className={styles.contentGridStart}>
-                    <div className={styles.descriptionSectionStart}>
-                      This is a "VISUAL" inspection only. In addition, the scope of this inspection is to verify the proper performance of the home's major systems. We do not verify proper design. The following items reflect the condition of the home and its systems at the time and date the inspection was performed. Conditions of an occupied home (and its systems) can and do change after the inspection is performed (ex: leaks can occur beneath sinks, the water may run at toilets, the walls, doors, and flooring may be damaged during moving, the kitchen sink disposal may get jammed, the dishwasher may leak, etc.).
-                      The furnishings, personal items, and/or systems of the home are not dismantled or moved. A 3-4 hour inspection is not equal to "live-in exposure" and will not discover all concerns with the home. Unless stated in writing, we will only inspect/comment on the following systems: Electrical, Heating/cooling, Appliances, Plumbing, Roof and Attic, Exterior, Grounds, and the Foundation. NOTE: This inspection is not a warranty or insurance policy. The limit of liability of AGI Property Inspections and its employees, officers, etc., does not extend beyond the day the inspection was performed.
-                      Cosmetic items (i.e. peeling/falling wallpaper, scuffs on the walls, floor coverings, nail holes, normal wear and tear that is common in an occupied home, etc.) are not a part of this inspection. In addition, we do not inspect for fungi, rodents, or insects of any type. If we note any of these items in the report, it is done so to bring attention to the issue so you can have the proper contractor evaluate those things further. 
-                      Although every effort is made to inspect/access all systems, it is not possible to describe every defect within the home. Various areas of the home may be inaccessible or not visible due to design, present a hazard to the inspector, furniture and/or storage. As a result, the home should be carefully reviewed during your final walk-thru, as the home should be vacant and clear of obstruction. This is your opportunity to ensure that no new concerns have occurred since the date of this inspection, that all requested repairs have been completed, and to verify that all systems are in proper, working condition (i.e. the plumbing system, appliances, electrical system, heating/cooling systems, etc.). NOTE: Please contact the office immediately if you suspect or discover any concerns during the final walk-thru (337-905-1428). Finally, since the report is digital, sometimes things can get unchecked or left off of the report. The inspector reserves the right to add or alter and update this report for you to include things that should be in the report after its initial delivery to the client.
-                      This report may also include repair recommendations and estimated costs provided as an additional tool to help clients understand potential expenses and assist with negotiations. These estimates are based on typical labor and material rates in our region but are generated from a two-dimensional image review using AI. They are for reference purposes only and should be considered approximate. They are not formal quotes, do not account for unique site conditions, and may vary depending on the contractor, materials, and methods chosen. Final repair pricing must always be obtained through qualified, licensed contractors who perform an on-site evaluation. AGI Property Inspections does not guarantee the accuracy of estimates or assume responsibility for the quality, scope, or cost of work performed by outside contractors.
-                      It is not our position to provide methods of correction for any of the noted items. Should a repair method be provided, correction of the condition is not guaranteed. We recommend methods of correction, estimates, and repairs are performed by qualified, licensed contractors or specialty tradespeople that you personally contact to ensure the concerns you have negotiated are properly reviewed and corrected. Please note that in listing a possible method of correction, the inspector is not offering any opinion as to who, among the parties to your transaction, should take responsibility for addressing any of these concerns. It is recommended that you consult with your Real Estate Professional, Attorney, and/or Contractor for further advice with regard to any of the items/concerns listed in this report.
-                      Although this report may identify products involved in class action lawsuits and/or recalled by the product’s manufacturer, this report will/may not identify ALL products. NOTE: There are numerous products involved in manufacturer recalls and/or class action lawsuits. Identifying products involved in manufacturer recalls or a class action lawsuit is NOT a requirement for Louisiana licensed Home Inspectors. You should seek the service of a qualified consulting company experienced in identifying manufacturer recalls and/or products involved in class action lawsuits.
-                      This inspection complies with the code of ethics and standards of practice as required by The State of Louisiana Home Inspectors Licensing Board. Home inspectors are generalists who report on readily visible issues/concerns with a home. Inspectors do not provide methods or estimates of repairs and because inspectors are generalists, it is their duty to recommend further review by a licensed specialist, contractors, etc., to allow you the opportunity to get a detailed review of any item(s) noted in this report that you deem to be a concern.
-                      This inspection report and all information contained within is the sole property of AGI Property Inspections and leased to the clients named in this report and is not to be shared/passed on without the AGI’s consent. Doing so may result in legal action.
+                    <div className={styles.contentGridStart}>
+                      <div className={styles.descriptionSectionStart}>
+                        <p>
+                          This is a <strong>visual inspection only</strong>. The scope of this
+                          inspection is to verify the proper performance of the home's major
+                          systems. We do not verify proper design.
+                        </p>
 
+                        <p>
+                          The following items reflect the condition of the home and its systems
+                          <strong> at the time and date the inspection was performed</strong>.
+                          Conditions of an occupied home can change after the inspection (e.g.,
+                          leaks may occur beneath sinks, water may run at toilets, walls or flooring
+                          may be damaged during moving, appliances may fail, etc.).
+                        </p>
+                          
+                        <p>
+                          Furnishings, personal items, and/or systems of the home are not dismantled
+                          or moved. A 3–4 hour inspection is not equal to "live-in exposure" and
+                          will not discover all concerns. Unless otherwise stated, we will only
+                          inspect/comment on the following systems:
+                          <em>
+                            Electrical, Heating/Cooling, Appliances, Plumbing, Roof and Attic,
+                            Exterior, Grounds, and the Foundation
+                          </em>
+                          .
+                        </p>
+                          
+                        <p className={styles.note}>
+                          <strong>NOTE:</strong> This inspection is not a warranty or insurance
+                          policy. The limit of liability of AGI Property Inspections and its
+                          employees does not extend beyond the day the inspection was performed.
+                        </p>
+                          
+                        <p>
+                          Cosmetic items (e.g., peeling wallpaper, wall scuffs, nail holes, normal
+                          wear and tear, etc.) are not part of this inspection. We also do not
+                          inspect for fungi, rodents, or insects. If such issues are noted, it is
+                          only to bring them to your attention so you can have the proper contractor
+                          evaluate further.
+                        </p>
+                          
+                        <p>
+                          Although every effort is made to inspect all systems, not every defect can
+                          be identified. Some areas may be inaccessible or hazardous. The home
+                          should be carefully reviewed during your final walk-through to ensure no
+                          new concerns have occurred and that requested repairs have been completed.
+                        </p>
+                          
+                        <p className={styles.note}>
+                          <strong>IMPORTANT:</strong> Please contact our office immediately at{" "}
+                          <a href="tel:3379051428">337-905-1428</a> if you suspect or discover any
+                          concerns during the final walk-through.
+                        </p>
+                          
+                        <p>
+                          Repair recommendations and cost estimates included in this report are{" "}
+                          <strong>approximate</strong>, generated from typical labor and material
+                          rates in our region. They are not formal quotes and must always be
+                          verified by licensed contractors. AGI Property Inspections does not
+                          guarantee their accuracy.
+                        </p>
+                          
+                        <p>
+                          We do not provide guaranteed repair methods. Any corrections should be
+                          performed by qualified, licensed contractors. Consult your Real Estate
+                          Professional, Attorney, or Contractor for further advice regarding
+                          responsibility for these repairs.
+                        </p>
+                          
+                        <p>
+                          While this report may identify products involved in recalls or lawsuits,
+                          it is not comprehensive. Identifying all recalled products is not a
+                          requirement for Louisiana licensed Home Inspectors.
+                        </p>
+                          
+                        <p>
+                          This inspection complies with the standards of practice of the{" "}
+                          <strong>
+                            State of Louisiana Home Inspectors Licensing Board
+                          </strong>
+                          . Home inspectors are generalists and recommend further review by licensed
+                          specialists when needed.
+                        </p>
+                          
+                        <p className={styles.disclaimer}>
+                          This inspection report and all information contained within is the sole
+                          property of AGI Property Inspections and is leased to the clients named in
+                          this report. It may not be shared or passed on without AGI’s consent.{" "}
+                          <em>Doing so may result in legal action.</em>
+                        </p>
+                      </div>
                     </div>
+
 
                   </div>
                   <br></br><br></br>
@@ -153,39 +235,132 @@ export default function InspectionReportPage() {
                   </div>
                   <div className={styles.contentGridStart}>
                     <div className={styles.descriptionSectionStart}>
-                      <strong>Inspection Categories & Summary</strong>
-                      <strong>Immediate Attention</strong>
-                      Major Defects: Issues that compromise the home’s structural integrity, may result in additional damage if not repaired, or is considered a safety hazard. These items are color-coded red in the report and should be corrected as soon as possible.
-                      Items for Repair
-                      Defects: Items in need of repair or correction, such as plumbing or electrical concerns, items that are damaged, inoperable, or improperly installed. These are color-coded orange in the report and have no real timeline on when they should be repaired.
-                      Maintenance Items
-                      Small DIY-type repairs and maintenance recommendations that are provided to knowledge about the long-term care and maintenance of the home. While not urgent, keeping up with these items will significantly reduce your future repair needs and costs.
-
-                      Important Information & Limitations
-                      AGI Property Inspections performs all inspections in compliance with the Louisiana Standards of Practice. We inspect readily accessible, visually observable, permanently installed systems and components of the home as outlined by these Standards. This inspection is not technically exhaustive or quantitative.
-                      Some comments in this report may go beyond what the Standards require, as those standards are the minimum set requirements. Going beyond them for our clients are done so as a courtesy to provide you with as much information as possible. Any item noted for repair, replacement, maintenance, or further evaluation, should be reviewed by qualified, licensed tradespeople.
-                      This inspection cannot predict future conditions or reveal hidden or latent defects. The report reflects the home’s condition at the time of inspection only. Weather changes, occupancy, or use may reveal issues not present during the inspection. Refer to the Louisiana Standards of Practice and your Inspection Agreement for full details on scope and limitations.
-                      This report should be considered alongside the seller’s disclosure, pest inspection report, and evaluations by licensed contractors to gain a complete picture of the home’s condition. All real estate purchases involve some level of risk, and unexpected repairs should be anticipated as part of homeownership.
-
-                      Repair Estimates Disclaimer
-                      This report may also include repair recommendations and estimated costs to assist our clients with budgeting and negotiations. These estimates are based on typical labor and material rates in our region, but are generated from a two-dimensional image review, using AI. They are for general reference purposes only and should be considered approximate.
-                      Estimates are not formal quotes.
-                      They do not account for unique site conditions and may vary depending on the contractor, materials, and methods chosen.
-                      Final pricing must always be obtained through qualified, licensed contractors who perform an on-site evaluation.
-                      AGI Property Inspections does not guarantee the accuracy of estimates or assume responsibility for the quality, scope, or cost of work performed by outside contractors.
-
-                      Recommendations
-                      Contractors / Further Evaluation: Repairs noted in this report should be performed by licensed professionals. Keep receipts for warranty and documentation purposes. “Qualified Contractor” refers to an individual or company who is licensed or certified in the relevant field.
-                      Causes of Damage / Methods of Repair: Any causes or repair methods suggested in this report are based on the inspector’s experience and opinion. Final determination of cause and repair approach should always be made by licensed contractors, who specialize in the relevant field, whose evaluation supersedes the information provided here.
-
-                      Excluded Items
-                      The following are not included in this inspection: septic systems, security systems, irrigation systems, pools, hot tubs, wells, sheds, playgrounds, saunas, outdoor lighting, central vacuums, water filters, water softeners, sound or intercom systems, generators, sport courts, sea walls, outbuildings, operating skylights, operating awnings, exterior BBQ grills, and firepits.
-
-                      Occupied Home Disclaimer
-                      If this home was occupied at the time of inspection; furniture, personal belongings, limited visibility and access to certain areas, including receptacles, windows, walls, floors, countertops, and more are not moved. Every effort was made to inspect all accessible areas; however, some conditions may not have been visible.
-                      We recommend using your final walkthrough to verify that no issues were missed due to inaccessibility and that the property remains in the same condition as at the time of inspection.
-
+                      {/* Categories */}
+                      <h3>Inspection Categories & Summary</h3>
+                                              
+                      <h4 className={styles.immediateAttention}>Immediate Attention</h4>
+                      <p>
+                        <strong>Major Defects:</strong> Issues that compromise the home’s structural
+                        integrity, may result in additional damage if not repaired, or are
+                        considered a safety hazard. These items are color-coded{" "}
+                        <span className={styles.red}>red</span> in the report and should be corrected
+                        as soon as possible.
+                      </p>
+                                              
+                      <h4 className={styles.itemsForRepair}>Items for Repair</h4>
+                      <p>
+                        <strong>Defects:</strong> Items in need of repair or correction, such as
+                        plumbing or electrical concerns, damaged or improperly installed components,
+                        etc. These are color-coded <span className={styles.orange}>orange</span> in
+                        the report and have no strict repair timeline.
+                      </p>
+                                              
+                      <h4 className={styles.maintenanceItems}>Maintenance Items</h4>
+                      <p>
+                        Small DIY-type repairs and maintenance recommendations provided to increase
+                        knowledge of long-term care. While not urgent, addressing these will reduce
+                        future repair needs and costs.
+                      </p>
+                                              
+                      <hr />
+                                              
+                      {/* Limitations */}
+                      <h3>Important Information & Limitations</h3>
+                      <p>
+                        AGI Property Inspections performs all inspections in compliance with the{" "}
+                        <strong>Louisiana Standards of Practice</strong>. We inspect readily
+                        accessible, visually observable, permanently installed systems and
+                        components of the home. This inspection is not technically exhaustive or
+                        quantitative.
+                      </p>
+                      <p>
+                        Some comments may go beyond the minimum Standards as a courtesy to provide
+                        additional detail. Any item noted for repair, replacement, maintenance, or
+                        further evaluation should be reviewed by qualified, licensed tradespeople.
+                      </p>
+                      <p>
+                        This inspection cannot predict future conditions or reveal hidden or latent
+                        defects. The report reflects the home’s condition only at the time of
+                        inspection. Weather, occupancy, or use may reveal issues not present at the
+                        time.
+                      </p>
+                      <p>
+                        This report should be considered alongside the{" "}
+                        <strong>seller’s disclosure, pest inspection report, and contractor
+                        evaluations</strong> for a complete picture of the home’s condition.
+                      </p>
+                                              
+                      <hr />
+                                              
+                      {/* Repair Disclaimer */}
+                      <h3>Repair Estimates Disclaimer</h3>
+                      <p>
+                        This report may include repair recommendations and estimated costs. These
+                        are based on typical labor and material rates in our region, generated from
+                        AI image review. They are approximate and not formal quotes.
+                      </p>
+                      <ul>
+                        <li>Estimates are <strong>not formal quotes</strong>.</li>
+                        <li>
+                          They do not account for unique site conditions and may vary depending on
+                          contractor, materials, and methods.
+                        </li>
+                        <li>
+                          Final pricing must always be obtained through qualified, licensed
+                          contractors with on-site evaluation.
+                        </li>
+                        <li>
+                          AGI Property Inspections does not guarantee the accuracy of estimates or
+                          assume responsibility for work performed by outside contractors.
+                        </li>
+                      </ul>
+                                              
+                      <hr />
+                                              
+                      {/* Recommendations */}
+                      <h3>Recommendations</h3>
+                      <ul>
+                        <li>
+                          <strong>Contractors / Further Evaluation:</strong> Repairs noted should be
+                          performed by licensed professionals. Keep receipts for warranty and
+                          documentation purposes.
+                        </li>
+                        <li>
+                          <strong>Causes of Damage / Methods of Repair:</strong> Suggested repair
+                          methods are based on inspector experience and opinion. Final determination
+                          should always be made by licensed contractors.
+                        </li>
+                      </ul>
+                                              
+                      <hr />
+                                              
+                      {/* Exclusions */}
+                      <h3>Excluded Items</h3>
+                      <p>
+                        The following are not included in this inspection: septic systems, security
+                        systems, irrigation systems, pools, hot tubs, wells, sheds, playgrounds,
+                        saunas, outdoor lighting, central vacuums, water filters, water softeners,
+                        sound or intercom systems, generators, sport courts, sea walls, outbuildings,
+                        operating skylights, awnings, exterior BBQ grills, and firepits.
+                      </p>
+                                              
+                      <hr />
+                                              
+                      {/* Occupied Home Disclaimer */}
+                      <h3>Occupied Home Disclaimer</h3>
+                      <p>
+                        If the home was occupied at the time of inspection, some areas may not have
+                        been accessible (furniture, personal belongings, etc.). Every effort was
+                        made to inspect all accessible areas; however, some issues may not have been
+                        visible.
+                      </p>
+                      <p>
+                        We recommend using your final walkthrough to verify that no issues were
+                        missed and that the property remains in the same condition as at the time of
+                        inspection.
+                      </p>
                     </div>
+
 
                   </div>
 
