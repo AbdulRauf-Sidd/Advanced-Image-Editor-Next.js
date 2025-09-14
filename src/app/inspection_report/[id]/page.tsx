@@ -84,6 +84,9 @@ export default function InspectionReportPage() {
         subCounter++;
       }
 
+      const def = defect.defect_description.split(".")[0] || "";
+
+
       const numbering = `${currentMain}.${subCounter}`;
 
       const totalEstimatedCost =
@@ -93,9 +96,10 @@ export default function InspectionReportPage() {
       return {
         id: defect._id,
         numbering,
+        heading2: `${defect.section} - ${defect.subsection}`,
         heading: `${numbering} ${defect.section} - ${defect.subsection}`,
         image: defect.image,
-        defect: defect.defect_description,
+        defect: def,
         location: defect.location,
         estimatedCosts: {
           materials: "General materials",
@@ -237,7 +241,7 @@ export default function InspectionReportPage() {
                     <div className={styles.descriptionSectionStart}>
                       {/* Categories */}
                       <h3>Inspection Categories & Summary</h3>
-                                              
+
                       <h4 className={styles.immediateAttention}>Immediate Attention</h4>
                       <p>
                         <strong>Major Defects:</strong> Issues that compromise the home’s structural
@@ -246,7 +250,7 @@ export default function InspectionReportPage() {
                         <span className={styles.red}>red</span> in the report and should be corrected
                         as soon as possible.
                       </p>
-                                              
+
                       <h4 className={styles.itemsForRepair}>Items for Repair</h4>
                       <p>
                         <strong>Defects:</strong> Items in need of repair or correction, such as
@@ -254,16 +258,16 @@ export default function InspectionReportPage() {
                         etc. These are color-coded <span className={styles.orange}>orange</span> in
                         the report and have no strict repair timeline.
                       </p>
-                                              
+
                       <h4 className={styles.maintenanceItems}>Maintenance Items</h4>
                       <p>
                         Small DIY-type repairs and maintenance recommendations provided to increase
                         knowledge of long-term care. While not urgent, addressing these will reduce
                         future repair needs and costs.
                       </p>
-                                              
+
                       <hr />
-                                              
+
                       {/* Limitations */}
                       <h3>Important Information & Limitations</h3>
                       <p>
@@ -289,9 +293,9 @@ export default function InspectionReportPage() {
                         <strong>seller’s disclosure, pest inspection report, and contractor
                         evaluations</strong> for a complete picture of the home’s condition.
                       </p>
-                                              
+
                       <hr />
-                                              
+
                       {/* Repair Disclaimer */}
                       <h3>Repair Estimates Disclaimer</h3>
                       <p>
@@ -314,9 +318,9 @@ export default function InspectionReportPage() {
                           assume responsibility for work performed by outside contractors.
                         </li>
                       </ul>
-                                              
+
                       <hr />
-                                              
+
                       {/* Recommendations */}
                       <h3>Recommendations</h3>
                       <ul>
@@ -331,9 +335,9 @@ export default function InspectionReportPage() {
                           should always be made by licensed contractors.
                         </li>
                       </ul>
-                                              
+
                       <hr />
-                                              
+
                       {/* Exclusions */}
                       <h3>Excluded Items</h3>
                       <p>
@@ -343,9 +347,9 @@ export default function InspectionReportPage() {
                         sound or intercom systems, generators, sport courts, sea walls, outbuildings,
                         operating skylights, awnings, exterior BBQ grills, and firepits.
                       </p>
-                                              
+
                       <hr />
-                                              
+
                       {/* Occupied Home Disclaimer */}
                       <h3>Occupied Home Disclaimer</h3>
                       <p>
@@ -383,7 +387,7 @@ export default function InspectionReportPage() {
                             {reportSections.map((section) => (
                               <tr key={section.id}>
                                 <td>{section.numbering}</td>
-                                <td>{section.heading}</td>
+                                <td>{section.heading2}</td>
                                 <td>{section.defect}</td>
                               </tr>
                             ))}
@@ -464,16 +468,16 @@ export default function InspectionReportPage() {
                           <thead>
                             <tr>
                               <th>No.</th>
-                              <th>Section</th>
                               <th>Defect</th>
+                              <th>Cost ($)</th>
                             </tr>
                           </thead>
                           <tbody>
                             {reportSections.map((section) => (
                               <tr key={section.id}>
                                 <td>{section.numbering}</td>
-                                <td>{section.heading}</td>
                                 <td>{section.defect}</td>
+                                <td>{section.estimatedCosts.totalEstimatedCost}</td>
                               </tr>
                             ))}
                           </tbody>
