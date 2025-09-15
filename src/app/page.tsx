@@ -26,15 +26,15 @@ export default function Home() {
   // Handle delete click to delete inspection
   const handleDeleteClick = async (inspectionId: string) => {
     if (!confirm('Are you sure you want to delete this inspection?')) {
-      return;
-    }
-
+          return;
+        }
+      
     try {
       console.log('Deleting inspection:', inspectionId);
       // You can implement delete API call here
       // For now, we'll just log it
       alert('Delete functionality not implemented yet');
-    } catch (error) {
+      } catch (error) {
       console.error('Error deleting inspection:', error);
       alert('Error deleting inspection. Please try again.');
     }

@@ -30,9 +30,9 @@
 .inspections-table th {
   padding: 16px 20px;
   text-align: left;
-  font-weight: 600;
+  font-weight: 800;
   color: #475569;
-  font-size: 12px;
+  font-size: 16px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 2px solid #e2e8f0;
@@ -320,7 +320,8 @@
   }
   
   .inspections-table th {
-    font-size: 11px;
+    font-size: 14px;
+    font-weight: 800;
   }
   
   .inspection-info {
@@ -423,7 +424,8 @@
   }
   
   .inspections-table th {
-    font-size: 10px;
+    font-size: 12px;
+    font-weight: 800;
   }
   
   .inspection-info {
@@ -535,7 +537,8 @@
   }
   
   .inspections-table th {
-    font-size: 9px;
+    font-size: 11px;
+    font-weight: 800;
   }
   
   .inspection-icon {
