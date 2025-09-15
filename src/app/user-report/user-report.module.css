@@ -29,24 +29,17 @@
 .sectionHeading {
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid #d63636;
+  border-bottom: 2px solid var(--selected-color, #d63636);
 }
 
 .sectionHeadingText {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #d63636;
+  color: var(--selected-color, #d63636);
   margin: 0;
   letter-spacing: -0.025em;
 }
 
-.sectionHeadingText {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #d63636;
-  margin: 0;
-  letter-spacing: -0.025em;
-}
 
 .contentGrid {
   display: grid;
@@ -76,7 +69,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #d63636, #f87171, #d63636);
+  background: linear-gradient(90deg, var(--selected-color, #d63636), var(--light-color, #f87171), var(--selected-color, #d63636));
 }
 
 .imageTitle {
@@ -90,7 +83,7 @@
 }
 
 .imageTitle i {
-  color: #d63636;
+  color: var(--selected-color, #d63636);
   margin-right: 0.75rem;
   font-size: 1.25rem;
 }
@@ -145,7 +138,7 @@
   padding: 1rem;
   background: white;
   border-radius: 0.5rem;
-  border-left: 3px solid #d63636;
+  border-left: 3px solid var(--selected-color, #d63636);
   transition: all 0.3s ease;
   position: relative;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -174,7 +167,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #d63636, #f87171, #d63636);
+  background: linear-gradient(90deg, var(--selected-color, #d63636), var(--light-color, #f87171), var(--selected-color, #d63636));
 }
 
 .descriptionTitle {
@@ -188,7 +181,7 @@
 }
 
 .descriptionTitle i {
-  color: #d63636;
+  color: var(--selected-color, #d63636);
   margin-right: 0.75rem;
   font-size: 1.25rem;
 }
@@ -198,7 +191,7 @@
   padding: 1rem;
   background: white;
   border-radius: 0.5rem;
-  border-left: 3px solid #d63636;
+  border-left: 3px solid var(--selected-color, #d63636);
   transition: all 0.3s ease;
   position: relative;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -225,7 +218,7 @@
 }
 
 .sectionTitle i {
-  color: #d63636;
+  color: var(--selected-color, #d63636);
   margin-right: 0.5rem;
   font-size: 0.9rem;
   background: rgba(214, 54, 54, 0.1);
@@ -247,7 +240,7 @@
 
 .costHighlight {
   background: #f8fafc;
-  border: 1px solid #d63636;
+  border: 1px solid var(--selected-color, #d63636);
   border-radius: 0.5rem;
   padding: 1rem;
   margin-top: 1rem;
@@ -262,18 +255,18 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #d63636, #f87171, #d63636);
+  background: linear-gradient(90deg, var(--selected-color, #d63636), var(--light-color, #f87171), var(--selected-color, #d63636));
 }
 
 .totalCost {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #d63636;
+  color: var(--selected-color, #d63636);
   text-align: center;
   padding: 0.75rem;
   background: white;
   border-radius: 0.5rem;
-  border: 1px solid #d63636;
+  border: 1px solid var(--selected-color, #d63636);
   box-shadow: 0 2px 8px rgba(214, 54, 54, 0.1);
   letter-spacing: -0.025em;
 }

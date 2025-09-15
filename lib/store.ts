@@ -11,6 +11,7 @@ import { persist } from 'zustand/middleware';
     subSection: string;
     analysisResult: any;
     timestamp: number;
+    selectedArrowColor?: string; // Store the selected arrow color
     // estimated_costs: CostItem[];
   }
 

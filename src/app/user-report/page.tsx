@@ -44,6 +44,24 @@ export default function UserReport() {
 
   const { analysisData, updateAnalysisData } = useAnalysisStore();
 
+  // Get the selected arrow color for dynamic styling
+  const getSelectedColor = () => {
+    const color = analysisData?.selectedArrowColor || '#d63636'; // Default to red if not set
+    console.log('Selected arrow color:', color);
+    return color;
+  };
+
+  // Get a lighter shade of the selected color for gradients
+  const getLightColor = () => {
+    const color = getSelectedColor();
+    // Convert hex to RGB and lighten it
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    return `rgb(${Math.min(255, r + 50)}, ${Math.min(255, g + 50)}, ${Math.min(255, b + 50)})`;
+  };
+
   // Initialize from store
   useEffect(() => {
     if (!analysisData) {
@@ -258,7 +276,13 @@ export default function UserReport() {
   ];
 
   return (
-    <div className={styles.userReportContainer}>
+    <div 
+      className={styles.userReportContainer}
+      style={{
+        '--selected-color': getSelectedColor(),
+        '--light-color': getLightColor(),
+      } as React.CSSProperties}
+    >
       <main className="py-8">
         <div className={styles.reportSectionsContainer}>
           {reportSections.map((section) => (
@@ -405,13 +429,20 @@ export default function UserReport() {
                           </p>
                         )}
                       </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+                     </div>
+                     
+                     {/* Total Cost Highlight */}
+                     <div className={styles.costHighlight}>
+                       <div className={styles.totalCost}>
+                         Total Estimated Cost: ${section.estimatedCosts.totalEstimatedCost}
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           ))}
+         </div>
 
         {/* Buttons */}
         <div className={styles.actionButtons}>

@@ -41,6 +41,7 @@ export default function ImageEditorPage() {
   const [editedFile, setEditedFile] = useState<File | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [selectedArrowColor, setSelectedArrowColor] = useState('#d63636'); // Default red color
 
   const { updateAnalysisData } = useAnalysisStore();
 
@@ -308,6 +309,7 @@ export default function ImageEditorPage() {
       console.log('Analysis result:', result);
 
       // Store analysis data in global state
+      console.log('Storing analysis data with arrow color:', selectedArrowColor);
       updateAnalysisData({
         inspectionId: selectedInspectionId,
         imageFile: editedFile,
@@ -316,7 +318,8 @@ export default function ImageEditorPage() {
         location: selectedLocation2,
         section: selectedLocation,
         subSection: selectedSubLocation,
-        analysisResult: result
+        analysisResult: result,
+        selectedArrowColor: selectedArrowColor // Store the selected arrow color
       });
       
       console.log('Data stored successfully, navigating to user report...');
@@ -330,6 +333,7 @@ export default function ImageEditorPage() {
       // Even if API fails, still store the data and navigate to user report
       console.log('API failed, but storing data and proceeding to user report...');
       
+      console.log('Storing fallback analysis data with arrow color:', selectedArrowColor);
       updateAnalysisData({
         inspectionId: selectedInspectionId,
         imageFile: editedFile,
@@ -347,7 +351,8 @@ export default function ImageEditorPage() {
           labor_rate: 0,
           hours_required: 0,
           total_estimated_cost: 0
-        }
+        },
+        selectedArrowColor: selectedArrowColor // Store the selected arrow color
       });
       
       // Navigate to results page even if API failed
@@ -505,6 +510,8 @@ export default function ImageEditorPage() {
                       // Set the arrow color in the ImageEditor
                       const event = new CustomEvent('setArrowColor', { detail: color });
                       window.dispatchEvent(event);
+                      setSelectedArrowColor(color); // Store the selected color
+                      console.log('Arrow color selected:', color);
                       setShowDrawingDropdown(false);
                     }}
                   ></div>
