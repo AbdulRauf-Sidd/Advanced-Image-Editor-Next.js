@@ -2218,21 +2218,22 @@ body div.submit-section div.submit-controls div.location-button-container button
 }
 
 .action-btn-small {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border: none;
   border-radius: 6px;
+  background: transparent;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  font-size: 12px;
+  font-size: 18px;
 }
 
 .action-btn-small:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .action-btn-small:active {
@@ -2240,30 +2241,27 @@ body div.submit-section div.submit-controls div.location-button-container button
 }
 
 .document-btn {
-  background: #3b82f6;
-  color: white;
+  color: #10b981; /* Green for document */
 }
 
 .document-btn:hover {
-  background: #2563eb;
+  color: #059669;
 }
 
 .edit-btn {
-  background: #10b981;
-  color: white;
+  color: #3b82f6; /* Blue for edit */
 }
 
 .edit-btn:hover {
-  background: #059669;
+  color: #2563eb;
 }
 
 .delete-btn {
-  background: #ef4444;
-  color: white;
+  color: #ef4444; /* Red for delete */
 }
 
 .delete-btn:hover {
-  background: #dc2626;
+  color: #dc2626;
 }
 
 .loading-spinner {
