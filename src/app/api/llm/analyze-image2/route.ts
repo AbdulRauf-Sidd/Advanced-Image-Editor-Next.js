@@ -211,11 +211,12 @@ export async function POST(request: NextRequest) {
           ...parsed,
           total_estimated_cost: totalCost
         };
-        
+        console.log('TOTAL: ', totalCost)
         return NextResponse.json(responseWithTotal);
       }
       return NextResponse.json<AnalysisResult>({ analysis: assistantResponse });
     } catch {
+      console.log('HALLO')
       return NextResponse.json<AnalysisResult>({ analysis: assistantResponse });
     }
 

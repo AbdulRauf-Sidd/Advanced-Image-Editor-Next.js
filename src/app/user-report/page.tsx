@@ -62,6 +62,8 @@ export default function UserReport() {
     return `rgb(${Math.min(255, r + 50)}, ${Math.min(255, g + 50)}, ${Math.min(255, b + 50)})`;
   };
 
+
+
   // Initialize from store
   useEffect(() => {
     if (!analysisData) {
@@ -253,13 +255,13 @@ export default function UserReport() {
     {
       id: 1,
       heading: `${analysisData.section} - ${analysisData.subSection}`,
-      image: image,
+      image: image || null,
       defect: isEditing
         ? editedData.defect
         : analysisResult?.defect || description || "No defect information",
       location: isEditing ? editedData.location : location || "Not specified",
-      section: analysisData.section,
-      subSection: analysisData.subSection,
+      section: analysisData.section || '',
+      subSection: analysisData.subSection || "",
       estimatedCosts: {
         materials: isEditing ? editedData.materials : analysisResult?.materials_names || "N/A",
         materialsCost: isEditing

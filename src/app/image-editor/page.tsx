@@ -309,6 +309,8 @@ export default function ImageEditorPage() {
       console.log('Analysis result:', result);
 
       // Store analysis data in global state
+      // const imageDataUrl = await fileToDataURL(editedFile);
+
       console.log('Storing analysis data with arrow color:', selectedArrowColor);
       updateAnalysisData({
         inspectionId: selectedInspectionId,

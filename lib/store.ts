@@ -3,14 +3,14 @@ import { persist } from 'zustand/middleware';
 
   interface AnalysisData {
     inspectionId: string;
-    imageFile: File;
-    image: File | string | null;
-    description: string;
-    location: string;
-    section: string;
-    subSection: string;
-    analysisResult: any;
-    timestamp: number;
+    imageFile?: File;
+    image?: File | string | null;
+    description?: string;
+    location?: string;
+    section?: string;
+    subSection?: string;
+    analysisResult?: any;
+    timestamp?: number;
     selectedArrowColor?: string; // Store the selected arrow color
     // estimated_costs: CostItem[];
   }

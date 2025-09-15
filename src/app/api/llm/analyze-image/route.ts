@@ -14,17 +14,12 @@ interface ErrorResponse {
 
 interface AnalysisResult {
   defect?: string;
-  estimated_costs?: Array<{
-    item: string;
-    type: 'material' | 'labor' | string;
-    unit_cost: string | number;
-    quantity: number;
-    total_cost: string | number;
-  }>;
-  diy_option?: string;
-  diy_cost?: string | number;
+  materials_names?: string;
+  materials_total_cost?: number;
+  labor_type?: string;
+  labor_rate?: number;
+  hours_required?: number;
   recommendation?: string;
-  total_estimated_cost?: string | number;
   analysis?: string;
 }
 
@@ -175,9 +170,25 @@ export async function POST(request: NextRequest) {
 
       const jsonMatch = assistantResponse.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        const parsed: AnalysisResult = JSON.parse(jsonMatch[0]);
-        return NextResponse.json(parsed);
-      }
+              const parsed: AnalysisResult = JSON.parse(jsonMatch[0]);
+              
+              // Calculate total cost if materials and labor costs are provided
+              let totalCost = 0;
+              if (parsed.materials_total_cost) {
+                totalCost += parsed.materials_total_cost;
+              }
+              if (parsed.labor_rate && parsed.hours_required) {
+                totalCost += parsed.labor_rate * parsed.hours_required;
+              }
+              
+              // Add total cost to the response
+              const responseWithTotal = {
+                ...parsed,
+                total_estimated_cost: totalCost
+              };
+              console.log('TOTAL: ', totalCost)
+              return NextResponse.json(responseWithTotal);
+            }
       return NextResponse.json<AnalysisResult>({ analysis: assistantResponse });
     } catch {
       return NextResponse.json<AnalysisResult>({ analysis: assistantResponse });
