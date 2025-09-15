@@ -2209,6 +2209,63 @@ body div.submit-section div.submit-controls div.location-button-container button
   text-align: center;
 }
 
+/* Table Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn-small {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 12px;
+}
+
+.action-btn-small:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn-small:active {
+  transform: translateY(0);
+}
+
+.document-btn {
+  background: #3b82f6;
+  color: white;
+}
+
+.document-btn:hover {
+  background: #2563eb;
+}
+
+.edit-btn {
+  background: #10b981;
+  color: white;
+}
+
+.edit-btn:hover {
+  background: #059669;
+}
+
+.delete-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.delete-btn:hover {
+  background: #dc2626;
+}
+
 .loading-spinner {
   width: 40px;
   height: 40px;

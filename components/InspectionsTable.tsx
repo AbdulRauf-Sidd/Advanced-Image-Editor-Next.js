@@ -12,9 +12,11 @@ interface Inspection {
 interface InspectionsTableProps {
   onRowClick: (inspectionId: string) => void;
   onDocumentClick: (inspectionId: string) => void;
+  onEditClick?: (inspectionId: string) => void;
+  onDeleteClick?: (inspectionId: string) => void;
 }
 
-export default function InspectionsTable({ onRowClick, onDocumentClick }: InspectionsTableProps) {
+export default function InspectionsTable({ onRowClick, onDocumentClick, onEditClick, onDeleteClick }: InspectionsTableProps) {
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [showAddInspectionPopup, setShowAddInspectionPopup] = useState(false);
   const [newInspectionName, setNewInspectionName] = useState('');
@@ -180,6 +182,30 @@ export default function InspectionsTable({ onRowClick, onDocumentClick }: Inspec
                           >
                             <i className="fas fa-file-alt"></i>
                           </button>
+                          {onEditClick && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEditClick(safeId);
+                              }}
+                              className="action-btn-small edit-btn"
+                              title="Edit Inspection"
+                            >
+                              <i className="fas fa-pencil-alt"></i>
+                            </button>
+                          )}
+                          {onDeleteClick && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteClick(safeId);
+                              }}
+                              className="action-btn-small delete-btn"
+                              title="Delete Inspection"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
