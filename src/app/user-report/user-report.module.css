@@ -40,6 +40,14 @@
   letter-spacing: -0.025em;
 }
 
+.sectionHeadingText {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #d63636;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
 .contentGrid {
   display: grid;
   grid-template-columns: 1fr 3fr;

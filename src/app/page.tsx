@@ -17,7 +17,7 @@ export default function Home() {
   };
 
   // Show table page
-  return (
+    return (
     <InspectionsTable 
       onRowClick={handleRowClick}
       onDocumentClick={handleDocumentClick}

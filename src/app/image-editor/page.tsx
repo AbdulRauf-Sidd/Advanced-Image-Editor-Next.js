@@ -268,17 +268,22 @@ export default function ImageEditorPage() {
     setIsSubmitting(true);
     setSubmitStatus('Processing...');
 
+    // Convert edited file to data URL (outside try-catch so it's accessible in both blocks)
+    let imageDataUrl: string;
     try {
-      console.log('Starting submission process...');
-      
-      // Convert edited file to data URL
-      const imageDataUrl = await new Promise<string>((resolve) => {
+      imageDataUrl = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onload = (e) => resolve(e.target?.result as string);
         reader.readAsDataURL(editedFile);
       });
-
       console.log('Image converted to data URL');
+    } catch (conversionError) {
+      console.error('Error converting image to data URL:', conversionError);
+      imageDataUrl = '';
+    }
+
+    try {
+      console.log('Starting submission process...');
 
       // Call AI analysis API
       const formData = new FormData();

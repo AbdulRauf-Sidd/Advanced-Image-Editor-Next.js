@@ -208,13 +208,15 @@ export default function UserReport() {
         const data = await res.json();
         console.log("Defect created successfully:", data);
         console.log("Defect created with id: " + data.id);
-        window.location.href = '/';
+        // Navigate back to image editor with the same inspection ID
+        router.push(`/image-editor?inspectionId=${analysisData?.inspectionId}`);
       } catch (error) {
         // Log any network or unexpected errors
         setIsSubmitting(false)
         console.error("Error creating inspection:", error);
         alert("An error occurred. Check the console for details.");
-
+        // Navigate back to image editor even on error
+        router.push(`/image-editor?inspectionId=${analysisData?.inspectionId}`);
       }
   };
 
