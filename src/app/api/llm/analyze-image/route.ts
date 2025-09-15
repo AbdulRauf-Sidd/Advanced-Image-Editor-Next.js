@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
     let imageUrl: string | undefined;
     let description: string | undefined;
     let file: File | null = null;
+    let location: string | undefined;
     console.log('2');
 
     const contentType = request.headers.get('content-type') || '';
@@ -38,12 +39,14 @@ export async function POST(request: NextRequest) {
       const body = await request.json();
       imageUrl = body.imageUrl;
       description = body.description;
+      location = body.location; // optional
     } else if (contentType.includes('multipart/form-data')) {
       // Case 2: Uploaded image file
       const form = await request.formData();
       file = form.get('image') as File | null;
       description = form.get('description') as string | undefined;
       imageUrl = form.get('imageUrl') as string | undefined; // optional if both supported
+      location = form.get('location') as string | undefined; // optional
     } else {
       return NextResponse.json<ErrorResponse>({
         error: 'Unsupported content type',
@@ -77,7 +80,7 @@ export async function POST(request: NextRequest) {
     const thread = await openai.beta.threads.create();
 
     // ✅ Build message content
-    const content: any[] = [{ type: "text", text: description }];
+    const content: any[] = [{ type: "text", text: `Description ${description} || Location: ${location}` }];
 
     if (file) {
       // Upload the file to OpenAI first

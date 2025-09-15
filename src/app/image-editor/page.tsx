@@ -45,59 +45,149 @@ export default function ImageEditorPage() {
 
   const { updateAnalysisData } = useAnalysisStore();
 
-  // Location options
-  const locations = [
-    'Exterior', 'Interior', 'Kitchen', 'Bathroom', 'Bedroom', 'Living Room',
-    'Basement', 'Attic', 'Garage', 'Roof', 'Foundation', 'Plumbing',
-    'Electrical', 'HVAC', 'Windows', 'Doors', 'Flooring', 'Walls',
-    'Ceiling', 'Stairs', 'Hallway', 'Laundry Room', 'Dining Room',
-    'Office', 'Storage', 'Patio', 'Deck', 'Pool', 'Garden'
+  const location = [
+    'Addition', 'All Locations', 'Apartment', 'Attic', 'Back Porch', 'Back Room', 'Balcony',
+    'Bedroom 1', 'Bedroom 2', 'Bedroom 3', 'Bedroom 4', 'Bedroom 5', 'Both Locations', 'Breakfast',
+    'Carport', 'Carport Entry', 'Closet', 'Crawlspace', 'Dining', 'Downstairs', 'Downstairs Bathroom',
+    'Downstairs Bathroom Closet', 'Downstairs Hallway', 'Downstairs Hall Closet', 'Driveway', 'Entry',
+    'Family Room', 'Front Entry', 'Front of House', 'Front Porch', 'Front Room', 'Garage', 'Garage Entry',
+    'Garage Storage Closet', 'Guest Bathroom', 'Guest Bedroom', 'Guest Bedroom Closet', 'Half Bathroom',
+    'Hallway', 'Heater Operation Temp', 'HVAC Closet', 'Keeping Room', 'Kitchen', 'Kitchen Pantry',
+    'Left Side of House', 'Left Wall', 'Living Room', 'Living Room Closet', 'Laundry Room',
+    'Laundry Room Closet', 'Master Bathroom', 'Master Bedroom', 'Master Closet', 'Most Locations',
+    'Multiple Locations', 'Office', 'Office Closet', 'Outdoor Storage', 'Patio', 'Rear Entry',
+    'Rear of House', 'Rear Wall', 'Right Side of House', 'Right Wall', 'Shop', 'Side Entry', 'Staircase',
+    'Sun Room', 'Top of Stairs', 'Upstairs Bathroom', 'Upstairs Bedroom 1', 'Upstairs Bedroom 1 Closet',
+    'Upstairs Bedroom 2', 'Upstairs Bedroom 2 Closet', 'Upstairs Bedroom 3', 'Upstairs Bedroom 3 Closet',
+    'Upstairs Bedroom 4', 'Upstairs Bedroom 4 Closet', 'Upstairs Hallway', 'Upstairs Laundry Room',
+    'Utility Room', 'Water Heater Closet', 'Water Heater Output Temp'
   ];
 
-  const subLocations = {
-    'Exterior': ['Front', 'Back', 'Left Side', 'Right Side', 'Roof', 'Foundation', 'Windows', 'Doors'],
-    'Interior': ['Living Room', 'Kitchen', 'Bedroom', 'Bathroom', 'Hallway', 'Stairs'],
-    'Kitchen': ['Cabinets', 'Countertops', 'Appliances', 'Sink', 'Flooring', 'Lighting'],
-    'Bathroom': ['Vanity', 'Shower', 'Bathtub', 'Toilet', 'Mirror', 'Flooring', 'Lighting'],
-    'Bedroom': ['Closet', 'Windows', 'Flooring', 'Lighting', 'Ceiling', 'Walls'],
-    'Living Room': ['Fireplace', 'Windows', 'Flooring', 'Lighting', 'Ceiling', 'Walls'],
-    'Basement': ['Foundation', 'Flooring', 'Walls', 'Ceiling', 'Plumbing', 'Electrical'],
-    'Attic': ['Insulation', 'Ventilation', 'Flooring', 'Walls', 'Ceiling', 'Electrical'],
-    'Garage': ['Door', 'Flooring', 'Walls', 'Ceiling', 'Electrical', 'Storage'],
-    'Roof': ['Shingles', 'Gutters', 'Chimney', 'Ventilation', 'Flashing', 'Skylights'],
-    'Foundation': ['Cracks', 'Water Damage', 'Drainage', 'Ventilation', 'Insulation'],
-    'Plumbing': ['Pipes', 'Fixtures', 'Water Heater', 'Drainage', 'Ventilation'],
-    'Electrical': ['Outlets', 'Switches', 'Panel', 'Wiring', 'Lighting', 'GFCI'],
-    'HVAC': ['Furnace', 'Air Conditioner', 'Ductwork', 'Thermostat', 'Ventilation'],
-    'Windows': ['Frames', 'Glass', 'Screens', 'Hardware', 'Weather Stripping'],
-    'Doors': ['Frames', 'Hardware', 'Weather Stripping', 'Locks', 'Hinges'],
-    'Flooring': ['Hardwood', 'Carpet', 'Tile', 'Vinyl', 'Laminate', 'Concrete'],
-    'Walls': ['Paint', 'Wallpaper', 'Drywall', 'Insulation', 'Moldings'],
-    'Ceiling': ['Paint', 'Drywall', 'Insulation', 'Lighting', 'Fans'],
-    'Stairs': ['Treads', 'Risers', 'Railings', 'Lighting', 'Safety'],
-    'Hallway': ['Flooring', 'Lighting', 'Walls', 'Ceiling', 'Storage'],
-    'Laundry Room': ['Appliances', 'Plumbing', 'Electrical', 'Storage', 'Ventilation'],
-    'Dining Room': ['Windows', 'Flooring', 'Lighting', 'Ceiling', 'Walls'],
-    'Office': ['Electrical', 'Lighting', 'Storage', 'Flooring', 'Walls'],
-    'Storage': ['Shelving', 'Lighting', 'Access', 'Organization', 'Security'],
-    'Patio': ['Flooring', 'Railings', 'Lighting', 'Drainage', 'Furniture'],
-    'Deck': ['Flooring', 'Railings', 'Lighting', 'Drainage', 'Stairs'],
-    'Pool': ['Water Quality', 'Equipment', 'Safety', 'Drainage', 'Lighting'],
-    'Garden': ['Landscaping', 'Irrigation', 'Drainage', 'Lighting', 'Maintenance']
+  const section = [
+    'AC / Cooling',
+    'Built-In Appliances',
+    'Electrical',
+    'Exterior',
+    'Foundation & Structure',
+    'Furnace / Heater',
+    'Grounds',
+    'Insulation & Ventilation',
+    'Interior',
+    'Plumbing',
+    'Roof',
+    'Swimming Pool & Spa'
+  ];
+
+  const subsection: { [key: string]: string[] } = {
+    'Grounds': [
+      'Vegetation, Grading, & Drainage',
+      'Sidewalks, Porches, Driveways'
+    ],
+    'Foundation & Structure': [
+      'Foundation',
+      'Crawlspace',
+      'Floor Structure',
+      'Wall Structure',
+      'Ceiling Structure'
+    ],
+    'Roof': [
+      'Coverings',
+      'Flashing & Seals',
+      'Roof Penetrations',
+      'Roof Structure & Attic'
+    ],
+    'Exterior': [
+      'Exterior Doors',
+      'Exterior Windows',
+      'Siding, Flashing, & Trim',
+      'Brick/Stone Veneer',
+      'Vinyl Siding',
+      'Soffit & Fascia',
+      'Wall Penetrations',
+      'Doorbell',
+      'Exterior Support Columns',
+      'Steps, Stairways, & Railings'
+    ],
+    'Interior': [
+      'Doors',
+      'Windows',
+      'Floors',
+      'Walls',
+      'Ceilings',
+      'Countertops & Cabinets',
+      'Trim'
+    ],
+    'Insulation & Ventilation': [
+      'Attic Access',
+      'Insulation',
+      'Vapor Barrier',
+      'Ventilation & Exhaust'
+    ],
+    'AC / Cooling': [
+      'Air Conditioning',
+      'Thermostats',
+      'Distribution System'
+    ],
+    'Furnace / Heater': [
+      'Forced Air Furnace'
+    ],
+    'Electrical': [
+      'Sub Panel',
+      'Service Panel',
+      'Branch Wiring & Breakers',
+      'Exterior Lighting',
+      'Fixtures, Fans, Switches, & Receptacles',
+      'GFCI & AFCI',
+      '240 Volt Receptacle',
+      'Smoke / Carbon Monoxide Alarms',
+      'Service Entrance'
+    ],
+    'Plumbing': [
+      'Water Heater',
+      'Drain, Waste, & Vents',
+      'Water Supply',
+      'Water Spigot',
+      'Gas Supply',
+      'Vents & Flues',
+      'Fixtures,Sinks, Tubs, & Toilets'
+    ],
+    'Built-In Appliances': [
+      'Refrigerator',
+      'Dishwasher',
+      'Garbage Disposal',
+      'Microwave',
+      'Range Hood',
+      'Range, Oven & Cooktop'
+    ],
+    'Swimming Pool & Spa': [
+      'Equipment',
+      'Electrical',
+      'Safety Devices',
+      'Coping & Decking',
+      'Vessel Surface',
+      'Drains',
+      'Control Valves',
+      'Filter',
+      'Pool Plumbing',
+      'Pumps',
+      'Spa Controls & Equipment',
+      'Heating',
+      'Diving Board & Slide'
+    ]
   };
 
-  const filteredLocations = locations.filter(location =>
-    location.toLowerCase().includes(locationSearch.toLowerCase())
+  const filteredSections = section.filter(sectionItem =>
+    sectionItem.toLowerCase().includes(locationSearch.toLowerCase())
   );
 
-  const filteredSubLocations = selectedLocation && subLocations[selectedLocation as keyof typeof subLocations]
-    ? subLocations[selectedLocation as keyof typeof subLocations].filter(subLocation =>
+  const filteredSubsections = selectedLocation && subsection[selectedLocation as keyof typeof subsection]
+    ? subsection[selectedLocation as keyof typeof subsection].filter(subLocation =>
         subLocation.toLowerCase().includes(subLocationSearch.toLowerCase())
       )
     : [];
 
-  const filteredLocations2 = locations.filter(location =>
-    location.toLowerCase().includes(locationSearch2.toLowerCase())
+  const filteredLocations = location.filter(locationItem =>
+    locationItem.toLowerCase().includes(locationSearch2.toLowerCase())
   );
 
   // Check for speech recognition support
@@ -266,6 +356,14 @@ export default function ImageEditorPage() {
       return;
     }
 
+    // Store selected values in their respective variables
+    const selectedSection = selectedLocation; // This is the section (AC / Cooling, Electrical, etc.)
+    const selectedSubsection = selectedSubLocation; // This is the subsection (Air Conditioning, Thermostats, etc.)
+    const selectedLocationValue = selectedLocation2; // This is the specific location (Kitchen, Bedroom 1, etc.)
+
+    // Console logs to show the selected values
+
+
     setIsSubmitting(true);
     setSubmitStatus('Processing...');
 
@@ -290,6 +388,11 @@ export default function ImageEditorPage() {
       const formData = new FormData();
       formData.append('image', editedFile);
       formData.append('description', description);
+      formData.append('location', selectedLocationValue);
+      formData.append('section', selectedSection);
+      formData.append('subsection', selectedSubsection);
+
+
 
       console.log('Calling AI analysis API...');
       const response = await fetch('/api/llm/analyze-image', {
@@ -309,17 +412,15 @@ export default function ImageEditorPage() {
       console.log('Analysis result:', result);
 
       // Store analysis data in global state
-      // const imageDataUrl = await fileToDataURL(editedFile);
-
       console.log('Storing analysis data with arrow color:', selectedArrowColor);
       updateAnalysisData({
         inspectionId: selectedInspectionId,
         imageFile: editedFile,
         image: imageDataUrl, // Store as data URL
         description,
-        location: selectedLocation2,
-        section: selectedLocation,
-        subSection: selectedSubLocation,
+        location: selectedLocationValue,
+        section: selectedSection,
+        subSection: selectedSubsection,
         analysisResult: result,
         selectedArrowColor: selectedArrowColor // Store the selected arrow color
       });
@@ -341,9 +442,9 @@ export default function ImageEditorPage() {
         imageFile: editedFile,
         image: imageDataUrl,
         description,
-        location: selectedLocation2,
-        section: selectedLocation,
-        subSection: selectedSubLocation,
+        location: selectedLocationValue,
+        section: selectedSection,
+        subSection: selectedSubsection,
         analysisResult: {
           defect: 'Analysis failed - please review manually',
           recommendation: 'Manual review required due to analysis error',
@@ -710,22 +811,22 @@ export default function ImageEditorPage() {
                     className="location-search-input"
                   />
                 </div>
-                <div className="location-options">
-                  {filteredLocations2.map(location2 => (
-                    <div 
-                      key={location2}
-                      className={`location-option ${selectedLocation2 === location2 ? 'selected' : ''}`}
-                      onClick={() => {
-                        setSelectedLocation2(location2);
-                        setShowLocationDropdown2(false);
-                        setLocationSearch2('');
-                      }}
-                    >
-                      <i className="fas fa-map-marker-alt"></i>
-                      <span>{location2}</span>
-                    </div>
-                  ))}
-                </div>
+                 <div className="location-options">
+                   {filteredLocations.map(locationItem => (
+                     <div 
+                       key={locationItem}
+                       className={`location-option ${selectedLocation2 === locationItem ? 'selected' : ''}`}
+                       onClick={() => {
+                         setSelectedLocation2(locationItem);
+                         setShowLocationDropdown2(false);
+                         setLocationSearch2('');
+                       }}
+                     >
+                       <i className="fas fa-map-marker-alt"></i>
+                       <span>{locationItem}</span>
+                     </div>
+                   ))}
+                 </div>
               </div>
             )}
           </div>
@@ -776,25 +877,25 @@ export default function ImageEditorPage() {
                     className="location-search-input"
                   />
                 </div>
-                <div className="location-options">
-                  {filteredLocations.map(location => (
-                    <div 
-                      key={location}
-                      className={`location-option ${selectedLocation === location ? 'selected' : ''}`}
-                      onClick={() => {
-                        setSelectedLocation(location);
-                        setShowLocationDropdown(false);
-                        setLocationSearch('');
-                        setSelectedSubLocation(''); // Reset sub-location when main location changes
-                        setSubLocationSearch(''); // Reset sub-location search
-                        setShowSubLocationDropdown(false); // Hide sub-location dropdown initially
-                      }}
-                    >
-                      <i className="fas fa-map-marker-alt"></i>
-                      <span>{location}</span>
-                    </div>
-                  ))}
-                </div>
+                 <div className="location-options">
+                   {filteredSections.map(sectionItem => (
+                     <div 
+                       key={sectionItem}
+                       className={`location-option ${selectedLocation === sectionItem ? 'selected' : ''}`}
+                       onClick={() => {
+                         setSelectedLocation(sectionItem);
+                         setShowLocationDropdown(false);
+                         setLocationSearch('');
+                         setSelectedSubLocation(''); // Reset sub-location when main location changes
+                         setSubLocationSearch(''); // Reset sub-location search
+                         setShowSubLocationDropdown(false); // Hide sub-location dropdown initially
+                       }}
+                     >
+                       <i className="fas fa-map-marker-alt"></i>
+                       <span>{sectionItem}</span>
+                     </div>
+                   ))}
+                 </div>
               </div>
             )}
           </div>
@@ -847,22 +948,22 @@ export default function ImageEditorPage() {
                     className="location-search-input"
                   />
                 </div>
-                <div className="location-options">
-                  {filteredSubLocations.map(subLocation => (
-                    <div 
-                      key={subLocation}
-                      className={`location-option ${selectedSubLocation === subLocation ? 'selected' : ''}`}
-                      onClick={() => {
-                        setSelectedSubLocation(subLocation);
-                        setShowSubLocationDropdown(false);
-                        setSubLocationSearch('');
-                      }}
-                    >
-                      <i className="fas fa-layer-group"></i>
-                      <span>{subLocation}</span>
-                    </div>
-                  ))}
-                </div>
+                 <div className="location-options">
+                   {filteredSubsections.map(subLocation => (
+                     <div 
+                       key={subLocation}
+                       className={`location-option ${selectedSubLocation === subLocation ? 'selected' : ''}`}
+                       onClick={() => {
+                         setSelectedSubLocation(subLocation);
+                         setShowSubLocationDropdown(false);
+                         setSubLocationSearch('');
+                       }}
+                     >
+                       <i className="fas fa-layer-group"></i>
+                       <span>{subLocation}</span>
+                     </div>
+                   ))}
+                 </div>
               </div>
             )}
           </div>
