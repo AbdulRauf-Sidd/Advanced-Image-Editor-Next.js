@@ -17,7 +17,7 @@ import { persist } from 'zustand/middleware';
 interface AnalysisState {
   analysisData: AnalysisData | null;
   setAnalysisData: (data: Omit<AnalysisData, 'timestamp'>) => void;
-  updateAnalysisData: (data: AnalysisData) => void;
+  updateAnalysisData: (data: Partial<AnalysisData> & { inspectionId: string }) => void;
   clearAnalysisData: () => void;
 }
 
@@ -49,7 +49,11 @@ export const useAnalysisStore = create<AnalysisState>()(
           });
         }
       },
-      updateAnalysisData: (data) => set({ analysisData: data }),
+      updateAnalysisData: (data) => set((state) => ({
+        analysisData: state.analysisData 
+          ? { ...state.analysisData, ...data, timestamp: Date.now() } 
+          : { ...data, timestamp: Date.now() }
+      })),
       clearAnalysisData: () => set({ analysisData: null }),
     }),
     {

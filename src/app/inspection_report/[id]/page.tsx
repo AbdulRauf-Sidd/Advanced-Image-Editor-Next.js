@@ -424,6 +424,12 @@ export default function InspectionReportPage() {
                           </div>
                         )}
                       </div>
+                      
+                      {/* Location moved here */}
+                      <div className={styles.locationSection}>
+                        <h4 className={styles.sectionTitle}>Location</h4>
+                        <p className={styles.sectionContent}>{section.location}</p>
+                      </div>
                     </div>
 
                     {/* Details */}
@@ -434,12 +440,6 @@ export default function InspectionReportPage() {
                         <div className={styles.section}>
                           <h4 className={styles.sectionTitle}>Defect</h4>
                             <p className={styles.sectionContent}>{section.defect}</p>
-                        </div>
-
-                        {/* Location */}
-                        <div className={styles.section}>
-                          <h4 className={styles.sectionTitle}>Location</h4>
-                            <p className={styles.sectionContent}>{section.location}</p>
                         </div>
 
                         {/* Estimated Costs */}

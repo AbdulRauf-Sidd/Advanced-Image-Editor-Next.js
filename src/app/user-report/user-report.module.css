@@ -132,6 +132,23 @@
   opacity: 0.6;
 }
 
+.locationSection {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 0.5rem;
+  border-left: 3px solid #d63636;
+  transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.locationSection:hover {
+  background: #f8fafc;
+  transform: translateX(2px);
+  box-shadow: 0 4px 12px rgba(214, 54, 54, 0.15);
+}
+
 .descriptionSection {
   background: #f8fafc;
   border-radius: 1rem;

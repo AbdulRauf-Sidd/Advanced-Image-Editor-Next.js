@@ -287,6 +287,21 @@ export default function UserReport() {
                       </div>
                     )}
                   </div>
+                  
+                  {/* Location moved here */}
+                  <div className={styles.locationSection}>
+                    <h4 className={styles.sectionTitle}>Location</h4>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        className={styles.editableInput}
+                        value={editedData.location}
+                        onChange={(e) => handleInputChange("location", e.target.value)}
+                      />
+                    ) : (
+                      <p className={styles.sectionContent}>{section.location}</p>
+                    )}
+                  </div>
                 </div>
 
                 {/* Details */}
@@ -304,21 +319,6 @@ export default function UserReport() {
                         />
                       ) : (
                         <p className={styles.sectionContent}>{section.defect}</p>
-                      )}
-                    </div>
-
-                    {/* Location */}
-                    <div className={styles.section}>
-                      <h4 className={styles.sectionTitle}>Location</h4>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          className={styles.editableInput}
-                          value={editedData.location}
-                          onChange={(e) => handleInputChange("location", e.target.value)}
-                        />
-                      ) : (
-                        <p className={styles.sectionContent}>{section.location}</p>
                       )}
                     </div>
 
