@@ -18,6 +18,7 @@ export async function createDefect(data: {
   labor_rate: number;
   hours_required: number;
   recommendation: string;
+  selectedArrowColor?: string; // Add selected arrow color field
 }) {
   const client = await clientPromise;
   const db = client.db(DB_NAME);

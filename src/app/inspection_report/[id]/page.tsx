@@ -16,6 +16,24 @@ export default function InspectionReportPage() {
 
   const reportRef = useRef<HTMLDivElement>(null);
 
+  // Get the selected arrow color for dynamic styling (for individual sections)
+  const getSelectedColor = (section: any) => {
+    const color = section?.selectedArrowColor || '#d63636';
+    console.log('Selected arrow color for section:', section?.heading, color);
+    return color;
+  };
+
+  // Get a lighter shade of the selected color for gradients
+  const getLightColor = (section: any) => {
+    const color = getSelectedColor(section);
+    // Convert hex to RGB and lighten it
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    return `rgb(${Math.min(255, r + 50)}, ${Math.min(255, g + 50)}, ${Math.min(255, b + 50)})`;
+  };
+
   const handleDownloadPDF = () => {
     console.log("start conversion");
     if (!reportRef.current) {
@@ -101,6 +119,7 @@ export default function InspectionReportPage() {
         image: defect.image,
         defect: def,
         location: defect.location,
+        selectedArrowColor: defect.color || defect.selectedArrowColor || '#d63636', // Add individual color for each section
         estimatedCosts: {
           materials: "General materials",
           materialsCost: defect.material_total_cost,
@@ -397,7 +416,14 @@ export default function InspectionReportPage() {
 
                   </div>
                 {reportSections.map((section) => (
-                <div key={section.id} className={styles.reportSection}>
+                <div 
+                  key={section.id} 
+                  className={styles.reportSection}
+                  style={{
+                    '--selected-color': getSelectedColor(section),
+                    '--light-color': getLightColor(section),
+                  } as React.CSSProperties}
+                >
                   {/* Heading */}
                   <div className={styles.sectionHeading}>
                     <h2 className={styles.sectionHeadingText}>{section.heading}</h2>

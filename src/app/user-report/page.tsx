@@ -206,7 +206,8 @@ export default function UserReport() {
           labor_type: analysisResult?.labor_type,
           labor_rate: analysisResult?.labor_rate,
           hours_required: analysisResult?.hours_required,
-          recommendation: analysisResult?.recommendation
+          recommendation: analysisResult?.recommendation,
+          color: analysisData?.selectedArrowColor || '#d63636', // pass the selected arrow color (default to red if not set)
         }),
       });
 
@@ -435,14 +436,14 @@ export default function UserReport() {
                      <div className={styles.costHighlight}>
                        <div className={styles.totalCost}>
                          Total Estimated Cost: ${section.estimatedCosts.totalEstimatedCost}
-                       </div>
-                     </div>
-                   </div>
-                 </div>
-               </div>
-             </div>
-           ))}
-         </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
 
         {/* Buttons */}
         <div className={styles.actionButtons}>
