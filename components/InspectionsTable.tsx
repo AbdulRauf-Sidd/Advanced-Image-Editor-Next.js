@@ -154,7 +154,7 @@ export default function InspectionsTable({ onRowClick, onDocumentClick, onEditCl
                     >
                       <td className="id-cell">
                         <span className="id-badge">
-                          {safeId.substring(0, 4)}
+                          {safeId.slice(-4)}
                         </span>
                       </td>
                       <td className="name-cell">
