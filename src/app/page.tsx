@@ -1,10 +1,15 @@
 "use client";
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import InspectionsTable from '../../components/InspectionsTable';
+import DefectEditModal from '../../components/DefectEditModal';
 
 export default function Home() {
   const router = useRouter();
+  const [defectModalOpen, setDefectModalOpen] = useState(false);
+  const [selectedInspectionId, setSelectedInspectionId] = useState<string>('');
+  const [selectedInspectionName, setSelectedInspectionName] = useState<string>('');
 
   // Handle row click to open ImageEditor
   const handleRowClick = (inspectionId: string) => {
@@ -16,11 +21,18 @@ export default function Home() {
     router.push(`/inspection_report/${inspectionId}`);
   };
 
-  // Handle edit click to edit inspection
+  // Handle edit click to edit inspection defects
   const handleEditClick = (inspectionId: string) => {
-    console.log('Edit inspection:', inspectionId);
-    // You can implement edit functionality here
-    // For now, we'll just log it
+    setSelectedInspectionId(inspectionId);
+    setSelectedInspectionName(`Inspection ${inspectionId.slice(-4)}`);
+    setDefectModalOpen(true);
+  };
+
+  // Handle close defect modal
+  const handleCloseDefectModal = () => {
+    setDefectModalOpen(false);
+    setSelectedInspectionId('');
+    setSelectedInspectionName('');
   };
 
   // Handle delete click to delete inspection
@@ -42,11 +54,20 @@ export default function Home() {
 
   // Show table page
     return (
-    <InspectionsTable 
-      onRowClick={handleRowClick}
-      onDocumentClick={handleDocumentClick}
-      onEditClick={handleEditClick}
-      onDeleteClick={handleDeleteClick}
-    />
+    <>
+      <InspectionsTable 
+        onRowClick={handleRowClick}
+        onDocumentClick={handleDocumentClick}
+        onEditClick={handleEditClick}
+        onDeleteClick={handleDeleteClick}
+      />
+      
+      <DefectEditModal
+        isOpen={defectModalOpen}
+        onClose={handleCloseDefectModal}
+        inspectionId={selectedInspectionId}
+        inspectionName={selectedInspectionName}
+      />
+    </>
   );
 }
