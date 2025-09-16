@@ -22,3 +22,20 @@ export async function getAllInspections() {
   const db = client.db(DB_NAME);
   return await db.collection("inspections").find({}).toArray();
 }
+
+
+export async function deleteInspection(inspectionId: string) {
+  const client = await clientPromise;
+  const db = client.db(DB_NAME);
+
+  // Validate if inspectionId is a valid ObjectId
+  if (!ObjectId.isValid(inspectionId)) {
+    throw new Error('Invalid inspection ID format');
+  }
+
+  const result = await db.collection("inspections").deleteOne({
+    _id: new ObjectId(inspectionId)
+  });
+
+  return result;
+}

@@ -42,13 +42,29 @@ export default function Home() {
         }
       
     try {
-      console.log('Deleting inspection:', inspectionId);
-      // You can implement delete API call here
-      // For now, we'll just log it
-      alert('Delete functionality not implemented yet');
-      } catch (error) {
+      console.log('inspection_id', inspectionId);
+      // setDeletingId(inspectionId);
+      
+      const response = await fetch(`/api/inspections/${inspectionId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete inspection');
+      }
+
+      console.log('Success:', data.message);
+      // Refresh the inspections list or update state
+      // alert('Inspection deleted successfully!');
+      window.location.href = '/';
+      
+    } catch (error: any) {
       console.error('Error deleting inspection:', error);
-      alert('Error deleting inspection. Please try again.');
+      alert(`Error: ${error.message}`);
+    } finally {
+      // setDeletingId(null);
     }
   };
 

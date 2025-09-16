@@ -64,6 +64,8 @@ export default function DefectEditModal({ isOpen, onClose, inspectionId, inspect
       return;
     }
 
+    console.log(defectId)
+
     try {
       setDeleting(defectId);
       const response = await fetch(`/api/defects/${defectId}`, {

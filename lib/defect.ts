@@ -42,3 +42,15 @@ export async function getDefectsByInspection(inspectionId: string) {
     .find({ inspection_id: new ObjectId(inspectionId) })
     .toArray();
 }
+
+
+export async function deleteDefect(defectId: string) {
+  const client = await clientPromise;
+  const db = client.db(DB_NAME);
+
+  const result = await db.collection("defects").deleteOne({
+    _id: new ObjectId(defectId)
+  });
+
+  return result;
+}
