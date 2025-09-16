@@ -1,9 +1,10 @@
 /* User Report Page Styles */
 
 .userReportContainer {
-  min-height: 100vh;
+  min-height: 95vh;
   background: linear-gradient(135deg, #e6fdfa 0%, #ffffff 100%);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
 }
 
 

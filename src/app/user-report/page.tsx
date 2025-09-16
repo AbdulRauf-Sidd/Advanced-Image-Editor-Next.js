@@ -449,7 +449,7 @@ export default function UserReport() {
 
         {/* Buttons */}
         <div className={styles.actionButtons}>
-          <button onClick={() => router.push("/")} className={`${styles.actionButton} ${styles.secondaryButton}`}>
+          <button onClick={() => router.push("/image-editor")} className={`${styles.actionButton} ${styles.secondaryButton}`}>
             Back
           </button>
 
