@@ -25,9 +25,6 @@ export default function ImageEditorPage() {
   const [showLocationDropdown2, setShowLocationDropdown2] = useState(false);
   const [locationSearch2, setLocationSearch2] = useState('');
   const [selectedLocation2, setSelectedLocation2] = useState<string>('');
-  const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const [isSpeechSupported, setIsSpeechSupported] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('');
   const drawingDropdownRef = useRef<HTMLDivElement>(null);
@@ -36,7 +33,6 @@ export default function ImageEditorPage() {
   const locationDropdownRef = useRef<HTMLDivElement>(null);
   const subLocationDropdownRef = useRef<HTMLDivElement>(null);
   const locationDropdownRef2 = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
   const [currentImage, setCurrentImage] = useState<HTMLImageElement | null>(null);
   const [editedFile, setEditedFile] = useState<File | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -190,13 +186,6 @@ export default function ImageEditorPage() {
     locationItem.toLowerCase().includes(locationSearch2.toLowerCase())
   );
 
-  // Check for speech recognition support
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      setIsSpeechSupported(!!SpeechRecognition);
-    }
-  }, []);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -227,77 +216,7 @@ export default function ImageEditorPage() {
     };
   }, []);
 
-  // Cleanup speech recognition
-  useEffect(() => {
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
-  }, []);
 
-  // Toggle microphone
-  const toggleMicrophone = () => {
-    if (!isSpeechSupported) {
-      alert('Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
-      return;
-    }
-    
-    if (!recognitionRef.current) {
-      // Try to initialize speech recognition if not already done
-      try {
-        const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-        recognitionRef.current = new SpeechRecognition();
-        
-        recognitionRef.current.continuous = true;
-        recognitionRef.current.interimResults = true;
-        recognitionRef.current.lang = 'en-US';
-        
-        recognitionRef.current.onresult = (event: any) => {
-          let finalTranscript = '';
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-              finalTranscript += transcript;
-            }
-          }
-          if (finalTranscript) {
-            setTranscript(prev => prev + ' ' + finalTranscript);
-            setDescription(prev => prev + ' ' + finalTranscript);
-          }
-        };
-        
-        recognitionRef.current.onerror = (event: any) => {
-          console.error('Speech recognition error:', event.error);
-          setIsListening(false);
-          if (event.error === 'not-allowed') {
-            alert('Please allow microphone access to use voice input.');
-          } else if (event.error === 'no-speech') {
-            alert('No speech detected. Please try speaking again.');
-          } else if (event.error === 'audio-capture') {
-            alert('Microphone not found. Please check your microphone connection.');
-          }
-        };
-        
-        recognitionRef.current.onend = () => {
-          setIsListening(false);
-        };
-        
-        recognitionRef.current.onstart = () => {
-          setIsListening(true);
-        };
-      } catch (error) {
-        console.error('Error initializing speech recognition:', error);
-        setIsSpeechSupported(false);
-      }
-    }
-    
-    if (isListening) {
-      recognitionRef.current.stop();
-    } else {
-      recognitionRef.current.start();
-    }
-  };
 
   const handleActionClick = (mode: 'none' | 'crop' | 'arrow' | 'circle' | 'square') => {
     if (mode === 'arrow') {
@@ -719,46 +638,6 @@ export default function ImageEditorPage() {
            onChange={(e) => setDescription(e.target.value)}
          />
          
-         {/* Voice Button in Description Box */}
-         <div className="mic-container description-mic">
-           <button 
-             className={`mic-btn ${isListening ? 'listening' : ''}`}
-             onClick={toggleMicrophone}
-             title={isListening ? 'Click to stop recording' : 'Click to start voice recording'}
-           >
-             <i className={`fas ${isListening ? 'fa-stop' : 'fa-microphone'}`}></i>
-           </button>
-           {isListening && (
-             <div className="mic-status">
-               <div className="mic-indicator">
-                 <span className="mic-dot"></span>
-                 <span className="mic-dot"></span>
-                 <span className="mic-dot"></span>
-               </div>
-               <span className="mic-status-text">Listening...</span>
-             </div>
-           )}
-           {transcript && !isListening && (
-             <div className="mic-transcript">
-               <span className="mic-transcript-text">"{transcript}"</span>
-               <button 
-                 className="mic-clear-btn"
-                 onClick={() => setTranscript('')}
-                 title="Clear transcript"
-               >
-                 <i className="fas fa-times"></i>
-               </button>
-             </div>
-           )}
-           {!isSpeechSupported && (
-             <div className="mic-unsupported">
-               <span className="mic-unsupported-text">
-                 <i className="fas fa-info-circle"></i>
-                 Voice input not supported in this browser
-               </span>
-             </div>
-           )}
-         </div>
        </div>
 
       {/* Submit Section */}

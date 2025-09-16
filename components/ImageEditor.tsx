@@ -1038,13 +1038,13 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
             const easedRotation = currentRotation + rotationDelta * 0.5;
             
             setLines(prev => prev.map(line => 
-              line.id === selectedArrowId 
-                ? {
-                    ...line,
-                    rotation: easedRotation,
-                    points: line.points.map(point => rotatePoint(point, center, easedRotation - currentRotation))
-                  }
-                : line
+                line.id === selectedArrowId 
+                  ? {
+                      ...line,
+                      rotation: easedRotation,
+                      points: line.points.map(point => rotatePoint(point, center, easedRotation - currentRotation))
+                    }
+                  : line
             ));
           }
         }
