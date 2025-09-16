@@ -2,8 +2,8 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import styles from "../../user-report/user-report.module.css";
-// import html2pdf from "html2pdf.js";
 import { useRef } from "react";
+
 
 export default function InspectionReportPage() {
   const params = useParams();
@@ -23,39 +23,7 @@ export default function InspectionReportPage() {
     return color;
   };
 
-
-  const handleDownload = async () => {
-    try {
-      setLoading(true);
-      console.log(1)
-
-      const response = await fetch(
-        `/api/pdf?url=${encodeURIComponent(window.location.href)}`
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to generate PDF");
-        console.log(1)
-      }
-
-      console.log(1)
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "page.pdf";
-      a.click();
-
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error(err);
-      alert("Could not generate PDF.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   // Get a lighter shade of the selected color for gradients
   const getLightColor = (section: any) => {
@@ -173,7 +141,6 @@ export default function InspectionReportPage() {
 
   return (
     <div className={styles.userReportContainer}>
-      <button onClick={handleDownload}>hello </button>
       <main className="py-8">
         {/* <div className="flex justify-center py-6">
             <button
