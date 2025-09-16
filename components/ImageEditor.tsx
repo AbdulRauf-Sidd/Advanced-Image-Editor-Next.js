@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import styles from './ImageEditor.module.css';
 
 // Use in JSX:
@@ -122,6 +122,22 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const animationRef = useRef<number | null>(null);
   const [rotationVelocity, setRotationVelocity] = useState(0);
   const [lastRotationTime, setLastRotationTime] = useState<number | null>(null);
+  
+  // Ultra-smooth arrow movement optimization
+  const movementFrameRef = useRef<number | null>(null);
+  const pendingMovementRef = useRef<{
+    id: number;
+    deltaX: number;
+    deltaY: number;
+  } | null>(null);
+  const isMovingRef = useRef(false);
+  const linesRef = useRef<Line[]>([]);
+  
+  // Keep linesRef in sync with lines state
+  useEffect(() => {
+    linesRef.current = lines;
+  }, [lines]);
+  
 
   // Add event listener for arrow color change
   useEffect(() => {
@@ -203,6 +219,45 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       }
     };
   }, [rotationVelocity, selectedArrowId, lastRotationTime]);
+
+  // Ultra-smooth arrow movement with requestAnimationFrame
+  useEffect(() => {
+    const processMovement = () => {
+      if (pendingMovementRef.current && isMovingRef.current) {
+        // Use ref for ultra-fast updates without triggering re-renders
+        const movement = pendingMovementRef.current;
+        const newLines = [...linesRef.current];
+        const lineIndex = newLines.findIndex(line => line.id === movement.id);
+        if (lineIndex !== -1) {
+          newLines[lineIndex] = {
+            ...newLines[lineIndex],
+            points: newLines[lineIndex].points.map(point => ({
+              x: point.x + movement.deltaX,
+              y: point.y + movement.deltaY
+            }))
+          };
+          linesRef.current = newLines;
+          setLines(newLines);
+        }
+        pendingMovementRef.current = null;
+      }
+      
+      if (isMovingRef.current) {
+        movementFrameRef.current = requestAnimationFrame(processMovement);
+      }
+    };
+    
+    if (isMovingRef.current) {
+      movementFrameRef.current = requestAnimationFrame(processMovement);
+    }
+    
+    return () => {
+      if (movementFrameRef.current) {
+        cancelAnimationFrame(movementFrameRef.current);
+      }
+    };
+  }, [isMovingRef.current]);
+
 
   const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -902,7 +957,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     }
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!canvasRef.current) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
@@ -963,27 +1018,16 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
             const deltaX = newCenter.x - oldCenter.x;
             const deltaY = newCenter.y - oldCenter.y;
             
-            setLines(prev => {
-              const updatedLines = prev.map(line => 
-                line.id === selectedArrowId 
-                  ? {
-                      ...line,
-                      points: line.points.map(point => ({
-                        x: point.x + deltaX,
-                        y: point.y + deltaY
-                      }))
-                    }
-                  : line
-              );
-              
-              // Export the file with updated positions
-              setTimeout(() => {
-                const file = exportEditedFile();
-                onEditedFile?.(file);
-              }, 0);
-              
-              return updatedLines;
-            });
+            // Use ultra-smooth movement with requestAnimationFrame
+            pendingMovementRef.current = {
+              id: selectedArrowId,
+              deltaX,
+              deltaY
+            };
+            
+            if (!isMovingRef.current) {
+              isMovingRef.current = true;
+            }
           } else if (interactionMode === 'rotate') {
             // Faster rotation with less easing for more responsive feel
             const angle = Math.atan2(mouseY - center.y, mouseX - center.x);
@@ -993,25 +1037,15 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
             // Reduced easing for faster rotation (from 0.3 to 0.5)
             const easedRotation = currentRotation + rotationDelta * 0.5;
             
-            setLines(prev => {
-              const updatedLines = prev.map(line => 
-                line.id === selectedArrowId 
-                  ? {
-                      ...line,
-                      rotation: easedRotation,
-                      points: line.points.map(point => rotatePoint(point, center, easedRotation - currentRotation))
-                    }
-                  : line
-              );
-              
-              // Export the file with updated positions
-              setTimeout(() => {
-                const file = exportEditedFile();
-                onEditedFile?.(file);
-              }, 0);
-              
-              return updatedLines;
-            });
+            setLines(prev => prev.map(line => 
+              line.id === selectedArrowId 
+                ? {
+                    ...line,
+                    rotation: easedRotation,
+                    points: line.points.map(point => rotatePoint(point, center, easedRotation - currentRotation))
+                  }
+                : line
+            ));
           }
         }
         return;
@@ -1085,11 +1119,6 @@ if (currentLine && currentLine.length > 1) {
               : line
           );
           
-          // Export the file with updated positions
-          setTimeout(() => {
-            const file = exportEditedFile();
-            onEditedFile?.(file);
-          }, 0);
           
           return updatedLines;
         });
@@ -1136,11 +1165,6 @@ if (currentLine && currentLine.length > 1) {
               : line
           );
           
-          // Export the file with updated positions
-          setTimeout(() => {
-            const file = exportEditedFile();
-            onEditedFile?.(file);
-          }, 0);
           
           return updatedLines;
         });
@@ -1190,11 +1214,6 @@ if (currentLine && currentLine.length > 1) {
           return line;
         });
         
-        // Export the file with updated positions
-        setTimeout(() => {
-          const file = exportEditedFile();
-          onEditedFile?.(file);
-        }, 0);
         
         return updatedLines;
       });
@@ -1234,7 +1253,7 @@ if (currentLine && currentLine.length > 1) {
       });
       setHoveredArrowId(hoveredShape ? hoveredShape.id : null);
     }
-  };
+  }, [activeMode, cropFrame, resizingCropHandle, isDraggingCrop, dragCropOffset, isDrawing, selectedArrowId, lines, isDraggingArrow, interactionMode, dragArrowOffset, currentLine, currentArrowSize, hoveredArrowId, isResizingShape, initialShapeData, resizeHandle, isMovingShape, moveOffset, hasDragged, dragStartPoint, circleColor, squareColor]);
 
   const handleMouseUp = () => {
     if (activeMode === 'crop' && isDrawing && cropFrame) {
@@ -1356,6 +1375,13 @@ if (currentLine && currentLine.length > 1) {
     setIsRotatingArrow(false);
     setIsResizingArrow(false);
     setInteractionMode(null);
+    
+    // Stop ultra-smooth movement
+    isMovingRef.current = false;
+    if (movementFrameRef.current) {
+      cancelAnimationFrame(movementFrameRef.current);
+      movementFrameRef.current = null;
+    }
   };
 
   const getHandles = (obj: CropFrame) => {
@@ -1966,7 +1992,7 @@ const drawSquare = (
         ctx.fill();
       });
     }
-  }, [image, lines, currentLine, isDrawing, drawingColor, brushSize, activeMode, cropFrame, selectedArrowId, hoveredArrowId, isDraggingArrow, isRotatingArrow, isResizingArrow, isTwoFingerTouch, rotationCenter, interactionMode, currentArrowSize, circleColor, squareColor, isResizingShape, resizeHandle, initialShapeData, isMovingShape, moveOffset, hasDragged]);
+  }, [image, lines, currentLine, isDrawing, drawingColor, brushSize, activeMode, cropFrame, selectedArrowId, hoveredArrowId, currentArrowSize, circleColor, squareColor, hasDragged]);
 
   const getCursor = () => {
     if (isMovingShape) {
