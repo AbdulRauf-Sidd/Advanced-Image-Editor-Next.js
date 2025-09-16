@@ -500,15 +500,19 @@ export default function InspectionReportPage() {
                               <th>Cost ($)</th>
                             </tr>
                           </thead>
-                          <tbody>
-                            {reportSections.map((section) => (
-                              <tr key={section.id}>
-                                <td>{section.numbering}</td>
-                                <td>{section.defect}</td>
-                                <td>{section.estimatedCosts.totalEstimatedCost}</td>
-                              </tr>
-                            ))}
-                          </tbody>
+                           <tbody>
+                             {reportSections.map((section) => (
+                               <tr key={section.id}>
+                                 <td>{section.numbering}</td>
+                                 <td>{section.defect}</td>
+                                 <td>{section.estimatedCosts.totalEstimatedCost}</td>
+                               </tr>
+                             ))}
+                             <tr style={{ fontWeight: 'bold', backgroundColor: '#f3f4f6' }}>
+                               <td colSpan={2}>Total Cost</td>
+                               <td>{reportSections.reduce((total, section) => total + section.estimatedCosts.totalEstimatedCost, 0)}</td>
+                             </tr>
+                           </tbody>
                         </table>
                     </div>
 
