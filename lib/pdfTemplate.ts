@@ -1,0 +1,399 @@
+export type DefectItem = {
+  section: string;
+  subsection: string;
+  defect_description: string;
+  image?: string; // URL or data URI
+  location?: string;
+  material_total_cost?: number;
+  labor_type?: string;
+  labor_rate?: number;
+  hours_required?: number;
+  recommendation?: string;
+  color?: string;
+};
+
+export type ReportMeta = {
+  title?: string;
+  subtitle?: string;
+  company?: string;
+  logoUrl?: string;
+  date?: string;
+  startNumber?: number; // base section number, defaults to 1
+};
+
+function escapeHtml(str: string = ""): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function currency(n?: number): string {
+  if (typeof n !== "number" || isNaN(n)) return "$0";
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
+}
+
+export function generateInspectionReportHTML(defects: DefectItem[], meta: ReportMeta = {}): string {
+  const {
+    title = "Inspection Report",
+    subtitle = "Defect Summary and Details",
+    company = "",
+    logoUrl,
+    date = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+    startNumber = 1,
+  } = meta;
+
+  // Sort by section then subsection for stable ordering
+  const sorted = [...defects].sort((a, b) => {
+    if (a.section < b.section) return -1;
+    if (a.section > b.section) return 1;
+    if (a.subsection < b.subsection) return -1;
+    if (a.subsection > b.subsection) return 1;
+    return 0;
+  });
+
+  let currentMain = startNumber - 1; // will increment on first new section
+  let lastSection: string | null = null;
+  let subCounter = 0;
+
+  const sectionsHtml = sorted
+    .map((d) => {
+      if (d.section !== lastSection) {
+        currentMain += 1;
+        subCounter = 1;
+        lastSection = d.section;
+      } else {
+        subCounter += 1;
+      }
+
+      const number = `${currentMain}.${subCounter}`;
+      const totalCost = (d.material_total_cost || 0) + (d.labor_rate || 0) * (d.hours_required || 0);
+      const selectedColor = d.color || "#d63636";
+
+      return `
+        <section class="report-section" style="--selected-color: ${selectedColor};">
+          <div class="section-heading">
+            <h2 class="section-heading-text">${escapeHtml(number)} ${escapeHtml(d.section)} - ${escapeHtml(d.subsection)}</h2>
+          </div>
+
+          <div class="content-grid">
+            <div class="image-section">
+              <h3 class="image-title">Visual Evidence</h3>
+              <div class="image-container">
+                ${d.image
+                  ? `<img src="${escapeHtml(d.image)}" alt="Defect image" class="property-image" />`
+                  : `<div class="image-placeholder"><p>No image available</p></div>`}
+              </div>
+              <div class="location-section">
+                <h4 class="section-title">Location</h4>
+                <p class="section-content">${escapeHtml(d.location || "Not specified")}</p>
+              </div>
+            </div>
+
+            <div class="description-section">
+              <h3 class="description-title">Analysis Details</h3>
+              <div class="section">
+                <h4 class="section-title">Defect</h4>
+                <p class="section-content">${escapeHtml(d.defect_description || "")}</p>
+              </div>
+              <div class="section">
+                <h4 class="section-title">Estimated Costs</h4>
+                <div class="section-content">
+                  <p>
+                    <strong>Materials:</strong> ${currency(d.material_total_cost)}<br/>
+                    <strong>Labor:</strong> ${escapeHtml(d.labor_type || "N/A")} at ${currency(d.labor_rate || 0)}/hr<br/>
+                    <strong>Hours:</strong> ${Number(d.hours_required || 0)}<br/>
+                    <strong>Recommendation:</strong> ${escapeHtml(d.recommendation || "N/A")}<br/>
+                    <strong>Total Estimated Cost:</strong> ${currency(totalCost)}
+                  </p>
+                </div>
+              </div>
+              <div class="cost-highlight">
+                <div class="total-cost">Total Estimated Cost: ${currency(totalCost)}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      `;
+    })
+    .join("\n");
+
+  // Build cost summary rows with numbering matching detail sections
+  const costSummaryRows = sorted.reduce<{
+    html: string;
+    current: number;
+    last: string | null;
+    sub: number;
+  }>((acc, d) => {
+    if (d.section !== acc.last) {
+      acc.current += 1;
+      acc.sub = 1;
+      acc.last = d.section;
+    } else {
+      acc.sub += 1;
+    }
+    const numbering = `${acc.current}.${acc.sub}`;
+    const defFirstSentence = (d.defect_description || "").split(".")[0];
+    const costValue = (d.material_total_cost || 0) + (d.labor_rate || 0) * (d.hours_required || 0);
+    acc.html += `
+      <tr>
+        <td>${escapeHtml(numbering)}</td>
+        <td>${escapeHtml(defFirstSentence)}</td>
+        <td style="text-align:right;">${currency(costValue)}</td>
+      </tr>
+    `;
+    return acc;
+  }, { html: "", current: startNumber - 1, last: null, sub: 0 }).html;
+
+  const totalAll = sorted.reduce((sum, d) => sum + (d.material_total_cost || 0) + (d.labor_rate || 0) * (d.hours_required || 0), 0);
+
+  // Build non-priced summary rows (No., Section, Defect) to place after Section 2
+  const summaryRowsSimple = sorted.reduce<{
+    html: string;
+    current: number;
+    last: string | null;
+    sub: number;
+  }>((acc, d) => {
+    if (d.section !== acc.last) {
+      acc.current += 1;
+      acc.sub = 1;
+      acc.last = d.section;
+    } else {
+      acc.sub += 1;
+    }
+    const numbering = `${acc.current}.${acc.sub}`;
+    const defFirstSentence = (d.defect_description || "").split(".")[0];
+    acc.html += `
+      <tr>
+        <td>${escapeHtml(numbering)}</td>
+        <td>${escapeHtml(d.section)} - ${escapeHtml(d.subsection)}</td>
+        <td>${escapeHtml(defFirstSentence)}</td>
+      </tr>`;
+    return acc;
+  }, { html: "", current: startNumber - 1, last: null, sub: 0 }).html;
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${escapeHtml(title)}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 24px; color: #111827; background: #ffffff; }
+    h1, h2, h3, h4 { margin: 0 0 8px 0; }
+    p { margin: 0 0 8px 0; }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; }
+    .header .title { font-size: 24px; font-weight: 700; }
+    .header .meta { color: #6b7280; font-size: 12px; }
+    .logo { height: 40px; }
+
+    .cover { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 20px; background: #f8fafc; }
+    .cover h2 { font-size: 18px; color: #1f2937; page-break-after: avoid; break-after: avoid; }
+    .cover p { color: #374151; }
+  .cover h3 { font-size: 16px; color: #111827; margin: 12px 0 8px; }
+  .cover h4 { font-size: 14px; color: #111827; margin: 10px 0 6px; }
+  .cover ul { margin: 8px 0 12px 18px; padding: 0; }
+  .cover li { margin: 4px 0; }
+  .cover hr { border: 0; border-top: 1px solid #e5e7eb; margin: 12px 0; }
+
+  /* Utility to keep a block together on one page */
+  .keep-together { page-break-inside: avoid; break-inside: avoid; }
+
+  /* Slight offset for the non-priced summary after Section 2 */
+  .cover--summary { margin-top: 24px; }
+
+  /* Section 2: revert to standard, readable sizes similar to original */
+  .cover--section2 { padding: 16px; margin-bottom: 20px; }
+  .cover--section2 h2 { font-size: 18px; margin-bottom: 8px; }
+  .cover--section2 h3 { font-size: 16px; margin: 12px 0 8px; }
+  .cover--section2 h4 { font-size: 14px; margin: 10px 0 6px; }
+  .cover--section2 p, .cover--section2 li { font-size: 13px; line-height: 1.5; margin: 0 0 8px 0; hyphens: manual; -webkit-hyphens: manual; }
+  .cover--section2 ul { margin: 8px 0 12px 18px; }
+  .cover--section2 hr { margin: 12px 0; }
+
+  /* Section 1: match Section 2 and original sizes */
+  .cover--section1 { padding: 16px; margin-bottom: 20px; }
+  .cover--section1 h2 { font-size: 18px; margin-bottom: 8px; }
+  .cover--section1 h3 { font-size: 16px; margin: 12px 0 8px; }
+  .cover--section1 h4 { font-size: 14px; margin: 10px 0 6px; }
+  .cover--section1 p, .cover--section1 li { font-size: 13px; line-height: 1.5; margin: 0 0 8px 0; hyphens: manual; -webkit-hyphens: manual; }
+  .cover--section1 ul { margin: 8px 0 12px 18px; }
+  .cover--section1 hr { margin: 12px 0; }
+
+    .section-heading { margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--selected-color, #d63636); }
+    .section-heading-text { font-size: 18px; color: var(--selected-color, #d63636); font-weight: 700; }
+
+    .content-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
+    .image-section, .description-section { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; }
+    .image-title, .description-title { font-size: 16px; font-weight: 700; color: #1f2937; margin-bottom: 12px; }
+    .image-container { border-radius: 8px; overflow: hidden; min-height: 220px; background: #fff; display: flex; align-items: center; justify-content: center; }
+    .property-image { width: 100%; height: auto; display: block; }
+    .image-placeholder { color: #6b7280; border: 2px dashed #cbd5e1; background: #fff; width: 100%; height: 220px; display: flex; align-items: center; justify-content: center; }
+
+    .location-section { margin-top: 12px; background: #fff; border-left: 3px solid var(--selected-color, #d63636); padding: 12px; border-radius: 6px; }
+    .section { background: #fff; border-left: 3px solid var(--selected-color, #d63636); padding: 12px; border-radius: 6px; margin-bottom: 10px; }
+    .section-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: #1f2937; }
+    .section-content { font-size: 13px; color: #374151; line-height: 1.5; }
+
+    .cost-highlight { background: #f8fafc; border: 1px solid var(--selected-color, #d63636); padding: 10px; border-radius: 8px; margin-top: 10px; }
+    .total-cost { text-align: center; font-weight: 700; color: var(--selected-color, #d63636); }
+
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { border: 1px solid #e5e7eb; padding: 8px; font-size: 12px; text-align: left; }
+    .table thead th { background: #f3f4f6; }
+
+    .footer { margin-top: 16px; font-size: 11px; color: #6b7280; }
+
+    /* Prevent splitting a single defect across pages */
+    .report-section { 
+      /* Increase space between defects */
+      margin: 32px 0;
+      page-break-inside: avoid; 
+      break-inside: avoid; 
+      -webkit-region-break-inside: avoid;
+    }
+    .content-grid,
+    .image-section,
+    .description-section,
+    .section,
+    .location-section,
+    .image-container,
+    .property-image { 
+      page-break-inside: avoid; 
+      break-inside: avoid; 
+    }
+    /* Keep table rows together */
+    .table tr,
+    .table thead,
+    .table tbody,
+    .table th,
+    .table td { 
+      page-break-inside: avoid; 
+      break-inside: avoid; 
+    }
+    /* Keep headings attached to the content that follows */
+    .section-heading { page-break-after: avoid; break-after: avoid; }
+
+    @media print { .page-break { page-break-before: always; } }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div>
+      <div class="title">${escapeHtml(title)}</div>
+      <div class="meta">${escapeHtml(subtitle)}${company ? " • " + escapeHtml(company) : ""} • ${escapeHtml(date)}</div>
+    </div>
+    ${logoUrl ? `<img src="${escapeHtml(logoUrl)}" alt="Logo" class="logo" />` : ""}
+  </header>
+
+  <section class="cover cover--section1">
+    <h2>Section 1 - Inspection Scope, Client Responsibilities, and Repair Estimates</h2>
+    <p>This is a <strong>visual inspection only</strong>. The scope of this inspection is to verify the proper performance of the home's major systems. We do not verify proper design.</p>
+    <p>The following items reflect the condition of the home and its systems <strong>at the time and date the inspection was performed</strong>. Conditions of an occupied home can change after the inspection (e.g., leaks may occur beneath sinks, water may run at toilets, walls or flooring may be damaged during moving, appliances may fail, etc.).</p>
+    <p>Furnishings, personal items, and/or systems of the home are not dismantled or moved. A 3–4 hour inspection is not equal to "live-in exposure" and will not discover all concerns. Unless otherwise stated, we will only inspect/comment on the following systems: <em>Electrical, Heating/Cooling, Appliances, Plumbing, Roof and Attic, Exterior, Grounds, and the Foundation</em>.</p>
+    <p><strong>NOTE:</strong> This inspection is not a warranty or insurance policy. The limit of liability of AGI Property Inspections and its employees does not extend beyond the day the inspection was performed.</p>
+    <p>Cosmetic items (e.g., peeling wallpaper, wall scuffs, nail holes, normal wear and tear, etc.) are not part of this inspection. We also do not inspect for fungi, rodents, or insects. If such issues are noted, it is only to bring them to your attention so you can have the proper contractor evaluate further.</p>
+    <p>Although every effort is made to inspect all systems, not every defect can be identified. Some areas may be inaccessible or hazardous. The home should be carefully reviewed during your final walk-through to ensure no new concerns have occurred and that requested repairs have been completed.</p>
+    <p><strong>IMPORTANT:</strong> Please contact our office immediately at <a href="tel:3379051428">337-905-1428</a> if you suspect or discover any concerns during the final walk-through.</p>
+    <p>Repair recommendations and cost estimates included in this report are <strong>approximate</strong>, generated from typical labor and material rates in our region. They are not formal quotes and must always be verified by licensed contractors. AGI Property Inspections does not guarantee their accuracy.</p>
+    <p>We do not provide guaranteed repair methods. Any corrections should be performed by qualified, licensed contractors. Consult your Real Estate Professional, Attorney, or Contractor for further advice regarding responsibility for these repairs.</p>
+    <p>While this report may identify products involved in recalls or lawsuits, it is not comprehensive. Identifying all recalled products is not a requirement for Louisiana licensed Home Inspectors.</p>
+    <p>This inspection complies with the standards of practice of the <strong>State of Louisiana Home Inspectors Licensing Board</strong>. Home inspectors are generalists and recommend further review by licensed specialists when needed.</p>
+    <p><em>This inspection report and all information contained within is the sole property of AGI Property Inspections and is leased to the clients named in this report. It may not be shared or passed on without AGI’s consent. Doing so may result in legal action.</em></p>
+  </section>
+
+  <div class="page-break"></div>
+
+  <section class="cover cover--section2">
+    <h2>Section 2 - Inspection Scope &amp; Limitations</h2>
+    <h3>Inspection Categories &amp; Summary</h3>
+    <h4>Immediate Attention</h4>
+    <p><strong>Major Defects:</strong> Issues that compromise the home’s structural integrity, may result in additional damage if not repaired, or are considered a safety hazard. These items are color-coded <span style="color:#ef4444; font-weight:600;">red</span> in the report and should be corrected as soon as possible.</p>
+    <h4>Items for Repair</h4>
+    <p><strong>Defects:</strong> Items in need of repair or correction, such as plumbing or electrical concerns, damaged or improperly installed components, etc. These are color-coded <span style="color:#f59e0b; font-weight:600;">orange</span> in the report and have no strict repair timeline.</p>
+    <h4>Maintenance Items</h4>
+    <p>Small DIY-type repairs and maintenance recommendations provided to increase knowledge of long-term care. While not urgent, addressing these will reduce future repair needs and costs.</p>
+    <hr />
+    <h3>Important Information &amp; Limitations</h3>
+    <p>AGI Property Inspections performs all inspections in compliance with the <strong>Louisiana Standards of Practice</strong>. We inspect readily accessible, visually observable, permanently installed systems and components of the home. This inspection is not technically exhaustive or quantitative.</p>
+    <p>Some comments may go beyond the minimum Standards as a courtesy to provide additional detail. Any item noted for repair, replacement, maintenance, or further evaluation should be reviewed by qualified, licensed tradespeople.</p>
+    <p>This inspection cannot predict future conditions or reveal hidden or latent defects. The report reflects the home’s condition only at the time of inspection. Weather, occupancy, or use may reveal issues not present at the time.</p>
+    <p>This report should be considered alongside the <strong>seller’s disclosure, pest inspection report, and contractor evaluations</strong> for a complete picture of the home’s condition.</p>
+    <hr />
+    <h3>Repair Estimates Disclaimer</h3>
+    <p>This report may include repair recommendations and estimated costs. These are based on typical labor and material rates in our region, generated from AI image review. They are approximate and not formal quotes.</p>
+    <ul>
+      <li>Estimates are <strong>not formal quotes</strong>.</li>
+      <li>They do not account for unique site conditions and may vary depending on contractor, materials, and methods.</li>
+      <li>Final pricing must always be obtained through qualified, licensed contractors with on-site evaluation.</li>
+      <li>AGI Property Inspections does not guarantee the accuracy of estimates or assume responsibility for work performed by outside contractors.</li>
+    </ul>
+    <hr />
+    <h3>Recommendations</h3>
+    <ul>
+      <li><strong>Contractors / Further Evaluation:</strong> Repairs noted should be performed by licensed professionals. Keep receipts for warranty and documentation purposes.</li>
+      <li><strong>Causes of Damage / Methods of Repair:</strong> Suggested repair methods are based on inspector experience and opinion. Final determination should always be made by licensed contractors.</li>
+    </ul>
+    <hr />
+    <h3>Excluded Items</h3>
+    <p>The following are not included in this inspection: septic systems, security systems, irrigation systems, pools, hot tubs, wells, sheds, playgrounds, saunas, outdoor lighting, central vacuums, water filters, water softeners, sound or intercom systems, generators, sport courts, sea walls, outbuildings, operating skylights, awnings, exterior BBQ grills, and firepits.</p>
+    <hr />
+    <h3>Occupied Home Disclaimer</h3>
+    <p>If the home was occupied at the time of inspection, some areas may not have been accessible (furniture, personal belongings, etc.). Every effort was made to inspect all accessible areas; however, some issues may not have been visible.</p>
+    <p>We recommend using your final walkthrough to verify that no issues were missed and that the property remains in the same condition as at the time of inspection.</p>
+  </section>
+
+  <!-- Non-priced defects summary placed after Section 2 -->
+  <section class="cover cover--summary keep-together">
+    <h2>Defects Summary</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>No.</th>
+          <th>Section</th>
+          <th>Defect</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${summaryRowsSimple}
+      </tbody>
+    </table>
+  </section>
+
+  <div class="page-break"></div>
+
+  ${sectionsHtml}
+
+  <div class="page-break"></div>
+
+  <section class="cover">
+    <h2>Defects Summary</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>No.</th>
+          <th>Defect</th>
+          <th style="text-align:right;">Cost ($)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${costSummaryRows}
+        <tr>
+          <td colspan="2" style="font-weight:700;background:#f3f4f6;">Total Estimated Cost</td>
+          <td style="font-weight:700;background:#f3f4f6; text-align:right;">${currency(totalAll)}</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer class="footer">
+    Generated by Advanced Image Editor • ${escapeHtml(company || "")}
+  </footer>
+</body>
+</html>
+  `;
+}
