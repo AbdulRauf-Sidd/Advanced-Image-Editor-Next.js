@@ -24,15 +24,23 @@ export async function POST(req: NextRequest) {
     const html = generateInspectionReportHTML(defects, meta);
 
     // Launch headless browser using puppeteer-core + @sparticuz/chromium (serverless-compatible)
-    const chromium = (await import("@sparticuz/chromium")).default;
+    // Prefer chromium-min with remote pack in serverless to avoid lib dependencies
+    let chromium;
+    try {
+      chromium = (await import("@sparticuz/chromium-min")).default;
+    } catch (error) {
+      // Fallback to full package if min isn't installed
+      chromium = (await import("@sparticuz/chromium")).default;
+    }
     const puppeteer = (await import("puppeteer-core")).default;
 
-    const isServerless = !!process.env.AWS_REGION || !!process.env.VERCEL;
+  const isServerless = !!process.env.AWS_REGION || !!process.env.VERCEL;
 
     // Resolve executable path differently for serverless vs local
     let executablePath: string | undefined = undefined;
     if (isServerless) {
-      executablePath = (await chromium.executablePath()) || undefined;
+      const packUrl = process.env.CHROMIUM_PACK_URL;
+      executablePath = (await (chromium as any).executablePath(packUrl)) || undefined;
     } else {
       // For local dev, prefer env variable or common install paths
       executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH || undefined;
@@ -77,11 +85,24 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // On serverless providers (e.g., Vercel/AWS), prefer the special "shell" headless mode
+    const headlessType: any = isServerless ? "shell" : (chromium.headless ?? true);
+
+    // Optional: disable WebGL/graphics to avoid additional lib requirements in serverless
+    if (isServerless) {
+      // @ts-ignore - type shim may not include this property
+      (chromium as any).setGraphicsMode = false;
+    }
+
     const browser = await puppeteer.launch({
-      args: isServerless ? chromium.args : ["--no-sandbox", "--disable-setuid-sandbox"],
+      // Merge puppeteer's default args with chromium's recommended serverless args
+      // For local: keep sandbox flags minimal; for serverless: rely on chromium.args
+      args: isServerless
+        ? (puppeteer as any).defaultArgs({ args: chromium.args, headless: headlessType })
+        : ["--no-sandbox", "--disable-setuid-sandbox"],
       defaultViewport: chromium.defaultViewport,
       executablePath,
-      headless: chromium.headless ?? true,
+      headless: headlessType,
     });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
