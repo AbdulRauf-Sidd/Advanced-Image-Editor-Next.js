@@ -3,6 +3,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import styles from "../../user-report/user-report.module.css";
 import { useRef } from "react";
+import Button from "@/components/Button";
 
 
 export default function InspectionReportPage() {
@@ -36,24 +37,51 @@ export default function InspectionReportPage() {
     return `rgb(${Math.min(255, r + 50)}, ${Math.min(255, g + 50)}, ${Math.min(255, b + 50)})`;
   };
 
-  const handleDownloadPDF = () => {
-    console.log("start conversion");
-    if (!reportRef.current) {
-        console.log('error')
-        return;
+  const handleDownloadPDF = async () => {
+    try {
+      // Transform reportSections into defects payload compatible with API
+      const defectsPayload = reportSections.map((r: any) => ({
+        section: r.heading2?.split(' - ')[0] || '',
+        subsection: r.heading2?.split(' - ')[1] || '',
+        defect_description: r.defect || '',
+        image: r.image,
+        location: r.location,
+        material_total_cost: r.estimatedCosts?.materialsCost ?? 0,
+        labor_type: r.estimatedCosts?.labor ?? '',
+        labor_rate: r.estimatedCosts?.laborRate ?? 0,
+        hours_required: r.estimatedCosts?.hoursRequired ?? 0,
+        recommendation: r.estimatedCosts?.recommendation ?? '',
+        color: r.selectedArrowColor || '#d63636',
+      }));
+
+      const meta = {
+        title: `inspection-${id}-report`,
+        subtitle: 'Generated Inspection Report',
+        company: 'AGI Property Inspections',
+      };
+
+      const res = await fetch('/api/reports/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ defects: defectsPayload, meta }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Failed to generate PDF: ${res.status} ${text}`);
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${meta.title}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('PDF generation failed', e);
+      alert('Failed to generate PDF. See console for details.');
     }
-
-    const element = reportRef.current;
-
-    const options = {
-      margin:       0.5,
-      filename:     "inspection-report.pdf",
-      image:        { type: "jpeg", quality: 0.98 },
-      html2canvas:  { scale: 2 },
-      jsPDF:        { unit: "in", format: "a4", orientation: "portrait" }
-    };
-
-    // html2pdf().set(options).from(element).save();
   };
 
   useEffect(() => {
@@ -142,14 +170,11 @@ export default function InspectionReportPage() {
   return (
     <div className={styles.userReportContainer}>
       <main className="py-8">
-        {/* <div className="flex justify-center py-6">
-            <button
-              onClick={handleDownloadPDF}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700"
-            >
-              Download PDF
-            </button>
-        </div> */}
+        <div className="flex justify-center py-6">
+          <Button type="success" className={`${styles.actionButton} ${styles.saveButton}`} onClick={handleDownloadPDF}>
+            Download PDF
+          </Button>
+        </div>
         <div ref={reportRef} className={styles.reportSectionsContainer}>
             <div className={styles.reportSectionsContainer}>
               <br></br><br></br>

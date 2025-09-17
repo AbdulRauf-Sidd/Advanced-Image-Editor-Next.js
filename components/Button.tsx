@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 
 interface ButtonProps {
@@ -20,7 +21,8 @@ const Button: React.FC<ButtonProps> = ({
 }) => {
   const typeClasses = {
     primary: "bg-blue-500 hover:bg-blue-600 text-white",
-    success: "bg-green-500 hover:bg-green-600 text-white",
+    // Use a richer green gradient to match main buttons
+    success: "bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white",
     warning: "bg-yellow-500 hover:bg-yellow-600 text-white",
     danger: "bg-red-500 hover:bg-red-600 text-white",
     info: "bg-blue-400 hover:bg-blue-500 text-white",
@@ -29,7 +31,7 @@ const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
-      className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors ${typeClasses[type]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+      className={`px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 ${typeClasses[type]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
       onClick={onClick}
       disabled={disabled}
       {...props}
