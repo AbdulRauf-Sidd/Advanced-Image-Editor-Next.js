@@ -150,6 +150,7 @@ export default function InspectionReportPage() {
         heading: `${numbering} ${defect.section} - ${defect.subsection}`,
         image: defect.image,
         defect: def,
+        defect_description: defect.defect_description,
         location: defect.location,
         color: defect.color || defect.selectedArrowColor || '#d63636', // Add individual color for each section
         estimatedCosts: {
@@ -494,7 +495,7 @@ export default function InspectionReportPage() {
                         {/* Defect */}
                         <div className={styles.section}>
                           <h4 className={styles.sectionTitle}>Defect</h4>
-                            <p className={styles.sectionContent}>{section.defect}</p>
+                            <p className={styles.sectionContent}>{section.defect_description}</p>
                         </div>
 
                         {/* Estimated Costs */}
