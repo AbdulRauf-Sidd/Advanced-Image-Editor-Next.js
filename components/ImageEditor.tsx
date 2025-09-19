@@ -74,6 +74,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const [currentLine, setCurrentLine] = useState<Point[] | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawingColor, setDrawingColor] = useState('#d63636');
+  const [synchronizedColor, setSynchronizedColor] = useState('#d63636'); // Global synchronized color
   const [brushSize, setBrushSize] = useState(3);
   const [currentArrowSize, setCurrentArrowSize] = useState(3);
   
@@ -139,39 +140,25 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   }, [lines]);
   
 
-  // Add event listener for arrow color change
+  // Synchronized color event listeners for all tools
   useEffect(() => {
-    const handleArrowColorChange = (e: CustomEvent) => {
-      setDrawingColor(e.detail);
+    const handleColorChange = (e: CustomEvent) => {
+      const color = e.detail;
+      setSynchronizedColor(color);
+      setDrawingColor(color);
+      setCircleColor(color);
+      setSquareColor(color);
+      console.log('Color synchronized across all tools:', color);
     };
 
-    window.addEventListener('setArrowColor', handleArrowColorChange as EventListener);
+    window.addEventListener('setArrowColor', handleColorChange as EventListener);
+    window.addEventListener('setCircleColor', handleColorChange as EventListener);
+    window.addEventListener('setSquareColor', handleColorChange as EventListener);
+    
     return () => {
-      window.removeEventListener('setArrowColor', handleArrowColorChange as EventListener);
-    };
-  }, []);
-
-  // Circle color event listener
-  useEffect(() => {
-    const handleCircleColorChange = (e: CustomEvent) => {
-      setCircleColor(e.detail);
-    };
-
-    window.addEventListener('setCircleColor', handleCircleColorChange as EventListener);
-    return () => {
-      window.removeEventListener('setCircleColor', handleCircleColorChange as EventListener);
-    };
-  }, []);
-
-  // Square color event listener
-  useEffect(() => {
-    const handleSquareColorChange = (e: CustomEvent) => {
-      setSquareColor(e.detail);
-    };
-
-    window.addEventListener('setSquareColor', handleSquareColorChange as EventListener);
-    return () => {
-      window.removeEventListener('setSquareColor', handleSquareColorChange as EventListener);
+      window.removeEventListener('setArrowColor', handleColorChange as EventListener);
+      window.removeEventListener('setCircleColor', handleColorChange as EventListener);
+      window.removeEventListener('setSquareColor', handleColorChange as EventListener);
     };
   }, []);
 

@@ -41,6 +41,7 @@ export default function DefectEditModal({ isOpen, onClose, inspectionId, inspect
     }
   }, [isOpen, inspectionId]);
 
+
   const fetchDefects = async () => {
     try {
       setLoading(true);
@@ -219,10 +220,11 @@ export default function DefectEditModal({ isOpen, onClose, inspectionId, inspect
                       <div className="defect-actions">
                         {!isEditing && (
                           <button
-                            className="edit-defect-btn"
+                            className="professional-edit-btn"
                             onClick={() => startEditing(defect)}
+                            title="Edit defect"
                           >
-                            <i className="fas fa-pen"></i>
+                            <i className="fas fa-edit"></i>
                           </button>
                         )}
                         {isEditing && (

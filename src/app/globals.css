@@ -1340,6 +1340,27 @@ body div.submit-section div.submit-controls div.location-button-container button
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* Selected color state for all tools */
+.arrow-color-option.selected,
+.circle-color-option.selected,
+.square-color-option.selected {
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 2px #3b82f6, 0 4px 8px rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
+}
+
+/* Color synchronization notice */
+.color-sync-notice {
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-top: 1px solid #e2e8f0;
+  font-size: 12px;
+  color: #0c4a6e;
+  text-align: center;
+  font-weight: 500;
+  border-radius: 0 0 8px 8px;
+}
+
 /* Mobile responsiveness for drawing tool dropdown */
 @media (max-width: 768px) {
   .arrow-dropdown {
