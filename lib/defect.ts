@@ -12,13 +12,13 @@ export async function createDefect(data: {
   section: string;
   subsection: string;
   defect_description: string;
-  material_names: string[];
+  materials: string;
   material_total_cost: number;
   labor_type: string;
   labor_rate: number;
   hours_required: number;
   recommendation: string;
-  selectedArrowColor?: string; // Add selected arrow color field
+  color?: string; // Add selected arrow color field
 }) {
   const client = await clientPromise;
   const db = client.db(DB_NAME);
@@ -51,6 +51,32 @@ export async function deleteDefect(defectId: string) {
   const result = await db.collection("defects").deleteOne({
     _id: new ObjectId(defectId)
   });
+
+  return result;
+}
+
+export async function updateDefect(defectId: string, inspectionId: string, updates: {
+  defect_description?: string;
+  materials?: string;
+  material_total_cost?: number;
+  location?: string;
+  labor_type?: string;
+  labor_rate?: number;
+  hours_required?: number;
+  recommendation?: string;
+}) {
+  const client = await clientPromise;
+  const db = client.db(DB_NAME);
+
+  const result = await db.collection("defects").updateOne(
+    {
+      _id: new ObjectId(defectId),
+      inspection_id: new ObjectId(inspectionId), // ensure it belongs to the right inspection
+    },
+    {
+      $set: updates,
+    }
+  );
 
   return result;
 }

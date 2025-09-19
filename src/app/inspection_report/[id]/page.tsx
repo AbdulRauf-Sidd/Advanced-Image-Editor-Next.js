@@ -19,7 +19,8 @@ export default function InspectionReportPage() {
 
   // Get the selected arrow color for dynamic styling (for individual sections)
   const getSelectedColor = (section: any) => {
-    const color = section?.selectedArrowColor || '#d63636';
+    console.log(section);
+    const color = section?.color || '#d63636';
     console.log('Selected arrow color for section:', section?.heading, color);
     return color;
   };
@@ -131,6 +132,7 @@ export default function InspectionReportPage() {
       } else {
         subCounter++;
       }
+      console.log('DEFECTS', defect);
 
       const def = defect.defect_description.split(".")[0] || "";
 
@@ -149,7 +151,7 @@ export default function InspectionReportPage() {
         image: defect.image,
         defect: def,
         location: defect.location,
-        selectedArrowColor: defect.color || defect.selectedArrowColor || '#d63636', // Add individual color for each section
+        color: defect.color || defect.selectedArrowColor || '#d63636', // Add individual color for each section
         estimatedCosts: {
           materials: "General materials",
           materialsCost: defect.material_total_cost,

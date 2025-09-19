@@ -10,13 +10,14 @@ interface Defect {
   section: string;
   subsection: string;
   defect_description: string;
-  material_names: string[];
+  defect_short_description: string;
+  materials: string;
   material_total_cost: number;
   labor_type: string;
   labor_rate: number;
   hours_required: number;
   recommendation: string;
-  selectedArrowColor?: string;
+  color?: string;
 }
 
 interface DefectEditModalProps {
@@ -30,6 +31,8 @@ export default function DefectEditModal({ isOpen, onClose, inspectionId, inspect
   const [defects, setDefects] = useState<Defect[]>([]);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editedValues, setEditedValues] = useState<Partial<Defect>>({});
 
   // Fetch defects when modal opens
   useEffect(() => {
@@ -100,6 +103,86 @@ export default function DefectEditModal({ isOpen, onClose, inspectionId, inspect
     return materialCost + laborCost;
   };
 
+  const startEditing = (defect: Defect) => {
+    setEditingId(defect._id);
+    setEditedValues({ ...defect });
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditedValues({});
+  };
+
+  const handleFieldChange = (field: keyof Defect, value: string) => {
+    setEditedValues(prev => {
+      let parsed: any = value;
+      if (field === 'material_total_cost' || field === 'labor_rate' || field === 'hours_required') {
+        const num = parseFloat(value);
+        parsed = isNaN(num) ? 0 : num;
+      }
+      return { ...prev, [field]: parsed };
+    });
+  };
+
+  const saveEdited = async () => {
+    if (!editingId) return;
+    const index = defects.findIndex(d => d._id === editingId);
+    if (index === -1) return;
+  
+    const updated: Defect = { ...defects[index], ...(editedValues as Defect) };
+  
+    // Log all values for the edited defect
+    console.log('Edited defect values:', updated);
+  
+    try {
+      // Call API to persist changes
+      const response = await fetch(`/api/defects/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inspection_id: updated.inspection_id, // required
+          defect_description: updated.defect_description,
+          materials: updated.materials,
+          material_total_cost: updated.material_total_cost,
+          location: updated.location,
+          labor_type: updated.labor_type,
+          labor_rate: updated.labor_rate,
+          hours_required: updated.hours_required,
+          recommendation: updated.recommendation,
+        }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error updating defect:", errorData.error);
+        alert(`Update failed: ${errorData.error}`);
+        return;
+      }
+  
+      const result = await response.json();
+      console.log("✅ Defect updated successfully:", result.message);
+  
+      // Update local state so UI reflects new values
+      setDefects(prev =>
+        prev.map(d => (d._id === editingId ? updated : d))
+      );
+  
+      setEditingId(null);
+      setEditedValues({});
+    } catch (err) {
+      console.error("Unexpected error while saving defect:", err);
+      alert("Something went wrong while saving changes.");
+    }
+  };
+  
+
+  const getDisplayDefect = (defect: Defect): Defect => {
+    if (editingId === defect._id) {
+      return { ...defect, ...(editedValues as Partial<Defect>) } as Defect;
+    }
+    return defect;
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -126,63 +209,218 @@ export default function DefectEditModal({ isOpen, onClose, inspectionId, inspect
             </div>
           ) : (
             <div className="defects-list">
-              {defects.map((defect, index) => (
-                <div key={defect._id} className="defect-card">
-                  <div className="defect-header">
-                    <h3>Defect #{index + 1}</h3>
-                    <button
-                      className="delete-defect-btn"
-                      onClick={() => handleDeleteDefect(defect._id)}
-                      disabled={deleting === defect._id}
-                    >
-                      {deleting === defect._id ? (
-                        <i className="fas fa-spinner fa-spin"></i>
-                      ) : (
-                        <i className="fas fa-trash"></i>
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="defect-content">
-                    <div className="defect-image">
-                      <img src={defect.image || '/placeholder-image.jpg'} alt="Defect" />
-                    </div>
-
-                    <div className="defect-details">
-                      <div className="detail-row">
-                        <strong>Location:</strong> {defect.location || 'Not specified'}
-                      </div>
-                      <div className="detail-row">
-                        <strong>Section:</strong> {defect.section || 'Not specified'}
-                      </div>
-                      <div className="detail-row">
-                        <strong>Subsection:</strong> {defect.subsection || 'Not specified'}
-                      </div>
-                      <div className="detail-row">
-                        <strong>Description:</strong> {defect.defect_description || 'No description available'}
-                      </div>
-                      <div className="detail-row">
-                        <strong>Materials:</strong> {defect.material_names?.join(', ') || 'No materials specified'}
-                      </div>
-                      <div className="detail-row">
-                        <strong>Material Cost:</strong> {formatCurrency(defect.material_total_cost || 0)}
-                      </div>
-                      <div className="detail-row">
-                        <strong>Labor:</strong> {defect.labor_type || 'Not specified'} at {formatCurrency(defect.labor_rate || 0)}/hr
-                      </div>
-                      <div className="detail-row">
-                        <strong>Hours:</strong> {defect.hours_required || 0}
-                      </div>
-                      <div className="detail-row">
-                        <strong>Recommendation:</strong> {defect.recommendation || 'No recommendation available'}
-                      </div>
-                      <div className="detail-row total-cost">
-                        <strong>Total Cost:</strong> {formatCurrency(calculateTotalCost(defect))}
+              {defects.map((defect, index) => {
+                const displayDefect = getDisplayDefect(defect);
+                const isEditing = editingId === defect._id;
+                return (
+                  <div key={defect._id} className="defect-card">
+                    <div className="defect-header">
+                      <h3>Defect #{index + 1}</h3>
+                      <div className="defect-actions">
+                        {!isEditing && (
+                          <button
+                            className="edit-defect-btn"
+                            onClick={() => startEditing(defect)}
+                          >
+                            <i className="fas fa-pen"></i>
+                          </button>
+                        )}
+                        {isEditing && (
+                          <>
+                            <button className="save-defect-btn" onClick={saveEdited}>
+                              <i className="fas fa-save"></i>
+                            </button>
+                            <button className="cancel-defect-btn" onClick={cancelEditing}>
+                              <i className="fas fa-times"></i>
+                            </button>
+                          </>
+                        )}
+                        <button
+                          className="delete-defect-btn"
+                          onClick={() => handleDeleteDefect(defect._id)}
+                          disabled={deleting === defect._id}
+                        >
+                          {deleting === defect._id ? (
+                            <i className="fas fa-spinner fa-spin"></i>
+                          ) : (
+                            <i className="fas fa-trash"></i>
+                          )}
+                        </button>
                       </div>
                     </div>
+
+                    <div className="defect-content">
+                      <div className="defect-image">
+                        <img src={displayDefect.image || '/placeholder-image.jpg'} alt="Defect" />
+                      </div>
+
+                      <div className="defect-details">
+                        <div className="detail-row">
+                          <strong>Location:</strong>{' '}
+                          {isEditing ? (
+                            <input
+                              className="defect-input"
+                              type="text"
+                              value={editedValues.location ?? displayDefect.location ?? ''}
+                              onChange={(e) => handleFieldChange('location', e.target.value)}
+                            />
+                          ) : (
+                            displayDefect.location || 'Not specified'
+                          )}
+                        </div>
+                        <div className="detail-row">
+                          <strong>Section:</strong>{' '}
+                          {isEditing ? (
+                            <input
+                              className="defect-input"
+                              type="text"
+                              value={editedValues.section ?? displayDefect.section ?? ''}
+                              onChange={(e) => handleFieldChange('section', e.target.value)}
+                            />
+                          ) : (
+                            displayDefect.section || 'Not specified'
+                          )}
+                        </div>
+                        <div className="detail-row">
+                          <strong>Subsection:</strong>{' '}
+                          {isEditing ? (
+                            <input
+                              className="defect-input"
+                              type="text"
+                              value={editedValues.subsection ?? displayDefect.subsection ?? ''}
+                              onChange={(e) => handleFieldChange('subsection', e.target.value)}
+                            />
+                          ) : (
+                            displayDefect.subsection || 'Not specified'
+                          )}
+                        </div>
+                        <div className="detail-row">
+                          <strong>Description:</strong>{' '}
+                          {isEditing ? (
+                            <textarea
+                              className="defect-input"
+                              value={editedValues.defect_description ?? displayDefect.defect_description ?? ''}
+                              onChange={(e) => handleFieldChange('defect_description', e.target.value)}
+                            />
+                          ) : (
+                            displayDefect.defect_description || 'No description available'
+                          )}
+                        </div>
+                        <div className="detail-row">
+                          <strong>Materials:</strong>{' '}
+                          {isEditing ? (
+                            <input
+                              className="defect-input"
+                              type="text"
+                              value={editedValues.materials ?? displayDefect.materials ?? ''}
+                              onChange={(e) =>
+                                setEditedValues(prev => ({
+                                  ...prev,
+                                  materials: e.target.value,
+                                }))
+                              }
+                            />
+                          ) : (
+                            displayDefect.materials || 'No materials specified'
+                          )}
+                        </div>
+                        <div className="detail-row">
+                          <strong>Material Cost:</strong>{' '}
+                          {isEditing ? (
+                            <input
+                              className="defect-input"
+                              type="number"
+                              step="0.01"
+                              value={String(editedValues.material_total_cost ?? displayDefect.material_total_cost ?? 0)}
+                              onChange={(e) => handleFieldChange('material_total_cost', e.target.value)}
+                            />
+                          ) : (
+                            formatCurrency(displayDefect.material_total_cost || 0)
+                          )}
+                        </div>
+                        <div className="detail-row">
+                          <strong>Labor:</strong>{' '}
+                          {isEditing ? (
+                            <input
+                              className="defect-input"
+                              type="text"
+                              value={editedValues.labor_type ?? displayDefect.labor_type ?? ''}
+                              onChange={(e) => handleFieldChange('labor_type', e.target.value)}
+                            />
+                          ) : (
+                            displayDefect.labor_type || 'Not specified'
+                          )}{' '}
+                          {isEditing ? (
+                            <>
+                              at
+                              <input
+                                className="defect-input"
+                                style={{ width: 100, marginLeft: 6, marginRight: 6 }}
+                                type="number"
+                                step="0.01"
+                                value={String(editedValues.labor_rate ?? displayDefect.labor_rate ?? 0)}
+                                onChange={(e) => handleFieldChange('labor_rate', e.target.value)}
+                              />
+                              /hr
+                            </>
+                          ) : (
+                            <> at {formatCurrency(displayDefect.labor_rate || 0)}/hr</>
+                          )}
+                        </div>
+                        <div className="detail-row">
+                          <strong>Hours:</strong>{' '}
+                          {isEditing ? (
+                            <input
+                              className="defect-input"
+                              type="number"
+                              step="0.1"
+                              value={String(editedValues.hours_required ?? displayDefect.hours_required ?? 0)}
+                              onChange={(e) => handleFieldChange('hours_required', e.target.value)}
+                            />
+                          ) : (
+                            displayDefect.hours_required || 0
+                          )}
+                        </div>
+                        <div className="detail-row">
+                          <strong>Recommendation:</strong>{' '}
+                          {isEditing ? (
+                            <textarea
+                              className="defect-input"
+                              value={editedValues.recommendation ?? displayDefect.recommendation ?? ''}
+                              onChange={(e) => handleFieldChange('recommendation', e.target.value)}
+                            />
+                          ) : (
+                            displayDefect.recommendation || 'No recommendation available'
+                          )}
+                        </div>
+                        <div className="detail-row total-cost">
+                          <strong>Total Cost:</strong>{' '}
+                          {formatCurrency(
+                            calculateTotalCost({
+                              ...displayDefect,
+                              material_total_cost: Number(
+                                isEditing
+                                  ? editedValues.material_total_cost ?? displayDefect.material_total_cost ?? 0
+                                  : displayDefect.material_total_cost ?? 0
+                              ),
+                              labor_rate: Number(
+                                isEditing
+                                  ? editedValues.labor_rate ?? displayDefect.labor_rate ?? 0
+                                  : displayDefect.labor_rate ?? 0
+                              ),
+                              hours_required: Number(
+                                isEditing
+                                  ? editedValues.hours_required ?? displayDefect.hours_required ?? 0
+                                  : displayDefect.hours_required ?? 0
+                              ),
+                            } as Defect)
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

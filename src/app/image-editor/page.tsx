@@ -269,24 +269,19 @@ export default function ImageEditorPage() {
       alert('Please upload and edit an image before submitting.');
       return;
     }
-
+  
     if (!selectedLocation || !selectedSubLocation || !selectedLocation2) {
       alert('Please select all required location fields.');
       return;
     }
-
-    // Store selected values in their respective variables
-    const selectedSection = selectedLocation; // This is the section (AC / Cooling, Electrical, etc.)
-    const selectedSubsection = selectedSubLocation; // This is the subsection (Air Conditioning, Thermostats, etc.)
-    const selectedLocationValue = selectedLocation2; // This is the specific location (Kitchen, Bedroom 1, etc.)
-
-    // Console logs to show the selected values
-
-
+  
+    const selectedSection = selectedLocation;
+    const selectedSubsection = selectedSubLocation;
+    const selectedLocationValue = selectedLocation2;
+  
     setIsSubmitting(true);
     setSubmitStatus('Processing...');
-
-    // Convert edited file to data URL (outside try-catch so it's accessible in both blocks)
+  
     let imageDataUrl: string;
     try {
       imageDataUrl = await new Promise<string>((resolve) => {
@@ -294,96 +289,59 @@ export default function ImageEditorPage() {
         reader.onload = (e) => resolve(e.target?.result as string);
         reader.readAsDataURL(editedFile);
       });
-      console.log('Image converted to data URL');
     } catch (conversionError) {
       console.error('Error converting image to data URL:', conversionError);
       imageDataUrl = '';
     }
-
+  
     try {
-      console.log('Starting submission process...');
-
-      // Call AI analysis API
       const formData = new FormData();
       formData.append('image', editedFile);
       formData.append('description', description);
       formData.append('location', selectedLocationValue);
       formData.append('section', selectedSection);
-      formData.append('subsection', selectedSubsection);
-
-
-
-      console.log('Calling AI analysis API...');
+      formData.append('subSection', selectedSubsection);
+      formData.append('inspectionId', selectedInspectionId);
+      formData.append('selectedColor', selectedArrowColor);
+      formData.append('imageUrl', imageDataUrl);
+  
       const response = await fetch('/api/llm/analyze-image', {
         method: 'POST',
         body: formData,
       });
-
-      console.log('API response status:', response.status);
-
+      
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API Error:', errorText);
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+        alert(`Analysis request failed: ${errorText}`);
+        return; // ❌ stop here
       }
-
+      
       const result = await response.json();
-      console.log('Analysis result:', result);
+      console.log('API response:', result);
+      
+      // Check if the analysis was accepted and started
+      if (response.status === 202) {
+        // Analysis is processing in the background
+        console.log('Analysis started with ID:', result.analysisId);
+        
+      } else if (!result.analysisId) {
+        alert('Analysis did not start correctly. Please try again.');
+        return; // ❌ stop here
+      }
+  
 
-      // Store analysis data in global state
-      console.log('Storing analysis data with arrow color:', selectedArrowColor);
-      updateAnalysisData({
-        inspectionId: selectedInspectionId,
-        imageFile: editedFile,
-        image: imageDataUrl, // Store as data URL
-        description,
-        location: selectedLocationValue,
-        section: selectedSection,
-        subSection: selectedSubsection,
-        analysisResult: result,
-        selectedArrowColor: selectedArrowColor // Store the selected arrow color
-      });
-      
-      console.log('Data stored successfully, navigating to user report...');
-      
-      // Navigate to results page
-      router.push('/user-report');
-      
+  
+      // ✅ Navigate only if job started successfully
+      window.location.href = `/image-editor/?inspectionId=${selectedInspectionId}`;
     } catch (error: any) {
       console.error('Submission error:', error);
-      
-      // Even if API fails, still store the data and navigate to user report
-      console.log('API failed, but storing data and proceeding to user report...');
-      
-      console.log('Storing fallback analysis data with arrow color:', selectedArrowColor);
-      updateAnalysisData({
-        inspectionId: selectedInspectionId,
-        imageFile: editedFile,
-        image: imageDataUrl,
-        description,
-        location: selectedLocationValue,
-        section: selectedSection,
-        subSection: selectedSubsection,
-        analysisResult: {
-          defect: 'Analysis failed - please review manually',
-          recommendation: 'Manual review required due to analysis error',
-          materials_names: 'To be determined',
-          materials_total_cost: 0,
-          labor_type: 'To be determined',
-          labor_rate: 0,
-          hours_required: 0,
-          total_estimated_cost: 0
-        },
-        selectedArrowColor: selectedArrowColor // Store the selected arrow color
-      });
-      
-      // Navigate to results page even if API failed
-      router.push('/user-report');
-      
+      alert('Unexpected error occurred while submitting. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
+  
 
   // Color options for all tools (arrow, circle, square)
   const arrowColors = ['#d63636', '#FF8C00', '#0066CC', '#800080']; // red, orange, blue, purple
