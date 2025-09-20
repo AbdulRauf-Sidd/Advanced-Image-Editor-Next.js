@@ -538,7 +538,7 @@ export default function InspectionReportPage() {
                              ))}
                              <tr style={{ fontWeight: 'bold', backgroundColor: '#f3f4f6' }}>
                                <td colSpan={2}>Total Cost</td>
-                               <td>{reportSections.reduce((total, section) => total + section.estimatedCosts.totalEstimatedCost, 0)}</td>
+                               <td>${reportSections.reduce((total, section) => total + section.estimatedCosts.totalEstimatedCost, 0)}</td>
                              </tr>
                            </tbody>
                         </table>
