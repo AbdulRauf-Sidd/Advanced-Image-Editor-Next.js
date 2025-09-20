@@ -525,7 +525,7 @@ export default function InspectionReportPage() {
                             <tr>
                               <th>No.</th>
                               <th>Defect</th>
-                              <th>Cost ($)</th>
+                              <th>Cost</th>
                             </tr>
                           </thead>
                            <tbody>
@@ -533,7 +533,7 @@ export default function InspectionReportPage() {
                                <tr key={section.id}>
                                  <td>{section.numbering}</td>
                                  <td>{section.defect}</td>
-                                 <td>{section.estimatedCosts.totalEstimatedCost}</td>
+                                 <td>${section.estimatedCosts.totalEstimatedCost}</td>
                                </tr>
                              ))}
                              <tr style={{ fontWeight: 'bold', backgroundColor: '#f3f4f6' }}>
