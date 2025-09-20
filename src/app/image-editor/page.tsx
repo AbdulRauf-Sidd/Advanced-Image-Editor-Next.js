@@ -37,7 +37,7 @@ export default function ImageEditorPage() {
   const [editedFile, setEditedFile] = useState<File | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [selectedArrowColor, setSelectedArrowColor] = useState('#d63636'); // Default red color
+  const [selectedColor, setSelectedColor] = useState('#d63636'); // Default red color - shared across all tools
 
   const { updateAnalysisData } = useAnalysisStore();
 
@@ -302,7 +302,7 @@ export default function ImageEditorPage() {
       formData.append('section', selectedSection);
       formData.append('subSection', selectedSubsection);
       formData.append('inspectionId', selectedInspectionId);
-      formData.append('selectedColor', selectedArrowColor);
+      formData.append('selectedColor', selectedColor);
       formData.append('imageUrl', imageDataUrl);
   
       const response = await fetch('/api/llm/analyze-image', {
@@ -344,7 +344,23 @@ export default function ImageEditorPage() {
   
 
   // Color options for all tools (arrow, circle, square)
-  const arrowColors = ['#d63636', '#FF8C00', '#0066CC', '#800080']; // red, orange, blue, purple
+  const toolColors = ['#d63636', '#FF8C00', '#0066CC', '#800080']; // red, orange, blue, purple
+
+  // Function to handle color selection for all tools
+  const handleColorSelection = (color: string) => {
+    setSelectedColor(color);
+    
+    // Dispatch events to set colors for all tools simultaneously
+    const arrowEvent = new CustomEvent('setArrowColor', { detail: color });
+    const circleEvent = new CustomEvent('setCircleColor', { detail: color });
+    const squareEvent = new CustomEvent('setSquareColor', { detail: color });
+    
+    window.dispatchEvent(arrowEvent);
+    window.dispatchEvent(circleEvent);
+    window.dispatchEvent(squareEvent);
+    
+    console.log('Color synchronized across all tools:', color);
+  };
 
   if (isSubmitting) {
     return (
@@ -481,21 +497,21 @@ export default function ImageEditorPage() {
           {showDrawingDropdown && (
             <div className="arrow-dropdown">
               <div className="arrow-color-options">
-                {arrowColors.map(color => (
+                {toolColors.map(color => (
                   <div 
                     key={color}
-                    className="arrow-color-option"
+                    className={`arrow-color-option ${selectedColor === color ? 'selected' : ''}`}
                     style={{ backgroundColor: color }}
                     onClick={() => {
-                      // Set the arrow color in the ImageEditor
-                      const event = new CustomEvent('setArrowColor', { detail: color });
-                      window.dispatchEvent(event);
-                      setSelectedArrowColor(color); // Store the selected color
-                      console.log('Arrow color selected:', color);
+                      handleColorSelection(color);
                       setShowDrawingDropdown(false);
                     }}
+                    title={`Select ${color} for all tools`}
                   ></div>
                 ))}
+              </div>
+              <div className="color-sync-notice">
+                Color applies to all tools
               </div>
             </div>
           )}
@@ -514,19 +530,21 @@ export default function ImageEditorPage() {
           {showCircleDropdown && (
             <div className="circle-dropdown">
               <div className="circle-color-options">
-                {arrowColors.map(color => (
+                {toolColors.map(color => (
                   <div 
                     key={color}
-                    className="circle-color-option"
+                    className={`circle-color-option ${selectedColor === color ? 'selected' : ''}`}
                     style={{ backgroundColor: color }}
                     onClick={() => {
-                      // Set the circle color in the ImageEditor
-                      const event = new CustomEvent('setCircleColor', { detail: color });
-                      window.dispatchEvent(event);
+                      handleColorSelection(color);
                       setShowCircleDropdown(false);
                     }}
+                    title={`Select ${color} for all tools`}
                   ></div>
                 ))}
+              </div>
+              <div className="color-sync-notice">
+                Color applies to all tools
               </div>
             </div>
           )}
@@ -545,19 +563,21 @@ export default function ImageEditorPage() {
           {showSquareDropdown && (
             <div className="square-dropdown">
               <div className="square-color-options">
-                {arrowColors.map(color => (
+                {toolColors.map(color => (
                   <div 
                     key={color}
-                    className="square-color-option"
+                    className={`square-color-option ${selectedColor === color ? 'selected' : ''}`}
                     style={{ backgroundColor: color }}
                     onClick={() => {
-                      // Set the square color in the ImageEditor
-                      const event = new CustomEvent('setSquareColor', { detail: color });
-                      window.dispatchEvent(event);
+                      handleColorSelection(color);
                       setShowSquareDropdown(false);
                     }}
+                    title={`Select ${color} for all tools`}
                   ></div>
                 ))}
+              </div>
+              <div className="color-sync-notice">
+                Color applies to all tools
               </div>
             </div>
           )}
