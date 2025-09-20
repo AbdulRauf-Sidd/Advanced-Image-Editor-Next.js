@@ -256,6 +256,13 @@ export default function ImageEditorPage() {
     window.dispatchEvent(event);
   };
 
+  const handleRotate = () => {
+    console.log('Rotate clicked');
+    // Dispatch custom event for ImageEditor to handle rotation
+    const event = new CustomEvent('rotateImage');
+    window.dispatchEvent(event);
+  };
+
   const handleCropStateChange = (hasFrame: boolean) => {
     setHasCropFrame(hasFrame);
   };
@@ -462,6 +469,10 @@ export default function ImageEditorPage() {
         </button>
         <button className="action-btn redo-btn" onClick={handleRedo}>
           <i className="fas fa-redo"></i>
+        </button>
+
+        <button className="action-btn rotate-btn" onClick={handleRotate}>
+          <i className="fas fa-sync-alt"></i>
         </button>
         
         <button 

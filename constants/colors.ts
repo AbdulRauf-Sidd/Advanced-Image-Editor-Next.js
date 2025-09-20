@@ -24,7 +24,7 @@ export const colors = {
     text: "#ffffff"
   },
   drawingColors: ['#ff6b6b', '#4b6cb7', '#0ba360', '#f46b45', '#8e2de2', '#000000'],
-  appBackground: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+  appBackground: "linear-gradient(135deg, #d1d5db 0%, #f3f4f6 100%)",
   headerBackground: "linear-gradient(120deg, #6a11cb 0%, #2575fc 100%)",
   toolbarBackground: "#ffffff",
   shadow: "rgba(0, 0, 0, 0.1)",

@@ -34,7 +34,14 @@ interface CropAction {
   id: number;
 }
 
-type Action = Line | CropAction;
+interface RotateAction {
+  type: 'rotate';
+  previousRotation: number;
+  newRotation: number;
+  id: number;
+}
+
+type Action = Line | CropAction | RotateAction;
 
 interface CropFrame {
   x: number;
@@ -70,6 +77,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraCanvasRef = useRef<HTMLCanvasElement>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const [imageRotation, setImageRotation] = useState(0); // Track image rotation in degrees
   const [lines, setLines] = useState<Line[]>([]);
   const [currentLine, setCurrentLine] = useState<Point[] | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -412,24 +420,38 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     
     // Draw the image with the same scaling as the display canvas
     if (image) {
-      const imgAspect = image.width / image.height;
-      const canvasAspect = canvas.width / canvas.height;
-      
-      let drawWidth, drawHeight, offsetX, offsetY;
-      
-      if (imgAspect > canvasAspect) {
-        drawWidth = canvas.width;
-        drawHeight = canvas.width / imgAspect;
-        offsetX = 0;
-        offsetY = (canvas.height - drawHeight) / 2;
+      // Apply rotation if needed
+      if (imageRotation !== 0) {
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate((imageRotation * Math.PI) / 180);
+        ctx.translate(-canvas.width / 2, -canvas.height / 2);
+        
+        // For rotated images, fill the entire canvas
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        
+        ctx.restore();
       } else {
-        drawHeight = canvas.height;
-        drawWidth = canvas.height * imgAspect;
-        offsetX = (canvas.width - drawWidth) / 2;
-        offsetY = 0;
+        // For non-rotated images, use aspect ratio fitting
+        const imgAspect = image.width / image.height;
+        const canvasAspect = canvas.width / canvas.height;
+        
+        let drawWidth, drawHeight, offsetX, offsetY;
+        
+        if (imgAspect > canvasAspect) {
+          drawWidth = canvas.width;
+          drawHeight = canvas.width / imgAspect;
+          offsetX = 0;
+          offsetY = (canvas.height - drawHeight) / 2;
+        } else {
+          drawHeight = canvas.height;
+          drawWidth = canvas.height * imgAspect;
+          offsetX = (canvas.width - drawWidth) / 2;
+          offsetY = 0;
+        }
+        
+        ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
       }
-      
-      ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
     }
     
     // Draw all lines with their current positions
@@ -472,7 +494,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   useEffect(() => {
     const file = exportEditedFile();
     onEditedFile?.(file);
-  }, [image, lines]);
+  }, [image, imageRotation, lines]);
 
   const saveAction = (action: Action) => {
     setActionHistory(prev => [...prev, action]);
@@ -491,6 +513,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       setActionHistory(lastAction.previousActionHistory);
       onCropStateChange(false);
       if (onImageChange) onImageChange(lastAction.previousImage);
+    } else if (lastAction.type === 'rotate') {
+      setImageRotation(lastAction.previousRotation);
     } else {
       setLines(prev => prev.filter(line => line.id !== lastAction.id));
     }
@@ -558,6 +582,8 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
         };
         croppedImage.src = canvas.toDataURL();
       }
+    } else if (lastRedoAction.type === 'rotate') {
+      setImageRotation(lastRedoAction.newRotation);
     } else {
       setLines(prev => [...prev, lastRedoAction]);
     }
@@ -640,6 +666,28 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       onImageChange?.(croppedImage);
     };
     croppedImage.src = canvas.toDataURL();
+  };
+
+  const rotateImage = () => {
+    if (!image) {
+      console.log('No image to rotate');
+      return;
+    }
+    
+    const newRotation = (imageRotation + 90) % 360;
+    console.log('Rotating image from', imageRotation, 'to', newRotation);
+    
+    // Add to action history for undo/redo
+    const rotateAction: RotateAction = {
+      type: 'rotate',
+      previousRotation: imageRotation,
+      newRotation: newRotation,
+      id: Date.now()
+    };
+    
+    setActionHistory(prev => [...prev, rotateAction]);
+    setRedoHistory([]); // Clear redo history when new action is performed
+    setImageRotation(newRotation);
   };
 
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -761,14 +809,20 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
       }
     };
 
+    const handleRotateImage = () => {
+      rotateImage();
+    };
+
     window.addEventListener('undoAction', handleUndoAction);
     window.addEventListener('redoAction', handleRedoAction);
     window.addEventListener('applyCrop', handleApplyCrop);
+    window.addEventListener('rotateImage', handleRotateImage);
 
     return () => {
       window.removeEventListener('undoAction', handleUndoAction);
       window.removeEventListener('redoAction', handleRedoAction);
       window.removeEventListener('applyCrop', handleApplyCrop);
+      window.removeEventListener('rotateImage', handleRotateImage);
     };
   }, [actionHistory, redoHistory, cropFrame]);
 
@@ -1880,26 +1934,41 @@ const drawSquare = (
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (image) {
-      const imgAspect = image.width / image.height;
-      const canvasAspect = canvas.width / canvas.height;
-      
-      let drawWidth, drawHeight, offsetX, offsetY;
-      
-      if (imgAspect > canvasAspect) {
-        drawWidth = canvas.width;
-        drawHeight = canvas.width / imgAspect;
-        offsetX = 0;
-        offsetY = (canvas.height - drawHeight) / 2;
-      } else {
-        drawHeight = canvas.height;
-        drawWidth = canvas.height * imgAspect;
-        offsetX = (canvas.width - drawWidth) / 2;
-        offsetY = 0;
-      }
-      
       ctx.fillStyle = '#f0f0f0';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+      
+      // Apply rotation if needed
+      if (imageRotation !== 0) {
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate((imageRotation * Math.PI) / 180);
+        ctx.translate(-canvas.width / 2, -canvas.height / 2);
+        
+        // For rotated images, fill the entire canvas
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        
+        ctx.restore();
+      } else {
+        // For non-rotated images, use aspect ratio fitting
+        const imgAspect = image.width / image.height;
+        const canvasAspect = canvas.width / canvas.height;
+        
+        let drawWidth, drawHeight, offsetX, offsetY;
+        
+        if (imgAspect > canvasAspect) {
+          drawWidth = canvas.width;
+          drawHeight = canvas.width / imgAspect;
+          offsetX = 0;
+          offsetY = (canvas.height - drawHeight) / 2;
+        } else {
+          drawHeight = canvas.height;
+          drawWidth = canvas.height * imgAspect;
+          offsetX = (canvas.width - drawWidth) / 2;
+          offsetY = 0;
+        }
+        
+        ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+      }
     } else {
       ctx.fillStyle = '#f0f0f0';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -2153,7 +2222,7 @@ const drawSquare = (
         ctx.fill();
       });
     }
-  }, [image, lines, currentLine, isDrawing, drawingColor, brushSize, activeMode, cropFrame, selectedArrowId, hoveredArrowId, currentArrowSize, circleColor, squareColor, hasDragged]);
+  }, [image, imageRotation, lines, currentLine, isDrawing, drawingColor, brushSize, activeMode, cropFrame, selectedArrowId, hoveredArrowId, currentArrowSize, circleColor, squareColor, hasDragged]);
 
   const getCursor = () => {
     if (isMovingShape) {

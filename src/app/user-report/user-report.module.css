@@ -2,7 +2,7 @@
 
 .userReportContainer {
   min-height: 95vh;
-  background: linear-gradient(135deg, #e6fdfa 0%, #ffffff 100%);
+  background: #d1d5db;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   
 }
@@ -12,7 +12,7 @@
 .reportSectionsContainer {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 1.5rem;
 }
 
 .reportSection {
@@ -488,7 +488,7 @@
   
   
   .reportSectionsContainer {
-    padding: 0 1.5rem;
+    padding: 0 1rem;
   }
 }
 
@@ -509,11 +509,11 @@
   }
   
   .reportSectionsContainer {
-    padding: 0 1rem;
+    padding: 0 0.5rem;
   }
   
   .reportSection {
-    padding: 1.5rem;
+    padding: 1rem;
   }
   
   .sectionHeadingText {
@@ -535,12 +535,12 @@
   }
   
   .contentGrid {
-    padding: 0 1rem;
+    padding: 0 0.5rem;
   }
   
   .imageSection,
   .descriptionSection {
-    padding: 1.5rem;
+    padding: 1rem;
   }
 }
 
@@ -560,11 +560,11 @@
   }
   
   .reportSectionsContainer {
-    padding: 0 0.75rem;
+    padding: 0 0.25rem;
   }
   
   .reportSection {
-    padding: 1rem;
+    padding: 0.75rem;
   }
   
   .sectionHeadingText {
@@ -573,7 +573,7 @@
   
   .imageSection,
   .descriptionSection {
-    padding: 1rem;
+    padding: 0.75rem;
     border-radius: 1rem;
   }
   
@@ -677,7 +677,7 @@
 .sectionHeadingTextStart {
   font-size: 1.75rem;
   font-weight: 700;
-  color: var(--primary-color);
+  color: black;
   margin: 0;
   letter-spacing: -0.025em;
 }
@@ -791,4 +791,25 @@
 .orange {
   color: #e69500;
   font-weight: bold;
+}
+
+/* Extra small mobile devices - maximize space */
+@media (max-width: 480px) {
+  .reportSectionsContainer {
+    padding: 0 0.125rem;
+  }
+  
+  .reportSection {
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .imageSection,
+  .descriptionSection {
+    padding: 0.5rem;
+  }
+  
+  .contentGrid {
+    padding: 0 0.125rem;
+  }
 }

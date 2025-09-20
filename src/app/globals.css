@@ -21,12 +21,12 @@
 
 html {
   height: 100%;
-  background: #e2e8f0 !important;
+  background: #d1d5db !important;
   background-attachment: fixed !important;
 }
 
 body {
-  background: linear-gradient(135deg, #e6fdfa 0%, #ffffff 100%) !important;
+  background: #d1d5db !important;
   background-attachment: fixed !important;
   min-height: 100vh;
   padding: 20px;
