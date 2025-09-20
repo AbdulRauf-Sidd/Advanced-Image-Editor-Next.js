@@ -52,7 +52,7 @@ export default function InspectionReportPage() {
         labor_rate: r.estimatedCosts?.laborRate ?? 0,
         hours_required: r.estimatedCosts?.hoursRequired ?? 0,
         recommendation: r.estimatedCosts?.recommendation ?? '',
-        color: r.selectedArrowColor || '#d63636',
+        color: r.color || '#d63636',
       }));
 
       const meta = {
