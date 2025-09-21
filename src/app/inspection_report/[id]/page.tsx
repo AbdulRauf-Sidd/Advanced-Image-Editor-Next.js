@@ -287,22 +287,22 @@ export default function InspectionReportPage() {
                       <h3>Inspection Categories & Summary</h3>
 
                       <h4 className={styles.immediateAttention}>Immediate Attention</h4>
-                      <div className={styles.red}>
+                      <div className={styles.immediateAttention}>
                       {/* <p> */}
                         Major Defects: Issues that compromise the home’s structural
                         integrity, may result in additional damage if not repaired, or are
                         considered a safety hazard. These items are color-coded{" "}
-                        <span className={styles.red}>red</span> in the report and should be corrected
+                        red in the report and should be corrected
                         as soon as possible.
                       {/* </p> */}
                       </div>
 
                       <h4 className={styles.itemsForRepair}>Items for Repair</h4>
-                      <div className={styles.orange}>
+                      <div className={styles.itemsForRepair}>
                       {/* <p className={styles.orange}> */}
                         Defects: Items in need of repair or correction, such as
                         plumbing or electrical concerns, damaged or improperly installed components,
-                        etc. These are color-coded <span className={styles.orange}>orange</span> in
+                        etc. These are color-coded orange in
                         the report and have no strict repair timeline.
                       {/* </p> */}
                       </div>
@@ -474,7 +474,7 @@ export default function InspectionReportPage() {
                   <div className={styles.contentGrid}>
                     {/* Image */}
                     <div className={styles.imageSection}>
-                      <h3 className={styles.imageTitle}>Visual Evidence</h3>
+                      {/* <h3 className={styles.imageTitle}>Visual Evidence</h3> */}
                       <div className={styles.imageContainer}>
                         {section.image ? (
                           <img
@@ -494,7 +494,11 @@ export default function InspectionReportPage() {
                       </div>
                       
                       {/* Location moved here */}
-                      <div className={styles.locationSection}>
+                      <div className={styles.locationSection}style={{
+                          // boxShadow: getSelectedColor(section),
+                          "--shadow-color": getLightColor(section),
+                          // '--light-color': getLightColor(section)
+                        } as React.CSSProperties }>
                         <h4 className={styles.sectionTitle}>Location</h4>
                         <p className={styles.sectionContent}>{section.location}</p>
                       </div>
@@ -502,16 +506,24 @@ export default function InspectionReportPage() {
 
                     {/* Details */}
                     <div className={styles.descriptionSection}>
-                      <h3 className={styles.descriptionTitle}>Analysis Details</h3>
+                      {/* <h3 className={styles.descriptionTitle}>Analysis Details</h3> */}
                       <div className="space-y-6">
                         {/* Defect */}
-                        <div className={styles.section}>
-                          <h4 className={styles.sectionTitle}>Defect</h4>
+                        <div className={styles.section} style={{
+                          // boxShadow: getSelectedColor(section),
+                          "--shadow-color": getLightColor(section),
+                          // '--light-color': getLightColor(section)
+                        } as React.CSSProperties }>
+                          <h4 className={styles.sectionTitle}>Defect Description</h4>
                             <p className={styles.sectionContent}>{section.defect_description}</p>
                         </div>
 
                         {/* Estimated Costs */}
-                        <div className={styles.section}>
+                        <div className={styles.section} style={{
+                          // boxShadow: getSelectedColor(section),
+                          "--shadow-color": getLightColor(section),
+                          // '--light-color': getLightColor(section)
+                        } as React.CSSProperties }>
                           <h4 className={styles.sectionTitle}>Estimated Costs</h4>
                           <div className={styles.sectionContent}>
                               <p>
