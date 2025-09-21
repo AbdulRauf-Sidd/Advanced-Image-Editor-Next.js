@@ -71,7 +71,8 @@ export default function ImageEditorPage() {
     'Interior',
     'Plumbing',
     'Roof',
-    'Swimming Pool & Spa'
+    'Swimming Pool & Spa',
+    'Verified Functionality'
   ];
 
   const subsection: { [key: string]: string[] } = {
@@ -169,6 +170,12 @@ export default function ImageEditorPage() {
       'Spa Controls & Equipment',
       'Heating',
       'Diving Board & Slide'
+    ],
+    'Verified Functionality': [
+      'AC Temperature Differential',
+      'Furnace Output Temperature',
+      'Oven Operation Temperature',
+      'Water Heater Output Temperature'
     ]
   };
 

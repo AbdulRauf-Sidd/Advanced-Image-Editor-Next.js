@@ -17,7 +17,7 @@
 
 .reportSection {
   background: white;
-  border-radius: 1.5rem;
+  border-radius: 1.0rem;
   padding: 2rem;
   margin-bottom: 2rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
@@ -490,6 +490,10 @@
   .reportSectionsContainer {
     padding: 0 1rem;
   }
+
+  .descriptionTitle {
+    text-align: center;
+  }
 }
 
 @media (max-width: 768px) {
@@ -503,6 +507,11 @@
   .descriptionSection {
     order: 1;
   }
+
+
+  .descriptionTitle {
+    text-align: center;
+  }
   
   .imageSection {
     order: 2;
@@ -513,10 +522,13 @@
   }
   
   .reportSection {
+    /* text-align: center; */
     padding: 1rem;
   }
   
   .sectionHeadingText {
+    padding-top: 0.5rem;
+    text-align: center;
     font-size: 1.5rem;
   }
   
@@ -549,6 +561,10 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+  }
+
+  .descriptionTitle {
+    text-align: center;
   }
   
   .descriptionSection {
@@ -665,13 +681,13 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, var(--primary-color), var(--primary-color), var(--primary-color));
+  background: linear-gradient(90deg, var(--text-color), var(--text-color), grey);
 }
 
 .sectionHeadingStart {
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid var(--primary-color);
+  border-bottom: 2px solid var(--text-color);
 }
 
 .sectionHeadingTextStart {
@@ -765,6 +781,10 @@
 
 .maintenanceItems {
   color: #2d6cdf; /* blue */
+}
+
+.recomended {
+  color: var(--purple); /* blue */
 }
 
 .descriptionSectionStart p {

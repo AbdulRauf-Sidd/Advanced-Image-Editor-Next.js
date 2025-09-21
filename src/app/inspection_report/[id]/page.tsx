@@ -184,8 +184,6 @@ export default function InspectionReportPage() {
               <div className={styles.sectionHeadingStart}>
                     <h2 className={styles.sectionHeadingTextStart}>Section 1 - Inspection Scope, Client Responsibilities, and Repair Estimates</h2>
                   </div>
-                  <div className={styles.contentGridStart}>
-                    <div className={styles.contentGridStart}>
                       <div className={styles.descriptionSectionStart}>
                         <p>
                           This is a <strong>visual inspection only</strong>. The scope of this
@@ -277,10 +275,7 @@ export default function InspectionReportPage() {
                           <em>Doing so may result in legal action.</em>
                         </p>
                       </div>
-                    </div>
 
-
-                  </div>
                   <br></br><br></br>
 
                 <div className={styles.sectionHeadingStart}>
@@ -292,28 +287,44 @@ export default function InspectionReportPage() {
                       <h3>Inspection Categories & Summary</h3>
 
                       <h4 className={styles.immediateAttention}>Immediate Attention</h4>
-                      <p>
-                        <strong>Major Defects:</strong> Issues that compromise the home’s structural
+                      <div className={styles.red}>
+                      {/* <p> */}
+                        Major Defects: Issues that compromise the home’s structural
                         integrity, may result in additional damage if not repaired, or are
                         considered a safety hazard. These items are color-coded{" "}
                         <span className={styles.red}>red</span> in the report and should be corrected
                         as soon as possible.
-                      </p>
+                      {/* </p> */}
+                      </div>
 
                       <h4 className={styles.itemsForRepair}>Items for Repair</h4>
-                      <p>
-                        <strong>Defects:</strong> Items in need of repair or correction, such as
+                      <div className={styles.orange}>
+                      {/* <p className={styles.orange}> */}
+                        Defects: Items in need of repair or correction, such as
                         plumbing or electrical concerns, damaged or improperly installed components,
                         etc. These are color-coded <span className={styles.orange}>orange</span> in
                         the report and have no strict repair timeline.
-                      </p>
+                      {/* </p> */}
+                      </div>
 
                       <h4 className={styles.maintenanceItems}>Maintenance Items</h4>
-                      <p>
+                      <div className={styles.maintenanceItems}>
+                      {/* <p> */}
                         Small DIY-type repairs and maintenance recommendations provided to increase
                         knowledge of long-term care. While not urgent, addressing these will reduce
                         future repair needs and costs.
-                      </p>
+                      {/* </p> */}
+                      </div>
+
+                      <h4 className={styles.recomended}>Recommend Further Evaluation</h4>
+                      <div className={styles.recomended}>
+                      {/* <p> */}
+                        Small DIY-type repairs and maintenance recommendations provided to increase
+                        knowledge of long-term care. While not urgent, addressing these will reduce
+                        future repair needs and costs.
+                      {/* </p> */}
+                      </div>
+                      <br></br>
 
                       <hr />
 
@@ -445,6 +456,7 @@ export default function InspectionReportPage() {
                     </div>
 
                   </div>
+                  <br></br>
                 {reportSections.map((section) => (
                 <div 
                   key={section.id} 
