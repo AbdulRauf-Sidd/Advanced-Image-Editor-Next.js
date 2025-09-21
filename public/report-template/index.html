@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inspection Report</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- Left Sidebar -->
+      <aside class="sidebar" aria-label="Report sections">
+        <nav
+          id="sectionNav"
+          class="nav"
+          role="navigation"
+          aria-label="Section navigation"
+        >
+          <!-- Filled by script.js -->
+        </nav>
+      </aside>
+
+      <!-- Right Content -->
+      <main class="content">
+        <!-- Cover/Header -->
+        <header class="cover" id="cover">
+          <div
+            class="cover-image"
+            id="coverImage"
+            role="img"
+            aria-label="Property image"
+          ></div>
+          <div class="cover-overlay">
+            <div class="cover-title" id="address">123 Main St</div>
+            <div class="cover-subtitle" id="cityState">Anytown, ST 12345</div>
+            <div class="cover-time" id="inspectionTime">
+              09/19/2025 11:00 pm
+            </div>
+          </div>
+          <div class="inspector-card" id="inspectorCard">
+            <img
+              class="inspector-avatar"
+              id="inspectorAvatar"
+              alt="Inspector avatar"
+            />
+            <div>
+              <div class="inspector-name" id="inspectorName">
+                Inspector Name
+              </div>
+              <div class="inspector-meta" id="inspectorMeta">
+                LA license #00000
+              </div>
+            </div>
+          </div>
+          <div class="cover-actions">
+            <div class="btn-group" role="tablist" aria-label="Report view">
+              <button
+                class="btn btn-secondary"
+                data-view="full"
+                aria-selected="true"
+              >
+                Full Report
+              </button>
+              <button class="btn btn-secondary" data-view="summary">
+                Summary
+              </button>
+            </div>
+            <div class="btn-group more-group">
+              <button class="btn btn-outline">Share</button>
+              <div class="dropdown">
+                <button class="btn btn-outline" id="pdfBtn">PDF ▾</button>
+                <div class="dropdown-menu" aria-labelledby="pdfBtn">
+                  <button class="dropdown-item" data-action="download-pdf">
+                    Download PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- Toolbar below cover to mirror reference site controls -->
+        <div class="toolbar" role="navigation" aria-label="Report controls">
+          <div class="group" role="tablist" aria-label="Report view">
+            <button
+              class="btn btn-primary"
+              data-view="full"
+              aria-selected="true"
+            >
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                  />
+                  <path fill="currentColor" d="M14 2v6h6" />
+                </svg>
+              </span>
+              Full Report
+            </button>
+            <button class="btn btn-primary" data-view="summary">
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M3 5h18v2H3zM3 11h18v2H3zM3 17h18v2H3z"
+                  />
+                </svg>
+              </span>
+              Summary
+            </button>
+            <button class="btn btn-primary" id="hazardBtn" data-view="hazard">
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M1 21h22L12 2 1 21zm12-3h-2v2h2v-2zm0-6h-2v5h2v-5z"
+                  />
+                </svg>
+              </span>
+              Safety Hazard / Repair Now
+            </button>
+          </div>
+          <div class="group">
+            <button class="btn btn-outline" id="shareBtn">
+              <span class="icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.02-4.11A2.99 2.99 0 0 0 21 4a3 3 0 1 0-3 3c.35 0 .69-.07 1-.18l-7.02 4.11A3 3 0 0 0 9 11c0 .24.04.47.09.7l-7.02 4.11A3 3 0 1 0 6 20a3 3 0 0 0-2.91-3.99l7.12-4.16 6.02 3.53c.5.45 1.16.72 1.87.72a3 3 0 1 0 0-6z"
+                  />
+                </svg>
+              </span>
+              Share
+            </button>
+            <div class="dropdown">
+              <button class="btn btn-outline" id="pdfBtn2">
+                <span class="icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      fill="currentColor"
+                      d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"
+                    />
+                    <path fill="currentColor" d="M14 2v6h6" />
+                  </svg>
+                </span>
+                PDF ▾
+              </button>
+              <div class="dropdown-menu" aria-labelledby="pdfBtn2">
+                <button class="dropdown-item" data-action="download-pdf">
+                  Download PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notice/Scope (optional short intro) -->
+        <section class="intro keep-together" id="intro">
+          <p>
+            This is a <strong>visual inspection report</strong>. It summarizes
+            observed defects and recommendations at the time of inspection.
+          </p>
+        </section>
+
+        <!-- Section 1 - Inspection Scope, Client Responsibilities, and Repair Estimates -->
+        <section class="section keep-together" id="section-1">
+          <h2 class="section-heading">
+            Section 1 - Inspection Scope, Client Responsibilities, and Repair
+            Estimates
+          </h2>
+          <div class="card info">
+            <div class="card-body">
+              <h3 class="info-heading">INFORMATION</h3>
+              <p>
+                This is a <strong>visual inspection only</strong>. The scope of
+                this inspection is to verify the proper performance of the
+                home's major systems. We do not verify proper design.
+              </p>
+              <p>
+                The following items reflect the condition of the home and its
+                systems
+                <strong
+                  >at the time and date the inspection was performed</strong
+                >. Conditions of an occupied home can change after the
+                inspection (e.g., leaks may occur beneath sinks, water may run
+                at toilets, walls or flooring may be damaged during moving,
+                appliances may fail, etc.).
+              </p>
+              <p>
+                Furnishings, personal items, and/or systems of the home are not
+                dismantled or moved. A 3–4 hour inspection is not equal to
+                "live-in exposure" and will not discover all concerns. Unless
+                otherwise stated, we will only inspect/comment on the following
+                systems:
+                <em
+                  >Electrical, Heating/Cooling, Appliances, Plumbing, Roof and
+                  Attic, Exterior, Grounds, and the Foundation</em
+                >.
+              </p>
+              <p class="callout-info">
+                <strong>NOTE:</strong> This inspection is not a warranty or
+                insurance policy. The limit of liability of
+                <strong>AGI Property Inspections</strong> and its employees does
+                not extend beyond the day the inspection was performed.
+              </p>
+              <p>
+                Cosmetic items (e.g., peeling wallpaper, wall scuffs, nail
+                holes, normal wear and tear, etc.) are not part of this
+                inspection. We also do not inspect for fungi, rodents, or
+                insects. If such issues are noted, it is only to bring them to
+                your attention so you can have the proper contractor evaluate
+                further.
+              </p>
+              <p>
+                Although every effort is made to inspect all systems, not every
+                defect can be identified. Some areas may be inaccessible or
+                hazardous. The home should be carefully reviewed during your
+                final walk-through to ensure no new concerns have occurred and
+                that requested repairs have been completed.
+              </p>
+              <p class="callout">
+                <strong>IMPORTANT:</strong> Please contact our office
+                immediately at <a href="tel:3379051428">337-905-1428</a> if you
+                suspect or discover any concerns during the final walk-through.
+              </p>
+              <p>
+                Repair recommendations and cost estimates included in this
+                report are <strong>approximate</strong>, generated from typical
+                labor and material rates in our region. They are not formal
+                quotes and must always be verified by licensed contractors.
+                <strong>AGI Property Inspections</strong> does not guarantee
+                their accuracy.
+              </p>
+              <p>
+                We do not provide guaranteed repair methods. Any corrections
+                should be performed by qualified, licensed contractors. Consult
+                your Real Estate Professional, Attorney, or Contractor for
+                further advice regarding responsibility for these repairs.
+              </p>
+              <p>
+                While this report may identify products involved in recalls or
+                lawsuits, it is not comprehensive. Identifying all recalled
+                products is not a requirement for Louisiana licensed Home
+                Inspectors.
+              </p>
+              <p>
+                This inspection complies with the standards of practice of the
+                <strong
+                  >State of Louisiana Home Inspectors Licensing Board</strong
+                >. Home inspectors are generalists and recommend further review
+                by licensed specialists when needed.
+              </p>
+              <p class="info-note">
+                This inspection report and all information contained within is
+                the sole property of
+                <strong>AGI Property Inspections</strong> and is leased to the
+                clients named in this report. It may not be shared or passed on
+                without AGI’s consent.
+                <em>Doing so may result in legal action.</em>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 2 - Inspection Scope & Limitations -->
+        <section class="section keep-together" id="section-2">
+          <h2 class="section-heading">
+            Section 2 - Inspection Scope & Limitations
+          </h2>
+          <div class="card info">
+            <div class="card-body">
+              <h3 class="info-heading">INFORMATION</h3>
+              <h4>Inspection Categories & Summary</h4>
+              <h4 class="text-danger"><strong>Immediate Attention:</strong></h4>
+              <p>
+                <strong>Major Defects:</strong> These are issues that affect the
+                home's structural integrity, or might lead to significant
+                expense if not addressed. These items are color-coded
+                <span class="text-danger">red</span> in the report and need
+                immediate attention.
+              </p>
+              <p>
+                <strong>Safety Hazards:</strong> Anything that poses an
+                immediate risk to occupants if not addressed. These items are
+                also color-coded <span class="text-danger">red</span> in the
+                report and need of immediate attention.
+              </p>
+              <h4 class="text-warning"><strong>Items for Repair:</strong></h4>
+              <p>
+                <strong>Defects:</strong> Items that ultimately need repair,
+                like plumbing and electrical issues, damaged, inoperable, or
+                improperly installed items. These items are color-coded
+                <span class="text-warning">orange</span> in the report.
+              </p>
+              <h4 class="text-info"><strong>Maintenance Items:</strong></h4>
+              <p>
+                The report will also list maintenance items that are not
+                included in the Summary. Maintenance suggestions and
+                recommendations are for your long-term care of the home. They
+                are important for upkeep and knowledge but do not typically need
+                immediate repair.
+              </p>
+              <hr />
+              <h4>Important Information & Limitations</h4>
+              <p>
+                <strong>AGI Property Inspections</strong> performs all
+                inspections in compliance with the
+                <strong>Louisiana Standards of Practice</strong>. We inspect
+                readily accessible, visually observable, permanently installed
+                systems and components of the home. This inspection is not
+                technically exhaustive or quantitative.
+              </p>
+              <p>
+                Some comments may go beyond the minimum Standards as a courtesy
+                to provide additional detail. Any item noted for repair,
+                replacement, maintenance, or further evaluation should be
+                reviewed by qualified, licensed tradespeople.
+              </p>
+              <p>
+                This inspection cannot predict future conditions or reveal
+                hidden or latent defects. The report reflects the home’s
+                condition only at the time of inspection. Weather, occupancy, or
+                use may reveal issues not present at the time.
+              </p>
+              <p>
+                This report should be considered alongside the
+                <strong
+                  >seller’s disclosure, pest inspection report, and contractor
+                  evaluations</strong
+                >
+                for a complete picture of the home’s condition.
+              </p>
+              <hr />
+              <h4>Repair Estimates Disclaimer</h4>
+              <p>
+                This report may include repair recommendations and estimated
+                costs. These are based on typical labor and material rates in
+                our region, generated from AI image review. They are approximate
+                and not formal quotes.
+              </p>
+              <ul>
+                <li>Estimates are <strong>not formal quotes</strong>.</li>
+                <li>
+                  They do not account for unique site conditions and may vary
+                  depending on contractor, materials, and methods.
+                </li>
+                <li>
+                  Final pricing must always be obtained through qualified,
+                  licensed contractors with on-site evaluation.
+                </li>
+                <li>
+                  <strong>AGI Property Inspections</strong> does not guarantee
+                  the accuracy of estimates or assume responsibility for work
+                  performed by outside contractors.
+                </li>
+              </ul>
+              <hr />
+              <h4>Recommendations</h4>
+              <ul>
+                <li>
+                  <strong>Contractors / Further Evaluation:</strong> Repairs
+                  noted should be performed by licensed professionals. Keep
+                  receipts for warranty and documentation purposes.
+                </li>
+                <li>
+                  <strong>Causes of Damage / Methods of Repair:</strong>
+                  Suggested repair methods are based on inspector experience and
+                  opinion. Final determination should always be made by licensed
+                  contractors.
+                </li>
+              </ul>
+              <hr />
+              <h4>Excluded Items</h4>
+              <p>
+                The following are not included in this inspection: septic
+                systems, security systems, irrigation systems, pools, hot tubs,
+                wells, sheds, playgrounds, saunas, outdoor lighting, central
+                vacuums, water filters, water softeners, sound or intercom
+                systems, generators, sport courts, sea walls, outbuildings,
+                operating skylights, awnings, exterior BBQ grills, and firepits.
+              </p>
+              <hr />
+              <h4>Occupied Home Disclaimer</h4>
+              <p>
+                If the home was occupied at the time of inspection, some areas
+                may not have been accessible (furniture, personal belongings,
+                etc.). Every effort was made to inspect all accessible areas;
+                however, some issues may not have been visible.
+              </p>
+              <p>
+                We recommend using your final walkthrough to verify that no
+                issues were missed and that the property remains in the same
+                condition as at the time of inspection.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Summary Table (hidden until Summary view) -->
+        <section id="summarySection" class="summary-section" hidden>
+          <h2 class="section-heading">Defects Summary</h2>
+          <div class="card">
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>No.</th>
+                    <th>Section</th>
+                    <th>Defect</th>
+                  </tr>
+                </thead>
+                <tbody id="summaryBody">
+                  <!-- filled by script.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Sections go here -->
+        <div id="sectionsContainer"><!-- filled by script.js --></div>
+      </main>
+    </div>
+
+    <!-- Image Zoom Modal -->
+    <div
+      id="zoomModal"
+      class="modal"
+      aria-hidden="true"
+      role="dialog"
+      aria-label="Image preview"
+    >
+      <div class="modal-backdrop" data-close="true"></div>
+      <figure class="modal-content" role="document">
+        <img id="zoomImage" alt="Zoomed preview" />
+        <figcaption id="zoomCaption"></figcaption>
+        <button class="modal-close" aria-label="Close" data-close="true">
+          ×
+        </button>
+      </figure>
+    </div>
+
+    <script src="script.js" defer></script>
+  </body>
+</html>
