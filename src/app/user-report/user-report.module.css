@@ -148,7 +148,7 @@
 .locationSection:hover {
   background: #f8fafc;
   transform: translateX(2px);
-  box-shadow: 0 4px 12px rgba(214, 54, 54, 0.15);
+  box-shadow: 0 4px 4px var(--shadow-color, rgba(214, 54, 54, 0.15));
 }
 
 .descriptionSection {
@@ -195,13 +195,14 @@
   border-left: 3px solid var(--selected-color, #d63636);
   transition: all 0.3s ease;
   position: relative;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  /* box-shadow: 0 2px 8px rgba(133, 244, 6, 0.05); */
 }
 
 .section:hover {
   background: #f8fafc;
   transform: translateX(2px);
-  box-shadow: 0 4px 12px rgba(214, 54, 54, 0.15);
+  /* box-shadow: 0 4px 12px rgba(214, 54, 54, 0.15); */
+  box-shadow: 0 4px 4px var(--shadow-color, rgba(214, 54, 54, 0.15));
 }
 
 .section:last-child {
