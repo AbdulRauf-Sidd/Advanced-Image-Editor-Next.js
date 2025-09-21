@@ -471,12 +471,12 @@ export default function ImageEditorPage() {
           <i className="fas fa-arrow-left"></i>
         </button>
 
-        <button className="action-btn undo-btn" onClick={handleUndo}>
+        {/* <button className="action-btn undo-btn" onClick={handleUndo}>
           <i className="fas fa-undo"></i>
         </button>
         <button className="action-btn redo-btn" onClick={handleRedo}>
           <i className="fas fa-redo"></i>
-        </button>
+        </button> */}
 
         <button className="action-btn rotate-btn" onClick={handleRotate}>
           <i className="fas fa-sync-alt"></i>
@@ -529,7 +529,7 @@ export default function ImageEditorPage() {
                 ))}
               </div>
               <div className="color-sync-notice">
-                Color applies to all tools
+                
               </div>
             </div>
           )}
@@ -541,7 +541,8 @@ export default function ImageEditorPage() {
             className={`action-btn circle-btn ${activeMode === 'circle' ? 'active' : ''}`}
             onClick={() => handleActionClick('circle')}
           >
-            <i className="fas fa-circle"></i>
+            <i className="far fa-circle thicker-circle"></i>
+
             <span className="btn-text">{activeMode === 'circle' ? '' : ''}</span>
           </button>
           
@@ -562,7 +563,7 @@ export default function ImageEditorPage() {
                 ))}
               </div>
               <div className="color-sync-notice">
-                Color applies to all tools
+                
               </div>
             </div>
           )}
@@ -574,7 +575,7 @@ export default function ImageEditorPage() {
             className={`action-btn square-btn ${activeMode === 'square' ? 'active' : ''}`}
             onClick={() => handleActionClick('square')}
           >
-            <i className="fas fa-square"></i>
+            <i className="far fa-square"></i> 
             <span className="btn-text">{activeMode === 'square' ? '' : ''}</span>
           </button>
           
@@ -595,7 +596,7 @@ export default function ImageEditorPage() {
                 ))}
               </div>
               <div className="color-sync-notice">
-                Color applies to all tools
+                
               </div>
             </div>
           )}
