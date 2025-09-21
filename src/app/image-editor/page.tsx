@@ -471,12 +471,12 @@ export default function ImageEditorPage() {
           <i className="fas fa-arrow-left"></i>
         </button>
 
-        {/* <button className="action-btn undo-btn" onClick={handleUndo}>
+        <button className="action-btn undo-btn" onClick={handleUndo}>
           <i className="fas fa-undo"></i>
         </button>
         <button className="action-btn redo-btn" onClick={handleRedo}>
           <i className="fas fa-redo"></i>
-        </button> */}
+        </button>
 
         <button className="action-btn rotate-btn" onClick={handleRotate}>
           <i className="fas fa-sync-alt"></i>
