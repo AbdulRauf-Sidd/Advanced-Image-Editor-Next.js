@@ -541,7 +541,10 @@ export default function ImageEditorPage() {
             className={`action-btn circle-btn ${activeMode === 'circle' ? 'active' : ''}`}
             onClick={() => handleActionClick('circle')}
           >
-            <i className="far fa-circle thicker-circle"></i>
+           <i className="far fa-circle thick-circle"></i>
+
+
+
 
             <span className="btn-text">{activeMode === 'circle' ? '' : ''}</span>
           </button>
@@ -575,7 +578,7 @@ export default function ImageEditorPage() {
             className={`action-btn square-btn ${activeMode === 'square' ? 'active' : ''}`}
             onClick={() => handleActionClick('square')}
           >
-            <i className="far fa-square"></i> 
+            <i className="far fa-square thick-square"></i> 
             <span className="btn-text">{activeMode === 'square' ? '' : ''}</span>
           </button>
           

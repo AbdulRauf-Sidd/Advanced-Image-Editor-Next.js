@@ -2714,3 +2714,12 @@ body div.submit-section div.submit-controls div.location-button-container button
   background-color: #f9f9f9;
 }
 
+.thick-circle {
+  font-size: 1.2em; /* makes it look bolder */
+  -webkit-text-stroke: 1px currentColor; /* adds stroke thickness */
+}
+
+.thick-square {
+  font-size: 1.2em; /* makes it look bolder */
+  -webkit-text-stroke: 1px currentColor; /* adds stroke thickness */
+}
