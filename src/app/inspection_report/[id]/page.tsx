@@ -28,9 +28,9 @@ export default function InspectionReportPage() {
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const baseSizeRef = useRef<{ w: number; h: number }>({ w: 0, h: 0 });
-  // Mobile nav menu
-  const [navMenuOpen, setNavMenuOpen] = useState(false);
-  const navMenuRef = useRef<HTMLDivElement | null>(null);
+  // Toolbar dropdown menu (Report Viewing Options)
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   // Navigation state
   const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
@@ -70,28 +70,28 @@ export default function InspectionReportPage() {
     };
   }, [lightboxOpen]);
 
-  // Close mobile nav menu on outside click
+  // Close toolbar menu on outside click
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
-      if (!navMenuOpen) return;
+      if (!menuOpen) return;
       const n = e.target as Node;
-      if (navMenuRef.current && !navMenuRef.current.contains(n)) {
-        setNavMenuOpen(false);
+      if (menuRef.current && !menuRef.current.contains(n)) {
+        setMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
-  }, [navMenuOpen]);
+  }, [menuOpen]);
 
-  // Close mobile nav menu on Escape
+  // Close toolbar menu on Escape
   useEffect(() => {
-    if (!navMenuOpen) return;
+    if (!menuOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setNavMenuOpen(false);
+      if (e.key === 'Escape') setMenuOpen(false);
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [navMenuOpen]);
+  }, [menuOpen]);
 
   // Handle panning while zoomed in
   useEffect(() => {
@@ -732,39 +732,54 @@ export default function InspectionReportPage() {
                   Safety Hazard / Repair Now
                 </button>
                 </div>
-                {/* Mobile navigation dropdown (visible only on small screens via CSS) */}
-                <div ref={navMenuRef} className={styles.mobileNavContainer}>
+                {/* Report Viewing Options dropdown (contains view + export actions) */}
+                <div ref={menuRef} className={styles.toolbarMenuContainer}>
                   <button
-                    className={`${styles.toolbarBtn} ${styles.mobileNavBtn}`}
+                    className={`${styles.toolbarBtn} ${styles.toolbarMenuBtn}`}
                     aria-haspopup="menu"
-                    aria-expanded={navMenuOpen}
-                    onClick={() => setNavMenuOpen(v => !v)}
-                    title="Navigation options"
+                    aria-expanded={menuOpen}
+                    onClick={() => setMenuOpen((v) => !v)}
+                    title="Report Viewing Options"
                   >
                     Report Viewing Options ▾
                   </button>
-                  {navMenuOpen && (
-                    <div className={styles.navDropdown} role="menu">
+                  {menuOpen && (
+                    <div className={styles.toolbarMenuDropdown} role="menu">
                       <button
                         role="menuitem"
-                        className={styles.navDropdownItem}
-                        onClick={() => { setNavMenuOpen(false); setFilterMode('full'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        className={styles.toolbarMenuItem}
+                        onClick={() => { setMenuOpen(false); setFilterMode('full'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                       >
                         Full Report
                       </button>
                       <button
                         role="menuitem"
-                        className={styles.navDropdownItem}
-                        onClick={() => { setNavMenuOpen(false); setFilterMode('summary'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        className={styles.toolbarMenuItem}
+                        onClick={() => { setMenuOpen(false); setFilterMode('summary'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                       >
                         Summary
                       </button>
                       <button
                         role="menuitem"
-                        className={`${styles.navDropdownItem} ${styles.toolbarBtnDanger}`}
-                        onClick={() => { setNavMenuOpen(false); setFilterMode('hazard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                        className={`${styles.toolbarMenuItem} ${styles.toolbarBtnDanger}`}
+                        onClick={() => { setMenuOpen(false); setFilterMode('hazard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                       >
                         Safety Hazard / Repair Now
+                      </button>
+                      <div className={styles.toolbarMenuDivider} aria-hidden="true" />
+                      <button
+                        role="menuitem"
+                        className={styles.toolbarMenuItem}
+                        onClick={() => { setMenuOpen(false); handleDownloadHTML(); }}
+                      >
+                        Export HTML
+                      </button>
+                      <button
+                        role="menuitem"
+                        className={styles.toolbarMenuItem}
+                        onClick={() => { setMenuOpen(false); handleDownloadPDF(); }}
+                      >
+                        Export PDF
                       </button>
                     </div>
                   )}

@@ -384,58 +384,6 @@
   justify-content: space-between;
   box-shadow: 0 6px 16px rgba(0,0,0,0.15);
 }
-    /* Responsive toolbar rules */
-    @media (max-width: 768px) {
-      .reportToolbar {
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-      /* Hide desktop nav buttons on mobile */
-      .toolbarGroup {
-        display: none;
-      }
-      /* Show mobile nav container */
-      .mobileNavContainer {
-        display: block;
-        position: relative;
-      }
-    }
-
-  /* Mobile nav dropdown base (hidden by default on desktop) */
-  .mobileNavContainer { display: none; }
-  .mobileNavBtn { font-weight: 700; }
-  .navDropdown {
-    position: absolute;
-    left: 0;
-    top: calc(100% + 6px);
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    box-shadow: 0 10px 24px rgba(0,0,0,0.12);
-    padding: 6px;
-    min-width: 220px;
-    z-index: 60;
-  }
-  .navDropdownItem {
-    display: block;
-    width: 100%;
-    text-align: left;
-    background: transparent;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 10px;
-    font-weight: 700;
-    color: #0f172a;
-  }
-  .navDropdownItem:hover {
-    background: #f1f5f9;
-  }
-
-  /* Ensure mobile overrides win, even over later base rules */
-  @media (max-width: 768px) {
-    .toolbarGroup { display: none !important; }
-    .mobileNavContainer { display: block !important; position: relative; }
-  }
 .toolbarGroup { display: flex; gap: 8px; align-items: center; }
 .toolbarRightGroup { display: flex; gap: 8px; align-items: center; }
 
@@ -453,6 +401,55 @@
 .toolbarBtnActive { background: #3b82f6; border-color: #60a5fa; color: #fff; }
 .toolbarBtnDanger { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); }
 .toolbarBtnDanger.toolbarBtnActive { background: #3b82f6; border-color: #60a5fa; color: #fff; }
+
+/* Toolbar dropdown (Report Viewing Options) */
+.toolbarMenuContainer { position: relative; display: none; }
+.toolbarMenuBtn { font-weight: 700; }
+.toolbarMenuDropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.14);
+  padding: 8px;
+  min-width: 220px;
+  z-index: 70;
+}
+.toolbarMenuItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.toolbarMenuItem:hover { background: #f1f5f9; }
+.toolbarMenuDivider { height: 1px; background: #e5e7eb; margin: 8px 4px; border-radius: 1px; }
+
+/* Mobile: show dropdown, hide individual buttons */
+@media (max-width: 768px) {
+  .toolbarGroup, .toolbarRightGroup { display: none; }
+  .toolbarMenuContainer { display: block; }
+  /* Make the toolbar full-bleed across the screen and center the dropdown */
+  .reportToolbar {
+    justify-content: center;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    border-radius: 0;
+  }
+  /* Center the dropdown menu under the button */
+  .toolbarMenuDropdown {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
 
 .actionButton {
   display: flex;
