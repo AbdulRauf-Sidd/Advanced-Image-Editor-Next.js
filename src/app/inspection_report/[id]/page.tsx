@@ -307,7 +307,7 @@ export default function InspectionReportPage() {
                       {/* </p> */}
                       </div>
 
-                      <h4 className={styles.maintenanceItems}>Maintenance Items</h4>
+                      <h4 className={styles.maintenanceItems}>Maintenance Items Description</h4>
                       <div className={styles.maintenanceItems}>
                       {/* <p> */}
                         Small DIY-type repairs and maintenance recommendations provided to increase
@@ -316,7 +316,7 @@ export default function InspectionReportPage() {
                       {/* </p> */}
                       </div>
 
-                      <h4 className={styles.recomended}>Recommend Further Evaluation</h4>
+                      <h4 className={styles.recomended}>Further Evaluation</h4>
                       <div className={styles.recomended}>
                       {/* <p> */}
                         Small DIY-type repairs and maintenance recommendations provided to increase
