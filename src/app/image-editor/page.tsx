@@ -452,7 +452,7 @@ export default function ImageEditorPage() {
       `}</style>
       
       {/* First Heading */}
-      <div className="heading-section">
+      {/* <div className="heading-section">
         <div className="heading-content">
           <i className="fas fa-image heading-icon"></i>
           <h1>Advanced Image Editor</h1>
@@ -463,7 +463,7 @@ export default function ImageEditorPage() {
             </p>
           )}
         </div>
-      </div>
+      </div> */}
 
       {/* Action Options Bar */}
       <div className="action-bar">
@@ -471,12 +471,12 @@ export default function ImageEditorPage() {
           <i className="fas fa-arrow-left"></i>
         </button>
 
-        {/* <button className="action-btn undo-btn" onClick={handleUndo}>
+        <button className="action-btn undo-btn" onClick={handleUndo}>
           <i className="fas fa-undo"></i>
         </button>
         <button className="action-btn redo-btn" onClick={handleRedo}>
           <i className="fas fa-redo"></i>
-        </button> */}
+        </button>
 
         <button className="action-btn rotate-btn" onClick={handleRotate}>
           <i className="fas fa-sync-alt"></i>
@@ -622,13 +622,13 @@ export default function ImageEditorPage() {
       </div>
 
       {/* Second Heading */}
-      <div className="heading-section">
+      {/* <div className="heading-section">
         <div className="heading-content">
           <i className="fas fa-edit heading-icon"></i>
           <h2>Image Description</h2>
           <p>Add details about your edited image</p>
         </div>
-      </div>
+      </div> */}
 
        {/* Description Box */}
        <div className="description-box">

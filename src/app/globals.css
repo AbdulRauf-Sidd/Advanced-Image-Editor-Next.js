@@ -22,12 +22,12 @@
 
 html {
   height: 100%;
-  background: #d1d5db !important;
+  background: #f0f0f0 !important;
   background-attachment: fixed !important;
 }
 
 body {
-  background: #d1d5db !important;
+  background: #f0f0f0 !important;
   background-attachment: fixed !important;
   min-height: 100vh;
   padding: 20px;
@@ -45,7 +45,7 @@ body {
 
 /* Heading Sections */
 .heading-section {
-  background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+  /* background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%); */
   padding: 32px 24px;
   border-radius: 16px;
   margin: 24px 0;
@@ -96,7 +96,7 @@ body {
 }
 
 .heading-section h1 {
-  color: #ffffff;
+  color: #000000;
   font-size: 2.5rem;
   font-weight: 700;
   margin: 0 0 12px 0;
@@ -106,7 +106,7 @@ body {
 }
 
 .heading-section h2 {
-  color: #ffffff;
+  color: #000000;
   font-size: 2rem;
   font-weight: 600;
   margin: 0 0 12px 0;
@@ -116,7 +116,7 @@ body {
 }
 
 .heading-section p {
-  color: #e2e8f0;
+  color: #000000;
   font-size: 1.1rem;
   font-weight: 400;
   margin: 0;
@@ -131,7 +131,7 @@ body {
   display: flex;
   gap: 12px;
   justify-content: space-between;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
 }
 
 .action-btn {
@@ -1207,7 +1207,7 @@ body div.submit-section div.submit-controls div.location-button-container button
   .action-bar {
     flex-direction: row;
     gap: 4px;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     justify-content: center;
   }
   

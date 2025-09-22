@@ -90,13 +90,13 @@ export default function InspectionsTable({ onRowClick, onDocumentClick, onEditCl
   return (
     <div className="app-container">
       {/* Header Section */}
-      <div className="heading-section">
+      {/* <div className="heading-section">
         <div className="heading-content">
           <i className="fas fa-clipboard-list heading-icon"></i>
           <h1>Inspections</h1>
           <p>Manage your property inspections efficiently</p>
         </div>
-      </div>
+      </div> */}
 
       {/* Action Bar with Add Inspection Button */}
       <div className="action-bar">
