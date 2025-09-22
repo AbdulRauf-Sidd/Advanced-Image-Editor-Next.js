@@ -62,8 +62,6 @@ export default function UserReport() {
     return `rgb(${Math.min(255, r + 50)}, ${Math.min(255, g + 50)}, ${Math.min(255, b + 50)})`;
   };
 
-
-
   // Initialize from store
   useEffect(() => {
     if (!analysisData) {
@@ -241,6 +239,17 @@ export default function UserReport() {
       }
   };
 
+  // Color to Importance mapping
+  const colorToImportance = (hex?: string) => {
+    if (!hex) return 'Immediate Attention';
+    const c = hex.toLowerCase();
+    if (c.includes('d63636') || c.includes('dc2626') || c.includes('ef4444') || c.includes('ff0000')) return 'Immediate Attention';
+    if (c.includes('e69500') || c.includes('f59e0b') || c.includes('ffa500') || c.includes('fb923c')) return 'Items for Repair';
+    if (c.includes('2d6cdf') || c.includes('3b82f6') || c.includes('60a5fa') || c.includes('1d4ed8')) return 'Maintenance Items';
+    if (c.includes('7c3aed') || c.includes('8b5cf6') || c.includes('6d28d9') || c.includes('9333ea')) return 'Further Evaluation';
+    return 'Immediate Attention';
+  };
+
   if (!analysisData) {
     return (
       <div style={{ padding: "20px", textAlign: "center" }}>
@@ -292,7 +301,15 @@ export default function UserReport() {
             <div key={section.id} className={styles.reportSection}>
               {/* Heading */}
               <div className={styles.sectionHeading}>
-                <h2 className={styles.sectionHeadingText}>{section.heading}</h2>
+                <h2 className={styles.sectionHeadingText}>
+                  {section.heading}
+                  <span
+                    className={styles.importanceBadge}
+                    style={{ background: getSelectedColor() }}
+                  >
+                    {colorToImportance(analysisData?.selectedArrowColor)}
+                  </span>
+                </h2>
               </div>
 
               <div className={styles.contentGrid}>
