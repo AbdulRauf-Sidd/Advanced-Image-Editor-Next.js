@@ -57,7 +57,7 @@ export default function InspectionReportPage() {
         setTranslate({ x: 0, y: 0 });
       }
     };
-    document.addEventListewner('keydown', onKey);
+    document.addEventListener('keydown', onKey);
     // Prevent background scroll while lightbox is open
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
