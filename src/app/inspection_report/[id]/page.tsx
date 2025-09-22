@@ -868,7 +868,7 @@ export default function InspectionReportPage() {
                       {/* </p> */}
                       </div>
 
-                      <h4 className={styles.maintenanceItems}>Maintenance Items Description</h4>
+                      <h4 className={styles.maintenanceItems}>Maintenance Items</h4>
                       <div className={styles.maintenanceItems}>
                       {/* <p> */}
                         Small DIY-type repairs and maintenance recommendations provided to increase
@@ -880,9 +880,9 @@ export default function InspectionReportPage() {
                       <h4 className={styles.recomended}>Further Evaluation</h4>
                       <div className={styles.recomended}>
                       {/* <p> */}
-                        Small DIY-type repairs and maintenance recommendations provided to increase
-                        knowledge of long-term care. While not urgent, addressing these will reduce
-                        future repair needs and costs.
+                        In some cases, a defect falls outside the scope of a general home inspection or requires 
+                        a more extensive level of knowledge to determine the full extent of the issue. 
+                        These items should be further evaluated by a specialist.
                       {/* </p> */}
                       </div>
                       <br></br>
