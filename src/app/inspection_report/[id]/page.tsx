@@ -741,7 +741,7 @@ export default function InspectionReportPage() {
                     onClick={() => setNavMenuOpen(v => !v)}
                     title="Navigation options"
                   >
-                    Navigate ▾
+                    Report Viewing Options ▾
                   </button>
                   {navMenuOpen && (
                     <div className={styles.navDropdown} role="menu">
