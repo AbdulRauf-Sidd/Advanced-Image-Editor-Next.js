@@ -729,7 +729,7 @@ export default function InspectionReportPage() {
                   className={`${styles.toolbarBtn} ${styles.toolbarBtnDanger} ${filterMode === 'hazard' ? styles.toolbarBtnActive : ''}`}
                   onClick={() => { setFilterMode('hazard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 >
-                  Safety Hazard / Repair Now
+                  Immediate Attention
                 </button>
                 </div>
                 {/* Report Viewing Options dropdown (contains view + export actions) */}
@@ -764,7 +764,7 @@ export default function InspectionReportPage() {
                         className={`${styles.toolbarMenuItem} ${styles.toolbarBtnDanger}`}
                         onClick={() => { setMenuOpen(false); setFilterMode('hazard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                       >
-                        Safety Hazard / Repair Now
+                        Immediate Attention
                       </button>
                       <div className={styles.toolbarMenuDivider} aria-hidden="true" />
                       <button
