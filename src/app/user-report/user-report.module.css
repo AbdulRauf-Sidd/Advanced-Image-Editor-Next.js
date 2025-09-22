@@ -10,9 +10,79 @@
 
 
 .reportSectionsContainer {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
+  max-width: 1100px; /* Constrain readable width of the main content */
+  margin: 0; /* Left aligned with grid */
+  padding: 0 24px 0 0; /* Right-side breathing room; left handled by grid gap */
+}
+
+/* Layout with sticky side nav */
+.reportLayout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  column-gap: 28px;
+  row-gap: 0;
+  align-items: start;
+  width: 100%;
+  max-width: none;
+  margin: 0; /* Remove centering so the sidebar sits at the far left */
+  padding: 0; /* No outer padding that creates extra left space */
+}
+
+.sideNav {
+  position: sticky;
+  top: 16px;
+  align-self: start;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  padding: 12px;
+  margin-top: 40px; /* Align with initial spacing before main content */
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+.sideNavHeader { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 12px; }
+.sideNavTitle { font-weight: 700; color: #111827; }
+.sideNavClose { display: none; }
+
+.navList { list-style: none; padding: 0; margin: 0; }
+.navItem { margin: 6px 0; }
+.navItem > a { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; column-gap: 10px; padding: 8px 10px; border-radius: 8px; text-decoration: none; color: #111827; }
+.navItem > a:hover { background: #f3f4f6; }
+.navItemActive > a { background: #eef2ff; border-left: 3px solid #2563eb; }
+
+.navIcon { width: 20px; text-align: center; color: #6b7280; display: inline-flex; }
+.navIconSvg { width: 18px; height: 18px; }
+.navLabel { flex: 1; font-weight: 500; }
+.navBadge { background: #2563eb; color: #fff; font-weight: 700; font-size: 12px; border-radius: 9999px; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; justify-self: end; padding: 0; }
+
+.subList { list-style: none; padding: 6px 0 6px 28px; margin: 0; }
+.subItem a { display: grid; grid-template-columns: 56px 1fr; gap: 8px; padding: 6px 8px; border-radius: 6px; text-decoration: none; color: #374151; }
+.subItem a:hover { background: #f3f4f6; }
+.subActive a { background: #e0e7ff; color: #111827; border-left: 3px solid #2563eb; }
+.subNumber { min-width: 48px; font-variant-numeric: tabular-nums; font-weight: 600; color: #374151; background: #e5e7eb; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; padding: 2px 8px; }
+.subTitle { flex: 1; }
+
+.mobileNavBar { display: none; margin: 0 0 12px 0; }
+.mobileNavToggle {
+  background: #111827; color: #fff; border: none; padding: 10px 14px; border-radius: 10px; font-weight: 700; box-shadow: 0 6px 16px rgba(0,0,0,0.15); cursor: pointer;
+}
+
+.mainContent { min-width: 0; }
+
+/* Mobile drawer behavior */
+@media (max-width: 992px) {
+  .reportLayout { grid-template-columns: 1fr; }
+  .sideNav { position: fixed; inset: 0 auto 0 0; width: 80%; max-width: 320px; transform: translateX(-105%); transition: transform .25s ease; z-index: 50; top: 0; border-radius: 0 12px 12px 0; margin-top: 0; }
+  .sideNavOpen { transform: translateX(0%); }
+  .sideNavClose { display: inline-flex; background: transparent; border: none; font-size: 22px; cursor: pointer; }
+  .mobileNavBar { display: block; }
+}
+
+/* Print: hide nav */
+@media print {
+  .sideNav, .mobileNavBar { display: none !important; }
+  .reportLayout { display: block; padding: 0; }
 }
 
 .reportSection {
@@ -284,6 +354,32 @@
   margin-right: auto;
   padding: 0 2rem;
 }
+
+/* Report toolbar */
+.reportToolbar {
+  display: flex;
+  gap: 8px;
+  background: #334155;
+  padding: 10px;
+  border-radius: 10px;
+  align-items: center;
+  justify-content: flex-start;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+.toolbarBtn {
+  appearance: none;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.1);
+  color: #e5e7eb;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.toolbarBtn:hover { background: rgba(255,255,255,0.16); }
+.toolbarBtnActive { background: #3b82f6; border-color: #60a5fa; color: #fff; }
+.toolbarBtnDanger { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); }
+.toolbarBtnDanger.toolbarBtnActive { background: #3b82f6; border-color: #60a5fa; color: #fff; }
 
 .actionButton {
   display: flex;
@@ -723,6 +819,39 @@
 
 .defectsTable tr:hover {
   background-color: #f1f1f1;
+}
+
+.linkRow { cursor: pointer; }
+.linkRow a { color: inherit; text-decoration: none; }
+.linkRow:hover td { background-color: #eef2ff; }
+
+.collapsed { display: none; }
+
+/* collapseToggle styles removed as collapse UI was dropped */
+
+.backToTop { font-size: 0.85rem; color: #2563eb; text-decoration: none; margin-left: auto; }
+.backToTop:hover { text-decoration: underline; }
+
+.lightboxOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.lightboxImage {
+  max-width: 95vw;
+  max-height: 92vh;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* Print styles: hide interactive-only UI */
+@media print {
+  .collapseToggle, .backToTop { display: none !important; }
+  .lightboxOverlay { display: none !important; }
 }
 
 

@@ -1,6 +1,6 @@
 "use client";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import styles from "../../user-report/user-report.module.css";
 import { useRef } from "react";
 import Button from "@/components/Button";
@@ -16,6 +16,123 @@ export default function InspectionReportPage() {
   const [currentSubNumber, setCurrentSubNumber] = useState(1)
 
   const reportRef = useRef<HTMLDivElement>(null);
+
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [zoomScale, setZoomScale] = useState(1);
+  const [translate, setTranslate] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const panStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const translateStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  const baseSizeRef = useRef<{ w: number; h: number }>({ w: 0, h: 0 });
+
+  // Side nav state
+  const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
+  const [isNavOpen, setIsNavOpen] = useState(false);
+  const [filterMode, setFilterMode] = useState<'full' | 'summary' | 'hazard'>('full');
+
+  // Smooth scroll to anchors from summary table
+  const scrollToAnchor = useCallback((anchorId: string) => {
+    const el = document.getElementById(anchorId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Optional: focus heading for accessibility
+      const h = el.querySelector('h2, h3');
+      if (h && (h as HTMLElement).focus) {
+        (h as HTMLElement).setAttribute('tabindex', '-1');
+        (h as HTMLElement).focus({ preventScroll: true });
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setLightboxOpen(false);
+        setLightboxSrc(null);
+        setZoomScale(1);
+        setTranslate({ x: 0, y: 0 });
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    // Prevent background scroll while lightbox is open
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [lightboxOpen]);
+
+  // Handle panning while zoomed in
+  useEffect(() => {
+    if (!isPanning) return;
+    const onMove = (e: MouseEvent) => {
+      const dx = e.clientX - panStart.current.x;
+      const dy = e.clientY - panStart.current.y;
+      const next = { x: translateStart.current.x + dx, y: translateStart.current.y + dy };
+      // Clamp within container bounds
+      const container = overlayRef.current?.getBoundingClientRect();
+      const baseW = baseSizeRef.current.w || imageRef.current?.getBoundingClientRect().width || 0;
+      const baseH = baseSizeRef.current.h || imageRef.current?.getBoundingClientRect().height || 0;
+      const scaledW = baseW * zoomScale;
+      const scaledH = baseH * zoomScale;
+      const containerW = container?.width || window.innerWidth;
+      const containerH = container?.height || window.innerHeight;
+      const maxX = Math.max(0, (scaledW - containerW) / 2);
+      const maxY = Math.max(0, (scaledH - containerH) / 2);
+      setTranslate({
+        x: Math.min(Math.max(next.x, -maxX), maxX),
+        y: Math.min(Math.max(next.y, -maxY), maxY),
+      });
+    };
+    const onUp = () => setIsPanning(false);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [isPanning]);
+
+  const openLightbox = (src: string) => {
+    setLightboxSrc(src);
+    setZoomScale(1);
+    setTranslate({ x: 0, y: 0 });
+    setLightboxOpen(true);
+  };
+
+  const toggleZoom = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (zoomScale === 1) {
+      setZoomScale(2.5);
+      setTranslate({ x: 0, y: 0 });
+    } else {
+      setZoomScale(1);
+      setTranslate({ x: 0, y: 0 });
+    }
+  };
+
+  const startPanHandler = (e: React.MouseEvent) => {
+    if (zoomScale === 1) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setIsPanning(true);
+    panStart.current = { x: e.clientX, y: e.clientY };
+    translateStart.current = { ...translate };
+  };
+
+  const onImageLoad = () => {
+    // Capture the displayed size at scale=1 to compute bounds reliably
+    if (imageRef.current) {
+      const rect = imageRef.current.getBoundingClientRect();
+      baseSizeRef.current = { w: rect.width, h: rect.height };
+    }
+  };
 
   // Get the selected arrow color for dynamic styling (for individual sections)
   const getSelectedColor = (section: any) => {
@@ -123,7 +240,7 @@ export default function InspectionReportPage() {
     let lastSection = null;
     let subCounter = 0;
 
-    const mapped = sortedDefects.map((defect) => {
+  const mapped = sortedDefects.map((defect) => {
       // If we hit a new section, increment main number and reset subCounter
       if (defect.section !== lastSection!) {
         currentMain++;
@@ -137,7 +254,8 @@ export default function InspectionReportPage() {
       const def = defect.defect_description.split(".")[0] || "";
 
 
-      const numbering = `${currentMain}.${subCounter}`;
+  const numbering = `${currentMain}.${subCounter}`;
+  const anchorId = `defect-${defect._id || numbering.replace(/\./g, '-')}`;
 
       const totalEstimatedCost =
         defect.material_total_cost +
@@ -145,7 +263,9 @@ export default function InspectionReportPage() {
 
       return {
         id: defect._id,
+        anchorId,
         numbering,
+        sectionName: defect.section,
         heading2: `${defect.section} - ${defect.subsection}`,
         heading: `${numbering} ${defect.section} - ${defect.subsection}`,
         image: defect.image,
@@ -170,6 +290,56 @@ export default function InspectionReportPage() {
     }
   }, [defects]);
 
+  const isHazardColor = (hex?: string) => {
+    if (!hex) return false;
+    const c = hex.toLowerCase();
+    return c.includes('d63636') || c.includes('ff0000') || c.includes('dc2626') || c.includes('ef4444');
+  };
+
+  const visibleSections = useMemo(() => {
+    if (filterMode === 'hazard') {
+      return reportSections.filter((r) => isHazardColor(r.color));
+    }
+    // For 'full' and 'summary', show all defects; the difference is intro sections visibility
+    return reportSections;
+  }, [reportSections, filterMode]);
+
+  // Group by section for sidebar
+  const groupedBySection = useMemo(() => {
+    const groups: Record<string, { count: number; firstAnchor: string | null; items: Array<{ title: string; numbering: string; anchorId: string }> }> = {};
+    for (const r of reportSections) {
+      const key = r.sectionName || 'Other';
+      if (!groups[key]) {
+        groups[key] = { count: 0, firstAnchor: null, items: [] };
+      }
+      groups[key].count += 1;
+      if (!groups[key].firstAnchor) groups[key].firstAnchor = r.anchorId;
+      groups[key].items.push({ title: r.heading2?.split(' - ')[1] || r.defect || '', numbering: r.numbering, anchorId: r.anchorId });
+    }
+    return groups;
+  }, [reportSections]);
+
+  // Scrollspy with IntersectionObserver
+  useEffect(() => {
+    if (!reportSections.length) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible?.target?.id) {
+          setActiveAnchor(visible.target.id);
+        }
+      },
+      { root: null, rootMargin: "-20% 0px -60% 0px", threshold: [0, 0.25, 0.5, 0.75, 1] }
+    );
+    reportSections.forEach((r) => {
+      const el = document.getElementById(r.anchorId);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [reportSections]);
+
   return (
     <div className={styles.userReportContainer}>
       <main className="py-8">
@@ -178,9 +348,74 @@ export default function InspectionReportPage() {
             Download PDF
           </Button>
         </div>
-        <div ref={reportRef} className={styles.reportSectionsContainer}>
+        <div className={styles.reportLayout}>
+          {/* Sidebar */}
+          <aside className={`${styles.sideNav} ${isNavOpen ? styles.sideNavOpen : ''}`} aria-label="Report navigation">
+            <div className={styles.sideNavHeader}>
+              <span className={styles.sideNavTitle}>Inspection Sections</span>
+              <button className={styles.sideNavClose} onClick={() => setIsNavOpen(false)} aria-label="Close navigation">×</button>
+            </div>
+            <nav>
+              <ul className={styles.navList}>
+                {Object.entries(groupedBySection).map(([sectionName, data]) => {
+                  const sectionIsActive = data.items.some(i => i.anchorId === activeAnchor);
+                  return (
+                  <li key={sectionName} className={`${styles.navItem} ${sectionIsActive ? styles.navItemActive : ''}`}>
+                    <a
+                      href={`#${data.firstAnchor || ''}`}
+                      onClick={(e) => { e.preventDefault(); if (data.firstAnchor) scrollToAnchor(data.firstAnchor); if (isNavOpen) setIsNavOpen(false); }}
+                      aria-current={sectionIsActive ? 'page' : undefined}
+                    >
+                      <span className={styles.navIcon} aria-hidden="true">
+                        <svg className={styles.navIconSvg} viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M10.707 1.293a1 1 0 00-1.414 0l-8 8A1 1 0 002 11h1v6a1 1 0 001 1h4a1 1 0 001-1v-4h2v4a1 1 0 001 1h4a1 1 0 001-1v-6h1a1 1 0 00.707-1.707l-8-8z"/>
+                        </svg>
+                      </span>
+                      <span className={styles.navLabel}>{sectionName}</span>
+                      <span className={styles.navBadge} aria-label={`${data.count} items`}>{data.count}</span>
+                    </a>
+                    {/* Sub-list removed per request: show only sections with count */}
+                  </li>
+                );})}
+              </ul>
+            </nav>
+          </aside>
+
+          {/* Mobile toggle */}
+          <div className={styles.mobileNavBar}>
+            <button className={styles.mobileNavToggle} onClick={() => setIsNavOpen(true)} aria-label="Open navigation">☰ Sections</button>
+          </div>
+
+          <div ref={reportRef} className={styles.mainContent}>
             <div className={styles.reportSectionsContainer}>
+              <div className={styles.reportToolbar} role="tablist" aria-label="Report view">
+                <button
+                  role="tab"
+                  aria-selected={filterMode === 'full'}
+                  className={`${styles.toolbarBtn} ${filterMode === 'full' ? styles.toolbarBtnActive : ''}`}
+                  onClick={() => { setFilterMode('full'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                >
+                  Full Report
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={filterMode === 'summary'}
+                  className={`${styles.toolbarBtn} ${filterMode === 'summary' ? styles.toolbarBtnActive : ''}`}
+                  onClick={() => { setFilterMode('summary'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                >
+                  Summary
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={filterMode === 'hazard'}
+                  className={`${styles.toolbarBtn} ${styles.toolbarBtnDanger} ${filterMode === 'hazard' ? styles.toolbarBtnActive : ''}`}
+                  onClick={() => { setFilterMode('hazard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                >
+                  Safety Hazard / Repair Now
+                </button>
+              </div>
               <br></br><br></br>
+              {filterMode === 'full' && <>
               <div className={styles.sectionHeadingStart}>
                     <h2 className={styles.sectionHeadingTextStart}>Section 1 - Inspection Scope, Client Responsibilities, and Repair Estimates</h2>
                   </div>
@@ -430,37 +665,13 @@ export default function InspectionReportPage() {
 
                   <br></br><br></br>
 
-                  <div className={styles.sectionHeadingStart}>
-                    <h2 className={styles.sectionHeadingTextStart}>Defects Summary</h2>
-                  </div>
-                  <div className={styles.contentGridStart}>
-                    <div className={styles.descriptionSectionStart}>
-                      <table className={styles.defectsTable}>
-                          <thead>
-                            <tr>
-                              <th>No.</th>
-                              <th>Section</th>
-                              <th>Defect</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {reportSections.map((section) => (
-                              <tr key={section.id}>
-                                <td>{section.numbering}</td>
-                                <td>{section.heading2}</td>
-                                <td>{section.defect}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                    </div>
-
-                  </div>
                   <br></br>
-                {reportSections.map((section) => (
+              </>}
+                {visibleSections.map((section) => (
                 <div 
                   key={section.id} 
                   className={styles.reportSection}
+                  id={section.anchorId}
                   style={{
                     '--selected-color': getSelectedColor(section),
                     '--light-color': getLightColor(section),
@@ -485,6 +696,9 @@ export default function InspectionReportPage() {
                             }
                             alt="Property analysis"
                             className={styles.propertyImage}
+                            role="button"
+                            onClick={() => { openLightbox(typeof section.image === 'string' ? section.image : URL.createObjectURL(section.image)); }}
+                            style={{ cursor: 'zoom-in' }}
                           />
                         ) : (
                           <div className={styles.imagePlaceholder}>
@@ -542,33 +756,70 @@ export default function InspectionReportPage() {
                   </div>
                 </div>
             ))}
-            <div className={styles.contentGridStart}>
-                    <div className={styles.descriptionSectionStart}>
-                      <table className={styles.defectsTable}>
-                          <thead>
-                            <tr>
-                              <th>No.</th>
-                              <th>Defect</th>
-                              <th>Cost</th>
-                            </tr>
-                          </thead>
-                           <tbody>
-                             {reportSections.map((section) => (
-                               <tr key={section.id}>
-                                 <td>{section.numbering}</td>
-                                 <td>{section.defect}</td>
-                                 <td>${section.estimatedCosts.totalEstimatedCost}</td>
-                               </tr>
-                             ))}
-                             <tr style={{ fontWeight: 'bold', backgroundColor: '#f3f4f6' }}>
-                               <td colSpan={2}>Total Cost</td>
-                               <td>${reportSections.reduce((total, section) => total + section.estimatedCosts.totalEstimatedCost, 0)}</td>
-                             </tr>
-                           </tbody>
-                        </table>
-                    </div>
+            {filterMode === 'full' && (
+              <div className={styles.contentGridStart}>
+                <div className={styles.descriptionSectionStart}>
+                  <table className={styles.defectsTable}>
+                    <thead>
+                      <tr>
+                        <th>No.</th>
+                        <th>Defect</th>
+                        <th>Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reportSections.map((section) => (
+                        <tr key={section.id}>
+                          <td>{section.numbering}</td>
+                          <td>{section.defect}</td>
+                          <td>${section.estimatedCosts.totalEstimatedCost}</td>
+                        </tr>
+                      ))}
+                      <tr style={{ fontWeight: 'bold', backgroundColor: '#f3f4f6' }}>
+                        <td colSpan={2}>Total Cost</td>
+                        <td>${reportSections.reduce((total, section) => total + section.estimatedCosts.totalEstimatedCost, 0)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
-                  </div>
+            {filterMode === 'hazard' && visibleSections.length === 0 && (
+              <div className={styles.descriptionSectionStart} style={{ marginTop: '1rem' }}>
+                <p><strong>No safety hazards found.</strong></p>
+              </div>
+            )}
+              {/* Lightbox Overlay */}
+              {lightboxOpen && lightboxSrc && (
+                <div
+                  ref={overlayRef}
+                  className={styles.lightboxOverlay}
+                  onClick={() => { setLightboxOpen(false); setLightboxSrc(null); setZoomScale(1); setTranslate({ x: 0, y: 0 }); }}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Image preview"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    ref={imageRef}
+                    src={lightboxSrc}
+                    alt="Zoomed defect"
+                    className={styles.lightboxImage}
+                    onClick={(e) => e.stopPropagation()}
+                    onDoubleClick={toggleZoom}
+                    onMouseDown={startPanHandler}
+                    onLoad={onImageLoad}
+                    style={{
+                      transform: `translate3d(${translate.x}px, ${translate.y}px, 0) scale(${zoomScale})`,
+                      cursor: zoomScale > 1 ? (isPanning ? 'grabbing' : 'grab') : 'zoom-in',
+                      transition: isPanning ? 'none' : 'transform 80ms linear',
+                      willChange: 'transform',
+                    }}
+                  />
+                </div>
+              )}
+            </div>
             </div>
         </div>
       </main>
