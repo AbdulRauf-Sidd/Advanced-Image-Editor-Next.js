@@ -2723,3 +2723,47 @@ body div.submit-section div.submit-controls div.location-button-container button
   font-size: 1.2em; /* makes it look bolder */
   -webkit-text-stroke: 1px currentColor; /* adds stroke thickness */
 }
+/* Parent container for both buttons */
+.button-group {
+  display: flex;
+  gap: 12px;            /* space between buttons */
+  flex-wrap: wrap;      /* stack on small screens */
+  justify-content: center;
+}
+
+/* Shared button style */
+.custom-btn {
+  background-color: #007bff;   /* blue like your Choose Image */
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-size: 1rem;      /* same font size */
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;  /* prevent text breaking */
+}
+
+.custom-btn:hover {
+  background-color: #0056b3;
+}
+
+/* Make font bigger for both */
+.custom-btn .btn-text {
+  font-size: 1rem;      /* same size as button text */
+  font-weight: normal;  /* not bold */
+}
+
+/* ✅ Mobile responsive: stack buttons vertically */
+@media (max-width: 600px) {
+  .button-group {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch; /* full width buttons */
+  }
+
+  .custom-btn {
+    width: 100%;        /* full width on small screens */
+    font-size: 1.1rem;  /* slightly larger text on mobile */
+  }
+}

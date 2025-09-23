@@ -38,6 +38,9 @@ export default function ImageEditorPage() {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [selectedColor, setSelectedColor] = useState('#d63636'); // Default red color - shared across all tools
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+const [isEdited, setIsEdited] = useState(false);
+
 
   const { updateAnalysisData } = useAnalysisStore();
 
@@ -263,6 +266,8 @@ export default function ImageEditorPage() {
     window.dispatchEvent(event);
   };
 
+  
+
   const handleRotate = () => {
     console.log('Rotate clicked');
     // Dispatch custom event for ImageEditor to handle rotation
@@ -288,6 +293,11 @@ export default function ImageEditorPage() {
       alert('Please select all required location fields.');
       return;
     }
+    if (!currentImage || !editedFile) {
+  alert('Please upload and edit an image before submitting.');
+  return;
+}
+
   
     const selectedSection = selectedLocation;
     const selectedSubsection = selectedSubLocation;

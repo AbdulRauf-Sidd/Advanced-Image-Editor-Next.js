@@ -131,7 +131,48 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const animationRef = useRef<number | null>(null);
   const [rotationVelocity, setRotationVelocity] = useState(0);
   const [lastRotationTime, setLastRotationTime] = useState<number | null>(null);
-  
+
+const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        setImage(img);
+        
+        // Draw the image on canvas
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const context = canvas.getContext('2d');
+          if (context) {
+            // Set canvas dimensions to match the image
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            // Clear the canvas and draw the image
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            // Reset states (similar to your reference code)
+            setLines([]);
+            setCurrentLine(null);
+            setCropFrame(null);
+            setActionHistory([]);
+            setRedoHistory([]);
+            onCropStateChange(false);
+            
+            // Call the onImageChange callback if it exists
+            if (onImageChange) onImageChange(img);
+          }
+        }
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
   // Ultra-smooth arrow movement optimization
   const movementFrameRef = useRef<number | null>(null);
   const pendingMovementRef = useRef<{
@@ -2295,12 +2336,31 @@ const drawSquare = (
               Drag & drop your image here or click to browse
             </div>
             <div className={styles.buttonContainer}>
-              <button className={styles.chooseImageBtn} onClick={() => fileInputRef.current?.click()}>
+             <div className="button-group">
+              <button
+                className="custom-btn"
+                onClick={() => fileInputRef.current?.click()}
+              >
                 Choose Image
               </button>
-              <button className={styles.cameraBtn} onClick={startCamera}>
-                <i className="fas fa-camera"></i> Take a Picture
+
+              <button
+                className="custom-btn"
+                onClick={() => document.getElementById("cameraInput")?.click()}
+              >
+                <span className="btn-text">Take a Picture</span>
               </button>
+
+          <input
+            id="cameraInput"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            style={{ display: "none" }}
+            onChange={handleFileUpload}
+          />
+        </div>
+
             </div>
           </>
         ) : image && !isCameraFullscreen ? (
