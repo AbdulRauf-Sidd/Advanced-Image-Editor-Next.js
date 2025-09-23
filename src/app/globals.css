@@ -2730,40 +2730,36 @@ body div.submit-section div.submit-controls div.location-button-container button
   flex-wrap: wrap;      /* stack on small screens */
   justify-content: center;
 }
-
-/* Shared button style */
-.custom-btn {
-  background-color: #007bff;   /* blue like your Choose Image */
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 10px 16px;
-  font-size: 1rem;      /* same font size */
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  white-space: nowrap;  /* prevent text breaking */
+.buttonGroup {
+  display: flex !important;
+  gap: 12px !important;
 }
 
-.custom-btn:hover {
-  background-color: #0056b3;
+.customBtn {
+  background-color: #007bff !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 10px 16px !important;
+  font-size: 1rem !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
 }
 
-/* Make font bigger for both */
-.custom-btn .btn-text {
-  font-size: 1rem;      /* same size as button text */
-  font-weight: normal;  /* not bold */
+.customBtn:hover {
+  background-color: #0056b3 !important;
 }
 
-/* ✅ Mobile responsive: stack buttons vertically */
+/* Mobile: stack buttons */
 @media (max-width: 600px) {
-  .button-group {
-    flex-direction: column;
-    gap: 10px;
-    align-items: stretch; /* full width buttons */
+  .buttonGroup {
+    flex-direction: column !important;
+    gap: 10px !important;
   }
 
-  .custom-btn {
-    width: 100%;        /* full width on small screens */
-    font-size: 1.1rem;  /* slightly larger text on mobile */
+  .customBtn {
+    width: 100% !important;
+    font-size: 1.1rem !important;
+    padding: 12px 0 !important;
   }
 }
