@@ -19,6 +19,7 @@ export async function GET() {
     const inspections = await getAllInspections();
     return NextResponse.json(inspections);
   } catch (error: any) {
+    console.log(error)
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
