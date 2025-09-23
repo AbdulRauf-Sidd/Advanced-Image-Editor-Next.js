@@ -2382,21 +2382,52 @@ const drawSquare = (
           {/* Choose from gallery */}
           
 
-<div className={styles.buttonGroup}>
+<div
+  style={{
+    display: 'flex',
+    gap: '12px',
+    flexWrap: 'wrap',
+    justifyContent: window.innerWidth <= 600 ? 'center' : 'flex-start', // center on mobile
+  }}
+>
   <button
-    className={styles.customBtn}
     onClick={() => fileInputRef.current?.click()}
+    style={{
+      backgroundColor: '#007bff',
+      color: 'white',
+      border: 'none',
+      borderRadius: '6px',
+      padding: '10px 16px',
+      fontSize: '1rem',
+      cursor: 'pointer',
+      transition: 'background-color 0.2s ease',
+    }}
+    onMouseOver={e => (e.currentTarget.style.backgroundColor = '#0056b3')}
+    onMouseOut={e => (e.currentTarget.style.backgroundColor = '#007bff')}
   >
     Choose Image
   </button>
 
   <button
-    className={styles.customBtn}
     onClick={() => cameraInputRef.current?.click()}
+    style={{
+      backgroundColor: '#007bff',
+      color: 'white',
+      border: 'none',
+      borderRadius: '6px',
+      padding: '10px 16px',
+      fontSize: '1rem',
+      cursor: 'pointer',
+      transition: 'background-color 0.2s ease',
+    }}
+    onMouseOver={e => (e.currentTarget.style.backgroundColor = '#0056b3')}
+    onMouseOut={e => (e.currentTarget.style.backgroundColor = '#007bff')}
   >
     Take a Picture
   </button>
 </div>
+
+    
 
 
           {/* Hidden file input for gallery */}

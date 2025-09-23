@@ -2734,32 +2734,12 @@ body div.submit-section div.submit-controls div.location-button-container button
   display: flex !important;
   gap: 12px !important;
 }
+/* ButtonGroup.module.css */
 
-.customBtn {
-  background-color: #007bff !important;
-  color: white !important;
-  border: none !important;
-  border-radius: 6px !important;
-  padding: 10px 16px !important;
-  font-size: 1rem !important;
-  cursor: pointer !important;
-  transition: background-color 0.2s ease !important;
+.buttonGroup {
+  display: flex !important;
+  gap: 12px !important;
 }
 
-.customBtn:hover {
-  background-color: #0056b3 !important;
-}
 
-/* Mobile: stack buttons */
-@media (max-width: 600px) {
-  .buttonGroup {
-    flex-direction: column !important;
-    gap: 10px !important;
-  }
 
-  .customBtn {
-    width: 100% !important;
-    font-size: 1.1rem !important;
-    padding: 12px 0 !important;
-  }
-}
