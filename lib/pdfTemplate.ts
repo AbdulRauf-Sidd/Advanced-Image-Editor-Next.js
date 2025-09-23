@@ -35,6 +35,60 @@ function currency(n?: number): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
 }
 
+// Color utilities: parse CSS color strings and classify by nearest base color
+function parseColorToRgb(input?: string): { r: number; g: number; b: number } | null {
+  if (!input) return null;
+  const s = String(input).trim().toLowerCase();
+  const hexMatch = s.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (hexMatch) {
+    let h = hexMatch[1];
+    if (h.length === 3) h = h.split("").map((ch) => ch + ch).join("");
+    const r = parseInt(h.substring(0, 2), 16);
+    const g = parseInt(h.substring(2, 4), 16);
+    const b = parseInt(h.substring(4, 6), 16);
+    return { r, g, b };
+  }
+  const rgbMatch = s.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/);
+  if (rgbMatch) {
+    const r = Math.max(0, Math.min(255, parseInt(rgbMatch[1], 10)));
+    const g = Math.max(0, Math.min(255, parseInt(rgbMatch[2], 10)));
+    const b = Math.max(0, Math.min(255, parseInt(rgbMatch[3], 10)));
+    return { r, g, b };
+  }
+  return null;
+}
+
+const baseColors: Record<'red' | 'orange' | 'blue' | 'purple', { r: number; g: number; b: number }> = {
+  red: { r: 220, g: 38, b: 38 },      // #dc2626
+  orange: { r: 245, g: 158, b: 11 },  // #f59e0b
+  blue: { r: 59, g: 130, b: 246 },    // #3b82f6
+  purple: { r: 124, g: 58, b: 237 },  // #7c3aed
+};
+
+function nearestCategory(color?: string): 'red' | 'orange' | 'blue' | 'purple' | null {
+  const rgb = parseColorToRgb(color);
+  if (!rgb) return null;
+  let bestKey: 'red' | 'orange' | 'blue' | 'purple' | null = null;
+  let bestDist = Number.POSITIVE_INFINITY;
+  (Object.keys(baseColors) as Array<'red' | 'orange' | 'blue' | 'purple'>).forEach((key) => {
+    const b = baseColors[key];
+    const d = (rgb.r - b.r) ** 2 + (rgb.g - b.g) ** 2 + (rgb.b - b.b) ** 2;
+    if (d < bestDist) { bestDist = d; bestKey = key; }
+  });
+  return bestKey;
+}
+
+function colorToImportance(input?: string): 'Immediate Attention' | 'Items for Repair' | 'Maintenance Items' | 'Further Evaluation' {
+  const cat = nearestCategory(input);
+  switch (cat) {
+    case 'red': return 'Immediate Attention';
+    case 'orange': return 'Items for Repair';
+    case 'blue': return 'Maintenance Items';
+    case 'purple': return 'Further Evaluation';
+    default: return 'Immediate Attention';
+  }
+}
+
 export function generateInspectionReportHTML(defects: DefectItem[], meta: ReportMeta = {}): string {
   const {
     title = "Inspection Report",
@@ -71,11 +125,17 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
       const number = `${currentMain}.${subCounter}`;
       const totalCost = (d.material_total_cost || 0) + (d.labor_rate || 0) * (d.hours_required || 0);
       const selectedColor = d.color || "#d63636";
+      
+      // Determine the importance label based on nearest color category
+      const importanceLabel = colorToImportance(selectedColor);
 
       return `
         <section class="report-section" style="--selected-color: ${selectedColor};">
           <div class="section-heading">
-            <h2 class="section-heading-text">${escapeHtml(number)} ${escapeHtml(d.section)} - ${escapeHtml(d.subsection)}</h2>
+            <h2 class="section-heading-text">
+              ${escapeHtml(number)} ${escapeHtml(d.section)} - ${escapeHtml(d.subsection)}
+              <span class="importance-badge" style="background-color: ${selectedColor};">${importanceLabel}</span>
+            </h2>
           </div>
 
           <div class="content-grid">
@@ -212,6 +272,18 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
   .cover--section2 h3 { font-size: 16px; margin: 12px 0 8px; }
   .cover--section2 h4 { font-size: 14px; margin: 10px 0 6px; }
   .cover--section2 p, .cover--section2 li { font-size: 13px; line-height: 1.5; margin: 0 0 8px 0; hyphens: manual; -webkit-hyphens: manual; }
+  
+  /* Importance badge styling */
+  .importance-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-left: 8px;
+  }
   .cover--section2 ul { margin: 8px 0 12px 18px; }
   .cover--section2 hr { margin: 12px 0; }
 
