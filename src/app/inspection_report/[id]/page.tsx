@@ -28,6 +28,9 @@ export default function InspectionReportPage() {
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const baseSizeRef = useRef<{ w: number; h: number }>({ w: 0, h: 0 });
+  // Toolbar dropdown menu (Report Viewing Options)
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   // Navigation state
   const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
@@ -66,6 +69,29 @@ export default function InspectionReportPage() {
       document.body.style.overflow = prevOverflow;
     };
   }, [lightboxOpen]);
+
+  // Close toolbar menu on outside click
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (!menuOpen) return;
+      const n = e.target as Node;
+      if (menuRef.current && !menuRef.current.contains(n)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [menuOpen]);
+
+  // Close toolbar menu on Escape
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [menuOpen]);
 
   // Handle panning while zoomed in
   useEffect(() => {
@@ -300,14 +326,7 @@ export default function InspectionReportPage() {
             <section id="${s.anchorId}" class="rpt-section">
               <h2 class="rpt-h2" style="color:${s.color || '#dc2626'}">
                 ${escapeHtml(s.heading)}
-                <span class="rpt-badge" style="background:${s.color || '#dc2626'}">${(function(){
-                  const c=(s.color||'').toLowerCase();
-                  if(c.includes('d63636')||c.includes('dc2626')||c.includes('ef4444')||c.includes('ff0000')) return 'Immediate Attention';
-                  if(c.includes('e69500')||c.includes('f59e0b')||c.includes('ffa500')||c.includes('fb923c')) return 'Items for Repair';
-                  if(c.includes('2d6cdf')||c.includes('3b82f6')||c.includes('60a5fa')||c.includes('1d4ed8')) return 'Maintenance Items';
-                  if(c.includes('7c3aed')||c.includes('8b5cf6')||c.includes('6d28d9')||c.includes('9333ea')) return 'Further Evaluation';
-                  return 'Immediate Attention';
-                })()}</span>
+                <span class="rpt-badge" style="background:${s.color || '#dc2626'}">${colorToImportance(s.color || '#dc2626')}</span>
               </h2>
               <div class="rpt-grid">
                 <div class="rpt-col">
@@ -612,10 +631,53 @@ export default function InspectionReportPage() {
     }
   }, [defects]);
 
-  const isHazardColor = (hex?: string) => {
-    if (!hex) return false;
-    const c = hex.toLowerCase();
-    return c.includes('d63636') || c.includes('ff0000') || c.includes('dc2626') || c.includes('ef4444');
+  // Robust color parsing helpers
+  const parseColorToRgb = (input?: string): { r: number; g: number; b: number } | null => {
+    if (!input) return null;
+    const s = String(input).trim().toLowerCase();
+    // #rgb or #rrggbb
+    const hexMatch = s.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (hexMatch) {
+      let h = hexMatch[1];
+      if (h.length === 3) h = h.split('').map((ch) => ch + ch).join('');
+      const r = parseInt(h.substring(0, 2), 16);
+      const g = parseInt(h.substring(2, 4), 16);
+      const b = parseInt(h.substring(4, 6), 16);
+      return { r, g, b };
+    }
+    // rgb() or rgba()
+    const rgbMatch = s.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/);
+    if (rgbMatch) {
+      const r = Math.max(0, Math.min(255, parseInt(rgbMatch[1], 10)));
+      const g = Math.max(0, Math.min(255, parseInt(rgbMatch[2], 10)));
+      const b = Math.max(0, Math.min(255, parseInt(rgbMatch[3], 10)));
+      return { r, g, b };
+    }
+    return null;
+  };
+
+  const baseColors: Record<'red' | 'orange' | 'blue' | 'purple', { r: number; g: number; b: number }> = {
+    red: { r: 220, g: 38, b: 38 },      // #dc2626
+    orange: { r: 245, g: 158, b: 11 },  // #f59e0b
+    blue: { r: 59, g: 130, b: 246 },    // #3b82f6
+    purple: { r: 124, g: 58, b: 237 },  // #7c3aed
+  };
+
+  const nearestCategory = (color?: string): 'red' | 'orange' | 'blue' | 'purple' | null => {
+    const rgb = parseColorToRgb(color);
+    if (!rgb) return null;
+    let bestKey: 'red' | 'orange' | 'blue' | 'purple' | null = null;
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (const key of Object.keys(baseColors) as Array<'red' | 'orange' | 'blue' | 'purple'>) {
+      const b = baseColors[key];
+      const d = (rgb.r - b.r) ** 2 + (rgb.g - b.g) ** 2 + (rgb.b - b.b) ** 2;
+      if (d < bestDist) { bestDist = d; bestKey = key; }
+    }
+    return bestKey;
+  };
+
+  const isHazardColor = (input?: string) => {
+    return nearestCategory(input) === 'red';
   };
 
   const visibleSections = useMemo(() => {
@@ -662,14 +724,15 @@ export default function InspectionReportPage() {
     return () => observer.disconnect();
   }, [reportSections]);
 
-  const colorToImportance = useCallback((hex?: string) => {
-    if (!hex) return 'Immediate Attention';
-    const c = hex.toLowerCase();
-    if (c.includes('d63636') || c.includes('dc2626') || c.includes('ef4444') || c.includes('ff0000')) return 'Immediate Attention';
-    if (c.includes('e69500') || c.includes('f59e0b') || c.includes('ffa500') || c.includes('fb923c')) return 'Items for Repair';
-    if (c.includes('2d6cdf') || c.includes('3b82f6') || c.includes('60a5fa') || c.includes('1d4ed8')) return 'Maintenance Items';
-    if (c.includes('7c3aed') || c.includes('8b5cf6') || c.includes('6d28d9') || c.includes('9333ea')) return 'Further Evaluation';
-    return 'Immediate Attention';
+  const colorToImportance = useCallback((input?: string) => {
+    const cat = nearestCategory(input);
+    switch (cat) {
+      case 'red': return 'Immediate Attention';
+      case 'orange': return 'Items for Repair';
+      case 'blue': return 'Maintenance Items';
+      case 'purple': return 'Further Evaluation';
+      default: return 'Immediate Attention';
+    }
   }, []);
 
   return (
@@ -703,8 +766,60 @@ export default function InspectionReportPage() {
                   className={`${styles.toolbarBtn} ${styles.toolbarBtnDanger} ${filterMode === 'hazard' ? styles.toolbarBtnActive : ''}`}
                   onClick={() => { setFilterMode('hazard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 >
-                  Safety Hazard / Repair Now
+                  Immediate Attention
                 </button>
+                </div>
+                {/* Report Viewing Options dropdown (contains view + export actions) */}
+                <div ref={menuRef} className={styles.toolbarMenuContainer}>
+                  <button
+                    className={`${styles.toolbarBtn} ${styles.toolbarMenuBtn}`}
+                    aria-haspopup="menu"
+                    aria-expanded={menuOpen}
+                    onClick={() => setMenuOpen((v) => !v)}
+                    title="Report Viewing Options"
+                  >
+                    Report Viewing Options ▾
+                  </button>
+                  {menuOpen && (
+                    <div className={styles.toolbarMenuDropdown} role="menu">
+                      <button
+                        role="menuitem"
+                        className={styles.toolbarMenuItem}
+                        onClick={() => { setMenuOpen(false); setFilterMode('full'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                      >
+                        Full Report
+                      </button>
+                      <button
+                        role="menuitem"
+                        className={styles.toolbarMenuItem}
+                        onClick={() => { setMenuOpen(false); setFilterMode('summary'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                      >
+                        Summary
+                      </button>
+                      <button
+                        role="menuitem"
+                        className={`${styles.toolbarMenuItem} ${styles.toolbarBtnDanger}`}
+                        onClick={() => { setMenuOpen(false); setFilterMode('hazard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                      >
+                        Immediate Attention
+                      </button>
+                      <div className={styles.toolbarMenuDivider} aria-hidden="true" />
+                      <button
+                        role="menuitem"
+                        className={styles.toolbarMenuItem}
+                        onClick={() => { setMenuOpen(false); handleDownloadHTML(); }}
+                      >
+                        Export HTML
+                      </button>
+                      <button
+                        role="menuitem"
+                        className={styles.toolbarMenuItem}
+                        onClick={() => { setMenuOpen(false); handleDownloadPDF(); }}
+                      >
+                        Export PDF
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div className={styles.toolbarRightGroup}>
                   <button className={styles.toolbarBtn} onClick={handleDownloadHTML} title="Export HTML">

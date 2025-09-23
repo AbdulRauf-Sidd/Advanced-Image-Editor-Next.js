@@ -106,6 +106,7 @@ a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px
 .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
 .defect-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow-sm); }
 .defect-header { padding: 8px 12px; font-weight: 700; color: #ffffff; font-size: 14px; display: flex; align-items: center; justify-content: space-between; }
+.importance-badge { font-size: 12px; padding: 2px 8px; border-radius: 9999px; background: rgba(255,255,255,0.2); margin-left: 8px; }
 .defect-header.orange { background: var(--warning); }
 .defect-header.red { background: var(--danger); }
 .defect-header.blue { background: var(--accent); }

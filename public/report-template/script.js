@@ -167,7 +167,20 @@ function buildSections(sections, { filterSeverity = null } = {}) {
   const sev = (d.severity || '').toLowerCase();
   const sevClass = sev === 'danger' ? 'red' : sev === 'warning' ? 'orange' : 'blue';
   header.className = `defect-header ${sevClass}`;
-      header.textContent = `${number} - ${d.title}`;
+  
+  // Determine the importance label based on severity
+  let importanceLabel = 'Maintenance Items'; // default blue
+  if (sev === 'danger') importanceLabel = 'Immediate Attention';
+  else if (sev === 'warning') importanceLabel = 'Items for Repair';
+  else if (sev === 'info') importanceLabel = 'Further Evaluation';
+      
+  header.textContent = `${number} - ${d.title}`;
+  
+  // Add badge with importance label
+  const badge = document.createElement('span');
+  badge.className = 'importance-badge';
+  badge.textContent = importanceLabel;
+  header.appendChild(badge);
       const imgWrap = document.createElement('div');
       imgWrap.className = 'defect-img-wrap';
       const img = document.createElement('img');
