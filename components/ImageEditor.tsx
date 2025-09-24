@@ -55,14 +55,12 @@ interface ImageEditorProps {
   onCropStateChange: (hasFrame: boolean) => void;
   onUndo: () => void;
   onRedo: () => void;
-  onImageChange: (img: HTMLImageElement | null) => void;
-  onEditedFile: (file: File | null) => void;
-  onFileUpload?: (file: File) => void; // <-- Add this line
-  videoRef: React.RefObject<HTMLVideoElement>;
-  setIsCameraOpen: (open: boolean) => void;
+  onImageChange?: (img: HTMLImageElement | null) => void;
+  onEditedFile?: (file: File | null) => void;
+  videoRef?: React.RefObject<HTMLVideoElement>;
+  setIsCameraOpen: (val: boolean) => void;
   isCameraOpen: boolean;
 }
-
 
 const ImageEditor: React.FC<ImageEditorProps> = ({ 
   activeMode, 
@@ -71,7 +69,6 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   onRedo,
   onImageChange, 
   onEditedFile,
-  onFileUpload, 
   videoRef,
   setIsCameraOpen,
   isCameraOpen
@@ -192,11 +189,12 @@ const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file) return;
 
-  // For images: keep editedFile; for videos: null
-  if (file.type.startsWith("image/")) {
-    setEditedFile(file); // store edited image
-    if (onEditedFile) onEditedFile(file);
+  setEditedFile(file);
+  if (onEditedFile) onEditedFile(file);
 
+  // Check MIME type
+  if (file.type.startsWith("image/")) {
+    // 🖼 Image handling
     const img = new Image();
     img.onload = () => {
       setImage(img);
@@ -206,28 +204,22 @@ const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (onImageChange) onImageChange(img);
     };
     img.src = URL.createObjectURL(file);
-  } else if (file.type.startsWith("video/")) {
-    // Videos don’t need editing
-    setEditedFile(null);
-    if (onEditedFile) onEditedFile(null);
-
-    // Clear canvas and lines
-    setImage(null);
+  } 
+  else if (file.type.startsWith("video/")) {
+    // 🎥 Video handling
+    const videoURL = URL.createObjectURL(file);
+    setImage(null); // clear canvas image
     setLines([]);
     setCropFrame(null);
     onCropStateChange(false);
 
-    // Store video URL to render in <video>
-    setVideoSrc(URL.createObjectURL(file));
+    // You can store videoURL in state to render <video>
+    setVideoSrc(videoURL);
   }
-
-  // For both images and videos, notify parent about uploaded file
-  if (onFileUpload) onFileUpload(file);
 
   // Reset input so same file can be reselected
   e.target.value = "";
 };
-
 
 
 
@@ -2499,7 +2491,7 @@ const drawSquare = (
             type="file"
             accept="image/*"
             style={{ display: "none" }}
-            onChange={handleFileUpload}
+            onChange={handleFileSelected}
           />
           <input
             ref={cameraInputRef}
@@ -2507,7 +2499,7 @@ const drawSquare = (
             accept="image/*"
             capture="environment"
             style={{ display: "none" }}
-            onChange={handleFileUpload}
+            onChange={handleFileSelected}
           />
           <input
             ref={cameraVideoRef}

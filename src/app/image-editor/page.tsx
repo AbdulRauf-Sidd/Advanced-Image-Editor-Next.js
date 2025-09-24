@@ -38,10 +38,8 @@ export default function ImageEditorPage() {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [selectedColor, setSelectedColor] = useState('#d63636'); // Default red color - shared across all tools
-  // const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 const [isEdited, setIsEdited] = useState(false);
-const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-
 
 
   const { updateAnalysisData } = useAnalysisStore();
@@ -285,83 +283,88 @@ const [uploadedFile, setUploadedFile] = useState<File | null>(null);
     router.push('/');
   };
 
-const handleSubmit = async () => {
-  if (!uploadedFile) {
-    alert('Please upload a file before submitting.');
-    return;
-  }
-
-  const isImage = uploadedFile.type.startsWith('image/');
-
-  if (isImage && !editedFile) {
-    alert('Please edit the image before submitting.');
-    return;
-  }
-
-  if (!selectedLocation || !selectedSubLocation || !selectedLocation2) {
-    alert('Please select all required location fields.');
-    return;
-  }
-
-  if (isImage && (!currentImage || !editedFile)) {
-    alert('Please upload and edit an image before submitting.');
-    return;
-  }
-
-  setIsSubmitting(true);
-  setSubmitStatus('Processing...');
-
-  try {
-    const formData = new FormData();
-
-    // ✅ Always append 'image' key (backend expects this)
-    formData.append('image', isImage ? editedFile! : uploadedFile);
-
-    formData.append('description', description || '');
-    formData.append('location', selectedLocation2);
-    formData.append('section', selectedLocation);
-    formData.append('subSection', selectedSubLocation);
-    formData.append('inspectionId', selectedInspectionId || '');
-    formData.append('selectedColor', selectedColor);
-
-    // Optional: imageDataUrl only for images
-    if (isImage) {
-      const imageDataUrl = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.readAsDataURL(editedFile!);
-      });
-      formData.append('imageUrl', imageDataUrl);
-    }
-
-    const response = await fetch('/api/llm/analyze-image', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API Error:', errorText);
-      alert(`Analysis request failed: ${errorText}`);
+  const handleSubmit = async () => {
+    if (!currentImage || !editedFile) {
+      alert('Please upload and edit an image before submitting.');
       return;
     }
-
-    const result = await response.json();
-    console.log('API response:', result);
-
-    if (response.status === 202 || result.analysisId) {
-      window.location.href = `/image-editor/?inspectionId=${selectedInspectionId}`;
-    } else {
-      alert('Analysis did not start correctly. Please try again.');
+  
+    if (!selectedLocation || !selectedSubLocation || !selectedLocation2) {
+      alert('Please select all required location fields.');
+      return;
     }
-  } catch (error) {
-    console.error('Submission error:', error);
-    alert('Unexpected error occurred while submitting. Please try again.');
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+    if (!currentImage || !editedFile) {
+  alert('Please upload and edit an image before submitting.');
+  return;
+}
 
+  
+    const selectedSection = selectedLocation;
+    const selectedSubsection = selectedSubLocation;
+    const selectedLocationValue = selectedLocation2;
+  
+    setIsSubmitting(true);
+    setSubmitStatus('Processing...');
+  
+    let imageDataUrl: string;
+    try {
+      imageDataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.readAsDataURL(editedFile);
+      });
+    } catch (conversionError) {
+      console.error('Error converting image to data URL:', conversionError);
+      imageDataUrl = '';
+    }
+  
+    try {
+      const formData = new FormData();
+      formData.append('image', editedFile);
+      formData.append('description', description);
+      formData.append('location', selectedLocationValue);
+      formData.append('section', selectedSection);
+      formData.append('subSection', selectedSubsection);
+      formData.append('inspectionId', selectedInspectionId);
+      formData.append('selectedColor', selectedColor);
+      formData.append('imageUrl', imageDataUrl);
+  
+      const response = await fetch('/api/llm/analyze-image', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
+        alert(`Analysis request failed: ${errorText}`);
+        return; // ❌ stop here
+      }
+      
+      const result = await response.json();
+      console.log('API response:', result);
+      
+      // Check if the analysis was accepted and started
+      if (response.status === 202) {
+        // Analysis is processing in the background
+        console.log('Analysis started with ID:', result.analysisId);
+        
+      } else if (!result.analysisId) {
+        alert('Analysis did not start correctly. Please try again.');
+        return; // ❌ stop here
+      }
+  
+
+  
+      // ✅ Navigate only if job started successfully
+      window.location.href = `/image-editor/?inspectionId=${selectedInspectionId}`;
+    } catch (error: any) {
+      console.error('Submission error:', error);
+      alert('Unexpected error occurred while submitting. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   
 
   // Color options for all tools (arrow, circle, square)
@@ -617,15 +620,14 @@ const handleSubmit = async () => {
       <div className="image-upload-area">
         <ImageEditor 
           activeMode={activeMode} 
-  onCropStateChange={handleCropStateChange}
-  onUndo={handleUndo}
-  onRedo={handleRedo}
-  onImageChange={setCurrentImage}
-  onEditedFile={setEditedFile}
-  onFileUpload={setUploadedFile}  // <-- ADD THIS
-  videoRef={videoRef}
-  setIsCameraOpen={setIsCameraOpen}
-  isCameraOpen={isCameraOpen}
+          onCropStateChange={handleCropStateChange}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onImageChange={setCurrentImage}
+          onEditedFile={setEditedFile}
+          videoRef={videoRef}
+          setIsCameraOpen={setIsCameraOpen}
+          isCameraOpen={isCameraOpen}
         />
       </div>
 
