@@ -135,6 +135,10 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
 const [editedFile, setEditedFile] = useState<File | null>(null);   // original or processed file
 const cameraInputRef = useRef<HTMLInputElement>(null);
 
+const cameraVideoRef = useRef<HTMLInputElement>(null); // for file input (video recording)
+const [videoSrc, setVideoSrc] = useState<string | null>(null);
+
+
 
   
 
@@ -179,6 +183,8 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
 };
 
 
+
+
 const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -186,19 +192,35 @@ const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
   setEditedFile(file);
   if (onEditedFile) onEditedFile(file);
 
-  const img = new Image();
-  img.onload = () => {
-    setImage(img);
+  // Check MIME type
+  if (file.type.startsWith("image/")) {
+    // 🖼 Image handling
+    const img = new Image();
+    img.onload = () => {
+      setImage(img);
+      setLines([]);
+      setCropFrame(null);
+      onCropStateChange(false);
+      if (onImageChange) onImageChange(img);
+    };
+    img.src = URL.createObjectURL(file);
+  } 
+  else if (file.type.startsWith("video/")) {
+    // 🎥 Video handling
+    const videoURL = URL.createObjectURL(file);
+    setImage(null); // clear canvas image
     setLines([]);
     setCropFrame(null);
     onCropStateChange(false);
-    if (onImageChange) onImageChange(img);
-  };
-  img.src = URL.createObjectURL(file);
 
-  // Reset input for next selection
-  e.target.value = '';
+    // You can store videoURL in state to render <video>
+    setVideoSrc(videoURL);
+  }
+
+  // Reset input so same file can be reselected
+  e.target.value = "";
 };
+
 
 
 
@@ -2370,67 +2392,100 @@ const drawSquare = (
       </div>
     )}
 
-      {/* Main Content */}
+
+
+
+  {/* Main Content */}
 <div className={styles.uploadContainer}>
-  {!image ? (
+  {!image && !videoSrc ? (
     <>
       <div className={styles.uploadInstructions}>
-        Drag & drop your image here or click to browse
+        Drag & drop your image or video here or click to browse
       </div>
       <div className={styles.buttonContainer}>
         <div className="button-group">
-          {/* Choose from gallery */}
-          
-
-<div
+          <div
+            style={{
+              display: "flex",
+              gap: "12px",
+              flexWrap: "wrap",
+              justifyContent: window.innerWidth <= 600 ? "center" : "flex-start", // center on mobile
+            }}
+          >
+            {/* Choose Image */}
+           <button
+  onClick={() => fileInputRef.current?.click()}
   style={{
-    display: 'flex',
-    gap: '12px',
-    flexWrap: 'wrap',
-    justifyContent: window.innerWidth <= 600 ? 'center' : 'flex-start', // center on mobile
+    backgroundColor: "#007bff",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    padding: "10px 16px",
+    fontSize: "1rem",
+    cursor: "pointer",
+    transition: "background-color 0.2s ease",
   }}
+  onMouseOver={(e) =>
+    (e.currentTarget.style.backgroundColor = "#0056b3")
+  }
+  onMouseOut={(e) =>
+    (e.currentTarget.style.backgroundColor = "#007bff")
+  }
 >
-  <button
-    onClick={() => fileInputRef.current?.click()}
-    style={{
-      backgroundColor: '#007bff',
-      color: 'white',
-      border: 'none',
-      borderRadius: '6px',
-      padding: '10px 16px',
-      fontSize: '1rem',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s ease',
-    }}
-    onMouseOver={e => (e.currentTarget.style.backgroundColor = '#0056b3')}
-    onMouseOut={e => (e.currentTarget.style.backgroundColor = '#007bff')}
-  >
-    Choose Image
-  </button>
-
-  <button
-    onClick={() => cameraInputRef.current?.click()}
-    style={{
-      backgroundColor: '#007bff',
-      color: 'white',
-      border: 'none',
-      borderRadius: '6px',
-      padding: '10px 16px',
-      fontSize: '1rem',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s ease',
-    }}
-    onMouseOver={e => (e.currentTarget.style.backgroundColor = '#0056b3')}
-    onMouseOut={e => (e.currentTarget.style.backgroundColor = '#007bff')}
-  >
-    Take a Picture
-  </button>
-</div>
-
-    
+  Choose Image
+</button>
 
 
-          {/* Hidden file input for gallery */}
+            {/* Take Picture */}
+          <button
+  onClick={() => cameraInputRef.current?.click()}
+  style={{
+    backgroundColor: "#007bff",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    padding: "10px 16px",
+    fontSize: "1rem",
+    cursor: "pointer",
+    transition: "background-color 0.2s ease",
+  }}
+  onMouseOver={(e) =>
+    (e.currentTarget.style.backgroundColor = "#0056b3")
+  }
+  onMouseOut={(e) =>
+    (e.currentTarget.style.backgroundColor = "#007bff")
+  }
+>
+  Take a Picture
+</button>
+
+
+            {/* Record Video */}
+           <button
+  onClick={() => cameraVideoRef.current?.click()}
+  style={{
+    backgroundColor: "#007bff",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    padding: "10px 16px",
+    fontSize: "1rem",
+    cursor: "pointer",
+    transition: "background-color 0.2s ease",
+  }}
+  onMouseOver={(e) =>
+    (e.currentTarget.style.backgroundColor = "#0056b3")
+  }
+  onMouseOut={(e) =>
+    (e.currentTarget.style.backgroundColor = "#007bff")
+  }
+>
+  Record Video
+</button>
+
+          </div>
+
+          {/* Hidden file inputs */}
           <input
             ref={fileInputRef}
             type="file"
@@ -2438,8 +2493,6 @@ const drawSquare = (
             style={{ display: "none" }}
             onChange={handleFileSelected}
           />
-
-          {/* Hidden file input for camera (native capture) */}
           <input
             ref={cameraInputRef}
             type="file"
@@ -2448,10 +2501,29 @@ const drawSquare = (
             style={{ display: "none" }}
             onChange={handleFileSelected}
           />
+          <input
+            ref={cameraVideoRef}
+            type="file"
+            accept="video/*"
+            capture="environment"
+            style={{ display: "none" }}
+            onChange={handleFileSelected}
+          />
         </div>
       </div>
     </>
+  ) : videoSrc ? (
+    // 👇 This is where your video preview will show
+    <div className={styles.videoDisplayArea}>
+      <video
+        src={videoSrc}
+        controls
+        autoPlay
+        style={{ maxWidth: "100%", maxHeight: "400px" }}
+      />
+    </div>
   ) : (
+    // 👇 Fallback: image canvas
     <div className={styles.imageDisplayArea}>
       <canvas
         ref={canvasRef}
@@ -2468,6 +2540,8 @@ const drawSquare = (
     </div>
   )}
 </div>
+
+
 
 
     </div>
