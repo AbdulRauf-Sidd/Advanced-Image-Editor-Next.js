@@ -131,12 +131,17 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const animationRef = useRef<number | null>(null);
   const [rotationVelocity, setRotationVelocity] = useState(0);
   const [lastRotationTime, setLastRotationTime] = useState<number | null>(null);
-  const [image, setImage] = useState<HTMLImageElement | null>(null); // displayed image
-const [editedFile, setEditedFile] = useState<File | null>(null);   // original or processed file
-const cameraInputRef = useRef<HTMLInputElement>(null);
 
-const cameraVideoRef = useRef<HTMLInputElement>(null); // for file input (video recording)
-const [videoSrc, setVideoSrc] = useState<string | null>(null);
+  const [image, setImage] = useState<HTMLImageElement | null>(null); // displayed image
+  const [editedFile, setEditedFile] = useState<File | null>(null);   // original or processed file
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const cameraVideoRef = useRef<HTMLInputElement>(null); // for file input (video recording)
+  const [videoSrc, setVideoSrc] = useState<string | null>(null);
+
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [thumbnail, setThumbnail] = useState<string | null>(null);
+
 
 
 
@@ -213,13 +218,31 @@ const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCropFrame(null);
     onCropStateChange(false);
 
-    // You can store videoURL in state to render <video>
-    setVideoSrc(videoURL);
+    setVideoSrc(videoURL);  // for <video> preview
+    setVideoFile(file);     // store full video
+
+    // Capture the first frame as thumbnail
+    const video = document.createElement("video");
+    video.src = videoURL;
+
+    video.addEventListener("loadeddata", () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const thumbnailDataUrl = canvas.toDataURL("image/png");
+        setThumbnail(thumbnailDataUrl);  // store thumbnail
+        console.log("Thumbnail captured:", thumbnailDataUrl);
+      }
+    });
   }
 
   // Reset input so same file can be reselected
   e.target.value = "";
 };
+
 
 
 
