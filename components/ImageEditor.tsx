@@ -76,7 +76,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraCanvasRef = useRef<HTMLCanvasElement>(null);
-  const [image, setImage] = useState<HTMLImageElement | null>(null);
+  // const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [imageRotation, setImageRotation] = useState(0); // Track image rotation in degrees
   const [lines, setLines] = useState<Line[]>([]);
   const [currentLine, setCurrentLine] = useState<Point[] | null>(null);
@@ -131,7 +131,99 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const animationRef = useRef<number | null>(null);
   const [rotationVelocity, setRotationVelocity] = useState(0);
   const [lastRotationTime, setLastRotationTime] = useState<number | null>(null);
+  const [image, setImage] = useState<HTMLImageElement | null>(null); // displayed image
+const [editedFile, setEditedFile] = useState<File | null>(null);   // original or processed file
+const cameraInputRef = useRef<HTMLInputElement>(null);
+
+const cameraVideoRef = useRef<HTMLInputElement>(null); // for file input (video recording)
+const [videoSrc, setVideoSrc] = useState<string | null>(null);
+
+
+
   
+
+
+const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (file) {
+    setEditedFile(file);  // ✅ keep reference to uploaded/taken file
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        setImage(img);
+
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const context = canvas.getContext('2d');
+          if (context) {
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Reset editor states
+            setLines([]);
+            setCurrentLine(null);
+            setCropFrame(null);
+            setActionHistory([]);
+            setRedoHistory([]);
+            onCropStateChange(false);
+
+            if (onImageChange) onImageChange(img);
+          }
+        }
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+
+
+
+const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  setEditedFile(file);
+  if (onEditedFile) onEditedFile(file);
+
+  // Check MIME type
+  if (file.type.startsWith("image/")) {
+    // 🖼 Image handling
+    const img = new Image();
+    img.onload = () => {
+      setImage(img);
+      setLines([]);
+      setCropFrame(null);
+      onCropStateChange(false);
+      if (onImageChange) onImageChange(img);
+    };
+    img.src = URL.createObjectURL(file);
+  } 
+  else if (file.type.startsWith("video/")) {
+    // 🎥 Video handling
+    const videoURL = URL.createObjectURL(file);
+    setImage(null); // clear canvas image
+    setLines([]);
+    setCropFrame(null);
+    onCropStateChange(false);
+
+    // You can store videoURL in state to render <video>
+    setVideoSrc(videoURL);
+  }
+
+  // Reset input so same file can be reselected
+  e.target.value = "";
+};
+
+
+
+
   // Ultra-smooth arrow movement optimization
   const movementFrameRef = useRef<number | null>(null);
   const pendingMovementRef = useRef<{
@@ -754,35 +846,48 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
     setIsCameraFullscreen(false);
   };
 
-  const captureImage = () => {
-    if (videoRef?.current && cameraCanvasRef.current) {
-      const video = videoRef.current;
-      const canvas = cameraCanvasRef.current;
-      const context = canvas.getContext('2d');
-      
-      if (context && video.videoWidth > 0 && video.videoHeight > 0) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        const img = new Image();
-        img.onload = () => {
-          setImage(img);
-          setLines([]);
-          setCurrentLine(null);
-          setCropFrame(null);
-          setActionHistory([]);
-          setRedoHistory([]);
-          onCropStateChange(false);
-          
-          if (onImageChange) onImageChange(img);
-          stopCamera();
-        };
-        img.src = canvas.toDataURL('image/jpeg', 0.9);
-      }
+const captureImage = () => {
+  if (videoRef?.current && cameraCanvasRef.current) {
+    const video = videoRef.current;
+    const canvas = cameraCanvasRef.current;
+    const context = canvas.getContext("2d");
+
+    if (context && video.videoWidth > 0 && video.videoHeight > 0) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const img = new Image();
+      img.onload = () => {
+        setImage(img);
+
+        // Reset editor states
+        setLines([]);
+        setCurrentLine(null);
+        setCropFrame(null);
+        setActionHistory([]);
+        setRedoHistory([]);
+        onCropStateChange(false);
+
+        if (onImageChange) onImageChange(img);
+
+        // ✅ Create a File from canvas and save in editedFile
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], "captured-image.jpg", { type: "image/jpeg" });
+            setEditedFile(file);
+            if (onEditedFile) onEditedFile(file);
+          }
+        }, "image/jpeg", 0.9);
+
+        stopCamera();
+      };
+      img.src = canvas.toDataURL("image/jpeg", 0.9);
     }
-  };
+  }
+};
+
 
   useEffect(() => {
     if (activeMode === 'crop' && !cropFrame) {
@@ -2287,51 +2392,158 @@ const drawSquare = (
       </div>
     )}
 
-      {/* Main Content */}
-      <div className={styles.uploadContainer}>
-        {!image && !isCameraFullscreen ? (
-          <>
-            <div className={styles.uploadInstructions}>
-              Drag & drop your image here or click to browse
-            </div>
-            <div className={styles.buttonContainer}>
-              <button className={styles.chooseImageBtn} onClick={() => fileInputRef.current?.click()}>
-                Choose Image
-              </button>
-              <button className={styles.cameraBtn} onClick={startCamera}>
-                <i className="fas fa-camera"></i> Take a Picture
-              </button>
-            </div>
-          </>
-        ) : image && !isCameraFullscreen ? (
-          <div className={styles.imageDisplayArea}>
-            <canvas
-              ref={canvasRef}
-              width={300}
-              height={400}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-              style={{ 
-                cursor: getCursor(),
-              }}
-            />
-          </div>
-        ) : null}
-        
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleUpload}
-          style={{ display: 'none' }}
-        />
-        
-        <canvas ref={cameraCanvasRef} style={{ display: 'none' }} />
+
+
+
+  {/* Main Content */}
+<div className={styles.uploadContainer}>
+  {!image && !videoSrc ? (
+    <>
+      <div className={styles.uploadInstructions}>
+        Drag & drop your image or video here or click to browse
       </div>
+      <div className={styles.buttonContainer}>
+        <div className="button-group">
+          <div
+            style={{
+              display: "flex",
+              gap: "12px",
+              flexWrap: "wrap",
+              justifyContent: window.innerWidth <= 600 ? "center" : "flex-start", // center on mobile
+            }}
+          >
+            {/* Choose Image */}
+           <button
+  onClick={() => fileInputRef.current?.click()}
+  style={{
+    backgroundColor: "#007bff",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    padding: "10px 16px",
+    fontSize: "1rem",
+    cursor: "pointer",
+    transition: "background-color 0.2s ease",
+  }}
+  onMouseOver={(e) =>
+    (e.currentTarget.style.backgroundColor = "#0056b3")
+  }
+  onMouseOut={(e) =>
+    (e.currentTarget.style.backgroundColor = "#007bff")
+  }
+>
+  Choose Image
+</button>
+
+
+            {/* Take Picture */}
+          <button
+  onClick={() => cameraInputRef.current?.click()}
+  style={{
+    backgroundColor: "#007bff",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    padding: "10px 16px",
+    fontSize: "1rem",
+    cursor: "pointer",
+    transition: "background-color 0.2s ease",
+  }}
+  onMouseOver={(e) =>
+    (e.currentTarget.style.backgroundColor = "#0056b3")
+  }
+  onMouseOut={(e) =>
+    (e.currentTarget.style.backgroundColor = "#007bff")
+  }
+>
+  Take a Picture
+</button>
+
+
+            {/* Record Video */}
+           <button
+  onClick={() => cameraVideoRef.current?.click()}
+  style={{
+    backgroundColor: "#007bff",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    padding: "10px 16px",
+    fontSize: "1rem",
+    cursor: "pointer",
+    transition: "background-color 0.2s ease",
+  }}
+  onMouseOver={(e) =>
+    (e.currentTarget.style.backgroundColor = "#0056b3")
+  }
+  onMouseOut={(e) =>
+    (e.currentTarget.style.backgroundColor = "#007bff")
+  }
+>
+  Record Video
+</button>
+
+          </div>
+
+          {/* Hidden file inputs */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={handleFileSelected}
+          />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            style={{ display: "none" }}
+            onChange={handleFileSelected}
+          />
+          <input
+            ref={cameraVideoRef}
+            type="file"
+            accept="video/*"
+            capture="environment"
+            style={{ display: "none" }}
+            onChange={handleFileSelected}
+          />
+        </div>
+      </div>
+    </>
+  ) : videoSrc ? (
+    // 👇 This is where your video preview will show
+    <div className={styles.videoDisplayArea}>
+      <video
+        src={videoSrc}
+        controls
+        autoPlay
+        style={{ maxWidth: "100%", maxHeight: "400px" }}
+      />
+    </div>
+  ) : (
+    // 👇 Fallback: image canvas
+    <div className={styles.imageDisplayArea}>
+      <canvas
+        ref={canvasRef}
+        width={300}
+        height={400}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ cursor: getCursor() }}
+      />
+    </div>
+  )}
+</div>
+
+
+
+
     </div>
   );
 };

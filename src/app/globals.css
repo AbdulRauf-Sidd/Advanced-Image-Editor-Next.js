@@ -2724,3 +2724,23 @@ body div.submit-section div.submit-controls div.location-button-container button
   font-size: 1.2em; /* makes it look bolder */
   -webkit-text-stroke: 1px currentColor; /* adds stroke thickness */
 }
+/* Parent container for both buttons */
+.button-group {
+  display: flex;
+  gap: 12px;            /* space between buttons */
+  flex-wrap: wrap;      /* stack on small screens */
+  justify-content: center;
+}
+.buttonGroup {
+  display: flex !important;
+  gap: 12px !important;
+}
+/* ButtonGroup.module.css */
+
+.buttonGroup {
+  display: flex !important;
+  gap: 12px !important;
+}
+
+
+
