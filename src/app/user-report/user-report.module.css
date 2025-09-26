@@ -249,15 +249,7 @@
   overflow: hidden;
 }
 
-.descriptionSection::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--selected-color, #d63636), var(--light-color, #f87171), var(--selected-color, #d63636));
-}
+
 
 .descriptionTitle {
   font-size: 1.5rem;
@@ -330,7 +322,7 @@
 
 .costHighlight {
   background: #f8fafc;
-  border: 1px solid var(--selected-color, #d63636);
+  border: 2px solid var(--selected-color, #d63636);
   border-radius: 0.5rem;
   padding: 1rem;
   margin-top: 1rem;
@@ -338,15 +330,7 @@
   overflow: hidden;
 }
 
-.costHighlight::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--selected-color, #d63636), var(--light-color, #f87171), var(--selected-color, #d63636));
-}
+
 
 .totalCost {
   font-size: 1.25rem;
@@ -354,10 +338,6 @@
   color: var(--selected-color, #d63636);
   text-align: center;
   padding: 0.75rem;
-  background: white;
-  border-radius: 0.5rem;
-  border: 1px solid var(--selected-color, #d63636);
-  box-shadow: 0 2px 8px rgba(214, 54, 54, 0.1);
   letter-spacing: -0.025em;
 }
 
@@ -430,6 +410,84 @@
 }
 .toolbarMenuItem:hover { background: #e2e8f0; }
 .toolbarMenuDivider { height: 1px; background: #e5e7eb; margin: 8px 4px; border-radius: 1px; }
+
+/* HTML Dropdown Styles */
+.htmlDropdownContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.htmlDropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 4px;
+  min-width: 140px;
+  z-index: 50;
+}
+
+.htmlDropdownItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.htmlDropdownItem:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+/* PDF Dropdown Styles */
+.pdfDropdownContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.pdfDropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 4px;
+  min-width: 140px;
+  z-index: 50;
+}
+
+.pdfDropdownItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.pdfDropdownItem:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
 
 /* Mobile: show dropdown, hide individual buttons */
 @media (max-width: 768px) {
@@ -859,13 +917,7 @@
 }
 
 .descriptionSectionStart::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--text-color), var(--text-color), grey);
+  display: none;
 }
 
 .sectionHeadingStart {
@@ -882,30 +934,51 @@
   letter-spacing: -0.025em;
 }
 
+/* Defects Summary Table */
 .defectsTable {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .defectsTable th,
 .defectsTable td {
-  border: 1px solid #ddd;
-  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  padding: 12px 16px;
   text-align: left;
+  font-size: 14px;
 }
 
 .defectsTable th {
-  background-color: #f4f4f4;
-  font-weight: 600;
+  background-color: #f3f4f6;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 12px;
 }
 
-.defectsTable tr:nth-child(even) {
-  background-color: #fafafa;
+.defectsTable tbody tr:nth-child(even) {
+  background-color: #f9fafb;
 }
 
-.defectsTable tr:hover {
-  background-color: #f1f1f1;
+.defectsTable tbody tr:hover {
+  background-color: #f3f4f6;
+}
+
+.defectsTable tfoot tr {
+  background-color: #f3f4f6;
+  font-weight: 700;
+  color: #111827;
+}
+
+.defectsTable tfoot td {
+  font-weight: 700;
+  font-size: 16px;
 }
 
 .linkRow { cursor: pointer; }
@@ -1129,4 +1202,60 @@
 
 @media (max-width: 992px) {
   .noSidebar { grid-template-columns: 1fr; }
+}
+
+/* Header Image Selector Styles */
+.toolbarMenuHeader {
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #4b5563;
+  background-color: #f3f4f6;
+}
+
+.headerImageSelector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px;
+  max-width: 400px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.headerImageOption {
+  width: 80px;
+  height: 60px;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.headerImageOption:hover {
+  transform: scale(1.05);
+}
+
+.headerImageOption.selected {
+  border-color: #2563eb;
+}
+
+.headerImageOption img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.clearBtn {
+  margin-top: 8px;
+  width: 100%;
+  background-color: #f3f4f6;
+  color: #4b5563;
+  font-size: 12px;
+  padding: 8px !important;
+}
+
+.clearBtn:hover {
+  background-color: #e5e7eb;
 }

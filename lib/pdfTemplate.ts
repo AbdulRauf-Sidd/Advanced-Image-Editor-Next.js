@@ -17,8 +17,11 @@ export type ReportMeta = {
   subtitle?: string;
   company?: string;
   logoUrl?: string;
+  headerImageUrl?: string; // URL for the large header background image
+  headerText?: string; // Text to display on the header image
   date?: string;
   startNumber?: number; // base section number, defaults to 1
+  reportType?: 'full' | 'summary';
 };
 
 function escapeHtml(str: string = ""): string {
@@ -97,6 +100,7 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
     logoUrl,
     date = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
     startNumber = 1,
+    reportType = 'full',
   } = meta;
 
   // Sort by section then subsection for stable ordering
@@ -243,13 +247,103 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
   <title>${escapeHtml(title)}</title>
   <style>
     * { box-sizing: border-box; }
-    body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 24px; color: #111827; background: #ffffff; }
+    body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0; color: #111827; background: #ffffff; }
     h1, h2, h3, h4 { margin: 0 0 8px 0; }
     p { margin: 0 0 8px 0; }
-    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; }
-    .header .title { font-size: 24px; font-weight: 700; }
-    .header .meta { color: #6b7280; font-size: 12px; }
-    .logo { height: 40px; }
+    
+    /* Header with image and content below */
+    .header-container { 
+      width: 100%;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+    
+    .logo-container {
+      text-align: left;
+      margin-bottom: 20px;
+      padding: 20px 0;
+    }
+    
+    .logo { 
+      height: 60px;
+    }
+    
+    .image-container {
+      width: 100%;
+      height: auto;
+      margin-bottom: 30px;
+      max-height: 500px;
+      overflow: hidden;
+    }
+    
+    .header-image {
+      width: 100%;
+      max-height: 500px;
+      object-fit: cover;
+      object-position: center;
+    }
+    
+    .report-header-content {
+      text-align: center;
+      padding: 20px 0;
+    }
+    
+    .header-text {
+      font-size: 36px;
+      font-weight: bold;
+      color: #333;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+    
+    .report-title {
+      font-size: 28px;
+      font-weight: 600;
+      color: #444;
+      margin: 0 0 10px 0;
+      text-transform: uppercase;
+    }
+    
+    .meta-info {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+    
+    /* Traditional header fallback */
+    .header-traditional { 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      margin: 24px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 12px; 
+    }
+    
+    .header-traditional .title { 
+      font-size: 24px;
+      font-weight: 700;
+      color: #111827;
+      text-shadow: none;
+    }
+    
+    .header-traditional .meta { 
+      color: #6b7280;
+      font-size: 12px;
+      text-shadow: none;
+    }
+    
+    .header-traditional .logo {
+      position: static;
+      height: 40px;
+      filter: none;
+    }
+    
+    /* Content padding */
+    .content-wrapper {
+      padding: 0 24px;
+    }
 
     .cover { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 20px; background: #f8fafc; }
     .cover h2 { font-size: 18px; color: #1f2937; page-break-after: avoid; break-after: avoid; }
@@ -354,15 +448,35 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
   </style>
 </head>
 <body>
-  <header class="header">
+  ${meta.headerImageUrl ? `
+  <!-- New header with image -->
+  <div class="header-container">
+    ${logoUrl ? `<div class="logo-container"><img src="${escapeHtml(logoUrl)}" alt="Logo" class="logo" /></div>` : ""}
+    <div class="image-container">
+      <img src="${escapeHtml(meta.headerImageUrl)}" alt="Property Image" class="header-image" />
+    </div>
+    
+    <!-- Header text appears below the image -->
+    <div class="report-header-content">
+      ${meta.headerText ? `<h1 class="header-text">${escapeHtml(meta.headerText)}</h1>` : ''}
+      <h2 class="report-title">HOME INSPECTION REPORT</h2>
+      <div class="meta-info">${escapeHtml(company)} • ${escapeHtml(date)}</div>
+    </div>
+  </div>
+  ` : `
+  <!-- Traditional header as fallback -->
+  <header class="header-traditional">
     <div>
       <div class="title">${escapeHtml(title)}</div>
       <div class="meta">${escapeHtml(subtitle)}${company ? " • " + escapeHtml(company) : ""} • ${escapeHtml(date)}</div>
     </div>
     ${logoUrl ? `<img src="${escapeHtml(logoUrl)}" alt="Logo" class="logo" />` : ""}
   </header>
+  `}
+  
+  <div class="content-wrapper">
 
-  <section class="cover cover--section1">
+  ${reportType === 'full' ? `<section class="cover cover--section1">
     <h2>Section 1 - Inspection Scope, Client Responsibilities, and Repair Estimates</h2>
     <p>This is a <strong>visual inspection only</strong>. The scope of this inspection is to verify the proper performance of the home's major systems. We do not verify proper design.</p>
     <p>The following items reflect the condition of the home and its systems <strong>at the time and date the inspection was performed</strong>. Conditions of an occupied home can change after the inspection (e.g., leaks may occur beneath sinks, water may run at toilets, walls or flooring may be damaged during moving, appliances may fail, etc.).</p>
@@ -417,9 +531,9 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
     <h3>Occupied Home Disclaimer</h3>
     <p>If the home was occupied at the time of inspection, some areas may not have been accessible (furniture, personal belongings, etc.). Every effort was made to inspect all accessible areas; however, some issues may not have been visible.</p>
     <p>We recommend using your final walkthrough to verify that no issues were missed and that the property remains in the same condition as at the time of inspection.</p>
-  </section>
+  </section>` : ''}
 
-  <!-- Non-priced defects summary placed after Section 2 -->
+  ${reportType === 'full' ? `<!-- Non-priced defects summary placed after Section 2 -->
   <section class="cover cover--summary keep-together">
     <h2>Defects Summary</h2>
     <table class="table">
@@ -434,15 +548,15 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
         ${summaryRowsSimple}
       </tbody>
     </table>
-  </section>
+  </section>` : ''}
 
-  <div class="page-break"></div>
+  ${reportType === 'full' ? '<div class="page-break"></div>' : ''}
 
   ${sectionsHtml}
 
   <div class="page-break"></div>
 
-  <section class="cover">
+  ${reportType === 'full' ? `<section class="cover">
     <h2>Defects Summary</h2>
     <table class="table">
       <thead>
@@ -460,8 +574,10 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
         </tr>
       </tbody>
     </table>
-  </section>
+  </section>` : ''}
 
+  </div><!-- End of content-wrapper -->
+  
   <footer class="footer">
     Generated by Advanced Image Editor • ${escapeHtml(company || "")}
   </footer>
