@@ -238,6 +238,8 @@ const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
       }
     });
   }
+
+  // Reset input so same file can be reselected
   e.target.value = "";
 };
 
