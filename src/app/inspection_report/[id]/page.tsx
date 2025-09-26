@@ -14,6 +14,7 @@ export default function InspectionReportPage() {
   const [currentSection, setCurrentSection] = useState(null)
   const [currentNumber, setCurrentNumber] = useState(3)
   const [currentSubNumber, setCurrentSubNumber] = useState(1)
+  const [inspection, setInspection] = useState<any>(null)
 
   const reportRef = useRef<HTMLDivElement>(null);
 
@@ -31,6 +32,14 @@ export default function InspectionReportPage() {
   // Toolbar dropdown menu (Report Viewing Options)
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  
+  // PDF dropdown state
+  const [pdfDropdownOpen, setPdfDropdownOpen] = useState(false);
+  const pdfDropdownRef = useRef<HTMLDivElement | null>(null);
+  
+  // HTML dropdown state
+  const [htmlDropdownOpen, setHtmlDropdownOpen] = useState(false);
+  const htmlDropdownRef = useRef<HTMLDivElement | null>(null);
 
   // Navigation state
   const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
@@ -83,6 +92,32 @@ export default function InspectionReportPage() {
     return () => document.removeEventListener('mousedown', onDown);
   }, [menuOpen]);
 
+  // Close PDF dropdown on outside click
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (!pdfDropdownOpen) return;
+      const n = e.target as Node;
+      if (pdfDropdownRef.current && !pdfDropdownRef.current.contains(n)) {
+        setPdfDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [pdfDropdownOpen]);
+
+  // Close HTML dropdown on outside click
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (!htmlDropdownOpen) return;
+      const n = e.target as Node;
+      if (htmlDropdownRef.current && !htmlDropdownRef.current.contains(n)) {
+        setHtmlDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [htmlDropdownOpen]);
+
   // Close toolbar menu on Escape
   useEffect(() => {
     if (!menuOpen) return;
@@ -92,6 +127,26 @@ export default function InspectionReportPage() {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [menuOpen]);
+
+  // Close PDF dropdown on Escape
+  useEffect(() => {
+    if (!pdfDropdownOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPdfDropdownOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [pdfDropdownOpen]);
+
+  // Close HTML dropdown on Escape
+  useEffect(() => {
+    if (!htmlDropdownOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setHtmlDropdownOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [htmlDropdownOpen]);
 
   // Handle panning while zoomed in
   useEffect(() => {
@@ -151,6 +206,8 @@ export default function InspectionReportPage() {
     translateStart.current = { ...translate };
   };
 
+
+
   const onImageLoad = () => {
     // Capture the displayed size at scale=1 to compute bounds reliably
     if (imageRef.current) {
@@ -180,10 +237,52 @@ export default function InspectionReportPage() {
     return `rgb(${Math.min(255, r + 50)}, ${Math.min(255, g + 50)}, ${Math.min(255, b + 50)})`;
   };
 
-  const handleDownloadPDF = async () => {
+  // Header image and text state
+  const [headerImage, setHeaderImage] = useState<string | null>(null);
+  const [headerText, setHeaderText] = useState<string | null>(null);
+  
+  // Function to select a defect image as header image
+  const selectHeaderImage = (imageUrl: string) => {
+    setHeaderImage(imageUrl);
+  };
+  
+  // Fetch inspection data including header image
+  useEffect(() => {
+    if (id) {
+      const fetchInspection = async () => {
+        try {
+          const response = await fetch(`/api/inspections/${id}`);
+          if (response.ok) {
+            const data = await response.json();
+            setInspection(data);
+            // If inspection has headerImage and headerText, use them
+            if (data.headerImage) {
+              setHeaderImage(data.headerImage);
+            }
+            if (data.headerText) {
+              setHeaderText(data.headerText);
+            }
+          } else {
+            console.error('Failed to fetch inspection details');
+          }
+        } catch (error) {
+          console.error('Error fetching inspection details:', error);
+        }
+      };
+      
+      fetchInspection();
+    }
+  }, [id]);
+
+  const handleDownloadPDF = async (reportType: 'full' | 'summary' = 'full') => {
     try {
+      // Filter sections based on report type
+      const sectionsToExport = reportType === 'summary' 
+        ? reportSections.filter(section => nearestCategory(section.color) !== 'blue') // Exclude blue maintenance items for summary
+        : reportSections; // All sections for full report
+      
       // Transform reportSections into defects payload compatible with API
-      const defectsPayload = reportSections.map((r: any) => ({
+      const defectsPayload = sectionsToExport.map((r: any) => ({
         section: r.heading2?.split(' - ')[0] || '',
         subsection: r.heading2?.split(' - ')[1] || '',
         defect_description: r.defect || '',
@@ -197,10 +296,24 @@ export default function InspectionReportPage() {
         color: r.color || '#d63636',
       }));
 
+      // Use header image from inspection data (which was loaded at component mount)
+      // Or use manually selected header image from the UI
+      // Or find a suitable one from defects as a fallback
+      let headerImageUrl = headerImage;
+      
+      // If no image was manually selected or from inspection data, use the first defect with an image
+      if (!headerImageUrl) {
+        const defectWithImage = defectsPayload.find(d => d.image);
+        headerImageUrl = defectWithImage ? defectWithImage.image : null;
+      }
+
       const meta = {
-        title: `inspection-${id}-report`,
+        title: 'Inspection Report',
         subtitle: 'Generated Inspection Report',
         company: 'AGI Property Inspections',
+        headerImageUrl, // Add the header image URL
+        headerText, // Add the header text
+        reportType, // Pass the report type to control sections visibility
       };
 
       const res = await fetch('/api/reports/generate', {
@@ -227,18 +340,34 @@ export default function InspectionReportPage() {
     }
   };
 
-  const handleDownloadHTML = async () => {
+  const handleDownloadHTML = async (reportType: 'full' | 'summary' = 'full') => {
     // Build a minimal standalone HTML using current reportSections
     try {
-      const title = `inspection-${id}-report`;
+      const title = `inspection-${id}-${reportType}-report`;
+      
+      // Use header image from inspection data or UI selection
+      // This is the same logic as in handleDownloadPDF
+      let headerImageUrl = headerImage;
+      
+      // If no image was manually selected or from inspection, use the first defect with an image
+      if (!headerImageUrl) {
+        const defectWithImage = reportSections.find(d => d.image);
+        headerImageUrl = defectWithImage ? defectWithImage.image : null;
+      }
+      
       const escapeHtml = (s: any) =>
         String(s ?? '')
           .replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;');
 
+      // Filter sections based on report type
+      const sectionsToExport = reportType === 'summary' 
+        ? reportSections.filter(section => nearestCategory(section.color) !== 'blue') // Exclude blue maintenance items for summary
+        : reportSections; // All sections for full report
+
       // Build summary table rows and totals
-      const summaryRows = reportSections
+      const summaryRows = sectionsToExport
         .map((s) => {
           const cost = s.estimatedCosts?.totalEstimatedCost ?? 0;
           const def = s.defect || (s.defect_description ? String(s.defect_description).split('.') [0] : '');
@@ -252,7 +381,7 @@ export default function InspectionReportPage() {
           `;
         })
         .join('');
-      const totalAll = reportSections.reduce((sum: number, s: any) => sum + (s.estimatedCosts?.totalEstimatedCost ?? 0), 0);
+      const totalAll = sectionsToExport.reduce((sum: number, s: any) => sum + (s.estimatedCosts?.totalEstimatedCost ?? 0), 0);
 
       // Intro sections (Section 1 & 2) content
       const introHtml = `
@@ -318,35 +447,50 @@ export default function InspectionReportPage() {
         </section>
       `;
 
-      const sectionHtml = reportSections
+      const sectionHtml = sectionsToExport
         .map((s) => {
           const imgSrc = typeof s.image === 'string' ? s.image : '';
           const cost = s.estimatedCosts?.totalEstimatedCost ?? 0;
           return `
-            <section id="${s.anchorId}" class="rpt-section">
-              <h2 class="rpt-h2" style="color:${s.color || '#dc2626'}">
-                ${escapeHtml(s.heading)}
-                <span class="rpt-badge" style="background:${s.color || '#dc2626'}">${colorToImportance(s.color || '#dc2626')}</span>
-              </h2>
-              <div class="rpt-grid">
-                <div class="rpt-col">
-                  ${imgSrc ? `<img class="rpt-img" src="${imgSrc}" alt="Defect image"/>` : ''}
-                  <div class="rpt-card"><h4>Location</h4><p>${escapeHtml(s.location)}</p></div>
-                </div>
-                <div class="rpt-col">
-                  <div class="rpt-card">
-                    <h4>Defect Description</h4>
-                    <p>${escapeHtml(s.defect_description)}</p>
+            <section id="${s.anchorId}" class="rpt-section" style="--selected-color:${s.color || '#dc2626'}">
+              <div class="rpt-section-heading" style="border-bottom-color:${s.color || '#dc2626'}">
+                <h2 class="rpt-section-heading-text" style="color:${s.color || '#dc2626'}">
+                  ${escapeHtml(s.heading)}
+                  <span class="rpt-badge" style="background:${s.color || '#dc2626'}">${colorToImportance(s.color || '#dc2626')}</span>
+                </h2>
+              </div>
+              <div class="rpt-content-grid">
+                <div class="rpt-image-section" style="border-color:${s.color || '#dc2626'}">
+                  <h3 class="rpt-section-title" style="color:${s.color || '#dc2626'}">Visual Evidence</h3>
+                  <div class="rpt-image-container" style="border-color:${s.color || '#dc2626'}">
+                    ${imgSrc ? `<img class="rpt-img" src="${imgSrc}" alt="Defect image"/>` : `<div class="rpt-image-placeholder" style="border-color:${s.color || '#dc2626'}"><p>No image available</p></div>`}
                   </div>
-                  <div class="rpt-card">
-                    <h4>Estimated Costs</h4>
-                    <p>
-                      <strong>Materials:</strong> ${escapeHtml(s.estimatedCosts?.materials)} ($${s.estimatedCosts?.materialsCost ?? 0}),
-                      <strong>Labor:</strong> ${escapeHtml(s.estimatedCosts?.labor)} at $${s.estimatedCosts?.laborRate ?? 0}/hr,
-                      <strong>Hours:</strong> ${s.estimatedCosts?.hoursRequired ?? 0},
-                      <strong>Recommendation:</strong> ${escapeHtml(s.estimatedCosts?.recommendation)},
-                      <strong>Total Estimated Cost:</strong> $${cost}
-                    </p>
+                  <div class="rpt-location-section" style="border-left-color:${s.color || '#dc2626'}; border-top-color:${s.color || '#dc2626'}; border-right-color:${s.color || '#dc2626'}; border-bottom-color:${s.color || '#dc2626'}">
+                    <h4 class="rpt-subsection-title" style="color:${s.color || '#dc2626'}">Location</h4>
+                    <p class="rpt-subsection-content">${escapeHtml(s.location)}</p>
+                  </div>
+                </div>
+                <div class="rpt-description-section" style="border-color:${s.color || '#dc2626'}">
+                  <h3 class="rpt-section-title" style="color:${s.color || '#dc2626'}">Analysis Details</h3>
+                  <div class="rpt-section bordered" style="border-left-color:${s.color || '#dc2626'}; border-top-color:${s.color || '#dc2626'}; border-right-color:${s.color || '#dc2626'}; border-bottom-color:${s.color || '#dc2626'}">
+                    <h4 class="rpt-subsection-title" style="color:${s.color || '#dc2626'}">Defect</h4>
+                    <p class="rpt-subsection-content">${escapeHtml(s.defect_description)}</p>
+                  </div>
+                  <div class="rpt-section bordered" style="border-left-color:${s.color || '#dc2626'}; border-top-color:${s.color || '#dc2626'}; border-right-color:${s.color || '#dc2626'}; border-bottom-color:${s.color || '#dc2626'}">
+                    <h4 class="rpt-subsection-title" style="color:${s.color || '#dc2626'}">Estimated Costs</h4>
+                    <div class="rpt-subsection-content">
+                      <p>
+                        <strong>Materials:</strong> ${escapeHtml(s.estimatedCosts?.materials)} ($${s.estimatedCosts?.materialsCost ?? 0})<br/>
+                        <strong>Labor:</strong> ${escapeHtml(s.estimatedCosts?.labor)} at $${s.estimatedCosts?.laborRate ?? 0}/hr<br/>
+                        <strong>Hours:</strong> ${s.estimatedCosts?.hoursRequired ?? 0}<br/>
+                        <strong>Recommendation:</strong> ${escapeHtml(s.estimatedCosts?.recommendation)}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="rpt-cost-highlight" style="border-color:${s.color || '#dc2626'}; background-color:${s.color || '#dc2626'}10;">
+                    <div class="rpt-total-cost" style="color:${s.color || '#dc2626'}">
+                      Total Estimated Cost: $${cost}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -361,7 +505,7 @@ export default function InspectionReportPage() {
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>${escapeHtml(title)}</title>
   <style>
-    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f1f5f9;color:#0f172a;margin:0;padding:24px}
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f1f5f9;color:#0f172a;margin:0;padding:24px 24px 4px 24px}
     .rpt-wrap{max-width:1100px;margin:0 auto}
     .rpt-h1{font-size:28px;margin:0 0 16px 0}
     .rpt-toc{background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.06);margin:12px 0}
@@ -373,19 +517,29 @@ export default function InspectionReportPage() {
     .toc-a:hover{background:#f8fafc}
     .toc-text{font-weight:600}
     .toc-dots{height:1px;background-image:linear-gradient(to right,#d1d5db 33%,rgba(255,255,255,0) 0);background-size:8px 1px;background-repeat:repeat-x}
-    .toc-badge{font-weight:700;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:9999px;padding:2px 10px;min-width:28px;text-align:center}
-    .rpt-section{background:#fff;border:1px solid #e7eaf3;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.12);padding:24px;margin:24px 0}
-    .rpt-h2{margin:0 0 16px 0}
-    .rpt-grid{display:grid;grid-template-columns:1fr 2fr;gap:16px}
-    .rpt-col{}
-    .rpt-img{width:100%;height:auto;border-radius:12px;display:block}
-  /* Make images clickable in export */
-  .rpt-img{cursor: zoom-in}
+    .toc-badge{font-weight:700;background:#3b82f6;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px}
+    .rpt-section{background:#fff;border:1px solid #e7eaf3;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.12);padding:24px;margin:24px 0 0 0}
+    .rpt-section-heading{margin:24px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--selected-color,#dc2626)}
+    .rpt-section-heading-text{font-size:18px;color:var(--selected-color,#dc2626);font-weight:700;margin:0}
+    .rpt-content-grid{display:grid;grid-template-columns:1fr 2fr;gap:16px}
+    .rpt-image-section{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:0}
+    .rpt-description-section{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:24px;margin-bottom:0}
+    .rpt-section-title{font-size:16px;font-weight:700;color:#1f2937;margin-bottom:12px}
+    .rpt-image-container{border-radius:8px;overflow:hidden;min-height:220px;background:#fff;display:flex;align-items:center;justify-content:center}
+    .rpt-img{width:100%;height:auto;display:block;cursor:zoom-in}
+    .rpt-image-placeholder{color:#6b7280;border:2px dashed #cbd5e1;background:#fff;width:100%;height:220px;display:flex;align-items:center;justify-content:center}
+    .rpt-location-section{margin-top:12px;background:#fff;border-left:3px solid var(--selected-color,#dc2626);padding:12px;border-radius:6px}
+    .rpt-section{background:#fff;padding:16px;border-radius:6px;margin-bottom:12px}
+    .rpt-section.bordered{border-left:3px solid var(--selected-color,#dc2626)}
+    .rpt-section:last-child{margin-bottom:0}
+    .rpt-subsection-title{font-size:14px;font-weight:700;margin-bottom:6px;color:#1f2937}
+    .rpt-subsection-content{font-size:13px;color:#374151;line-height:1.5}
+    .rpt-cost-highlight{background:#f8fafc;border:2px solid var(--selected-color,#dc2626);padding:24px;border-radius:12px;margin-top:20px;margin-bottom:16px}
+    .rpt-total-cost{text-align:center;font-weight:700;color:var(--selected-color,#dc2626);padding:16px 0;font-size:18px}
   /* Lightbox overlay */
   .lb-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:9999}
   .lb-overlay.open{display:flex}
   .lb-img{max-width:95vw;max-height:92vh;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.5);transition:transform 80ms linear;will-change:transform;cursor: zoom-in}
-    .rpt-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin:12px 0}
     .rpt-badge{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:9999px;font-weight:700;color:#fff;font-size:12px}
     .rpt-hr{border:none;border-top:1px solid #e5e7eb;margin:12px 0}
     .cat-red{color:#dc2626}
@@ -398,13 +552,34 @@ export default function InspectionReportPage() {
     .rpt-table tfoot td{font-weight:700;background:#f3f4f6}
     .note{background:#fff8e1;border-left:4px solid #ff9800;padding:8px;margin:8px 0}
     .disclaimer{font-size:12px;color:#6b7280;font-style:italic;border-top:1px solid #e5e7eb;padding-top:8px}
-    @media(max-width:768px){.rpt-grid{grid-template-columns:1fr}}
+    @media(max-width:768px){.rpt-content-grid{grid-template-columns:1fr}}
+    /* Header with image and content below */
+    .header-container {width: 100%; margin-bottom: 40px; text-align: center;}
+    .image-container {width: 100%; height: auto; margin-bottom: 30px; max-height: 500px; overflow: hidden;}
+    .header-image {width: 100%; max-height: 500px; object-fit: cover; object-position: center;}
+    .report-header-content {text-align: center; padding: 20px 0;}
+    .header-text {font-size: 36px; font-weight: bold; color: #333; margin-top: 0; margin-bottom: 20px;}
+    .report-title {font-size: 28px; font-weight: 600; color: #444; margin: 0 0 10px 0; text-transform: uppercase;}
+    .meta-info {font-size: 16px; color: #666; margin-bottom: 10px;}
+    .logo {height: 60px; margin-bottom: 20px;}
   </style>
 </head>
 <body>
   <div class="rpt-wrap">
-    <h1 class="rpt-h1">Inspection Report</h1>
-    <div class="rpt-toc">
+    ${headerImageUrl ? `
+    <!-- New header with image and text below -->
+    <div class="header-container">
+      <div class="image-container">
+        <img src="${escapeHtml(headerImageUrl)}" alt="Property Image" class="header-image" />
+      </div>
+      <div class="report-header-content">
+        ${headerText ? `<h1 class="header-text">${escapeHtml(headerText)}</h1>` : ''}
+        <h2 class="report-title">HOME INSPECTION REPORT</h2>
+        <div class="meta-info">AGI Property Inspections • Generated ${new Date().toLocaleDateString()}</div>
+      </div>
+    </div>
+    ` : `<h1 class="rpt-h1">Inspection Report</h1>`}
+    ${reportType === 'full' ? `<div class="rpt-toc">
       <div class="toc-h">Inspection Sections</div>
       <ul class="toc-ul">
         ${Object.entries(groupedBySection)
@@ -414,9 +589,32 @@ export default function InspectionReportPage() {
           })
           .join('')}
       </ul>
-    </div>
-    ${introHtml}
+    </div>` : ''}
+    ${reportType === 'full' ? introHtml : ''}
     ${sectionHtml}
+    ${reportType === 'full' ? `
+    <section class="rpt-section">
+      <h2 class="rpt-h2">Defects Summary & Total Estimated Cost</h2>
+      <table class="rpt-table">
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Section</th>
+            <th>Defect</th>
+            <th style="text-align:right;">Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${summaryRows}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3">Total</td>
+            <td style="text-align:right;">$${totalAll}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </section>` : ''}
     <!-- Lightbox overlay for image zoom/pan -->
     <div id="lb-overlay" class="lb-overlay" role="dialog" aria-modal="true" aria-label="Image preview">
       <img id="lb-img" class="lb-img" alt="Zoomed defect" />
@@ -502,28 +700,6 @@ export default function InspectionReportPage() {
         });
       })();
     </script>
-    <section class="rpt-section">
-      <h2 class="rpt-h2">Defects Summary & Total Estimated Cost</h2>
-      <table class="rpt-table">
-        <thead>
-          <tr>
-            <th>No.</th>
-            <th>Section</th>
-            <th>Defect</th>
-            <th style="text-align:right;">Cost</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${summaryRows}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td colspan="3">Total</td>
-            <td style="text-align:right;">$${totalAll}</td>
-          </tr>
-        </tfoot>
-      </table>
-    </section>
   </div>
 </body>
 </html>`;
@@ -684,7 +860,11 @@ export default function InspectionReportPage() {
     if (filterMode === 'hazard') {
       return reportSections.filter((r) => isHazardColor(r.color));
     }
-    // For 'full' and 'summary', show all defects; the difference is intro sections visibility
+    if (filterMode === 'summary') {
+      // For summary, exclude blue (maintenance items) defects
+      return reportSections.filter((r) => nearestCategory(r.color) !== 'blue');
+    }
+    // For 'full', show all defects
     return reportSections;
   }, [reportSections, filterMode]);
 
@@ -807,27 +987,126 @@ export default function InspectionReportPage() {
                       <button
                         role="menuitem"
                         className={styles.toolbarMenuItem}
-                        onClick={() => { setMenuOpen(false); handleDownloadHTML(); }}
+                        onClick={() => { setMenuOpen(false); handleDownloadHTML('summary'); }}
                       >
-                        Export HTML
+                        Export HTML Summary
                       </button>
                       <button
                         role="menuitem"
                         className={styles.toolbarMenuItem}
-                        onClick={() => { setMenuOpen(false); handleDownloadPDF(); }}
+                        onClick={() => { setMenuOpen(false); handleDownloadHTML('full'); }}
                       >
-                        Export PDF
+                        Export HTML Full Report
                       </button>
+                      <button
+                        role="menuitem"
+                        className={styles.toolbarMenuItem}
+                        onClick={() => { setMenuOpen(false); handleDownloadPDF('summary'); }}
+                      >
+                        Export PDF Summary
+                      </button>
+                      <button
+                        role="menuitem"
+                        className={styles.toolbarMenuItem}
+                        onClick={() => { setMenuOpen(false); handleDownloadPDF('full'); }}
+                      >
+                        Export PDF Full Report
+                      </button>
+                      <div className={styles.toolbarMenuDivider} aria-hidden="true" />
+                      <div className={styles.toolbarMenuHeader}>Select Report Header Image</div>
+                      <div className={styles.headerImageSelector}>
+                        {defects.filter(d => d.image).slice(0, 5).map((defect, index) => (
+                          <div 
+                            key={`header-img-${index}`}
+                            className={`${styles.headerImageOption} ${headerImage === defect.image ? styles.selected : ''}`}
+                            onClick={() => { 
+                              selectHeaderImage(defect.image);
+                              // Don't close menu to allow multiple selections
+                            }}
+                          >
+                            <img src={defect.image} alt={`Option ${index + 1}`} />
+                          </div>
+                        ))}
+                        {headerImage && (
+                          <button
+                            className={`${styles.toolbarMenuItem} ${styles.clearBtn}`}
+                            onClick={() => {
+                              setHeaderImage(null);
+                            }}
+                          >
+                            Clear Selection
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
                 <div className={styles.toolbarRightGroup}>
-                  <button className={styles.toolbarBtn} onClick={handleDownloadHTML} title="Export HTML">
-                    Export HTML
-                  </button>
-                  <button className={styles.toolbarBtn} onClick={handleDownloadPDF} title="Export PDF">
-                    Export PDF
-                  </button>
+                  {/* HTML Dropdown */}
+                  <div ref={htmlDropdownRef} className={styles.htmlDropdownContainer}>
+                    <button 
+                      className={styles.toolbarBtn} 
+                      onClick={() => setHtmlDropdownOpen(!htmlDropdownOpen)} 
+                      title="Export HTML"
+                    >
+                      Export HTML ▾
+                    </button>
+                    {htmlDropdownOpen && (
+                      <div className={styles.htmlDropdown}>
+                        <button
+                          className={styles.htmlDropdownItem}
+                          onClick={() => {
+                            setHtmlDropdownOpen(false);
+                            handleDownloadHTML('summary');
+                          }}
+                        >
+                          Summary
+                        </button>
+                        <button
+                          className={styles.htmlDropdownItem}
+                          onClick={() => {
+                            setHtmlDropdownOpen(false);
+                            handleDownloadHTML('full');
+                          }}
+                        >
+                          Full Report
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* PDF Dropdown */}
+                  <div ref={pdfDropdownRef} className={styles.pdfDropdownContainer}>
+                    <button 
+                      className={styles.toolbarBtn} 
+                      onClick={() => setPdfDropdownOpen(!pdfDropdownOpen)} 
+                      title="Export PDF"
+                    >
+                      Export PDF ▾
+                    </button>
+                    {pdfDropdownOpen && (
+                      <div className={styles.pdfDropdown}>
+                        <button
+                          className={styles.pdfDropdownItem}
+                          onClick={() => {
+                            setPdfDropdownOpen(false);
+                            handleDownloadPDF('summary');
+                          }}
+                        >
+                          Summary
+                        </button>
+                        <button
+                          className={styles.pdfDropdownItem}
+                          onClick={() => {
+                            setPdfDropdownOpen(false);
+                            handleDownloadPDF('full');
+                          }}
+                        >
+                          Full Report
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               {/* Inspection Sections - TOC */}
@@ -1105,8 +1384,6 @@ export default function InspectionReportPage() {
                   </div>
 
                   <br></br><br></br>
-
-                  <br></br>
               </>}
                 {visibleSections.map((section) => (
                 <div 
@@ -1131,7 +1408,7 @@ export default function InspectionReportPage() {
                   <div className={styles.contentGrid}>
                     {/* Image */}
                     <div className={styles.imageSection}>
-                      {/* <h3 className={styles.imageTitle}>Visual Evidence</h3> */}
+                      <h3 className={styles.imageTitle}>Visual Evidence</h3>
                       <div className={styles.imageContainer}>
                         {section.image ? (
                           <img
@@ -1154,7 +1431,7 @@ export default function InspectionReportPage() {
                       </div>
                       
                       {/* Location moved here */}
-                      <div className={styles.locationSection}style={{
+                      <div className={styles.locationSection} style={{
                           // boxShadow: getSelectedColor(section),
                           "--shadow-color": getLightColor(section),
                           // '--light-color': getLightColor(section)
@@ -1166,7 +1443,7 @@ export default function InspectionReportPage() {
 
                     {/* Details */}
                     <div className={styles.descriptionSection}>
-                      {/* <h3 className={styles.descriptionTitle}>Analysis Details</h3> */}
+                      <h3 className={styles.descriptionTitle}>Analysis Details</h3>
                       <div className="space-y-6">
                         {/* Defect */}
                         <div className={styles.section} style={{
@@ -1174,7 +1451,7 @@ export default function InspectionReportPage() {
                           "--shadow-color": getLightColor(section),
                           // '--light-color': getLightColor(section)
                         } as React.CSSProperties }>
-                          <h4 className={styles.sectionTitle}>Defect Description</h4>
+                          <h4 className={styles.sectionTitle}>Defect</h4>
                             <p className={styles.sectionContent}>{section.defect_description}</p>
                         </div>
 
@@ -1188,13 +1465,21 @@ export default function InspectionReportPage() {
                           <div className={styles.sectionContent}>
                               <p>
                                 <strong>Materials:</strong> {section.estimatedCosts.materials} ($
-                                {section.estimatedCosts.materialsCost}),{" "}
+                                {section.estimatedCosts.materialsCost})<br/>
                                 <strong>Labor:</strong> {section.estimatedCosts.labor} at $
-                                {section.estimatedCosts.laborRate}/hr, <strong>Hours:</strong>{" "}
-                                {section.estimatedCosts.hoursRequired}, <strong>Recommendation:</strong>{" "}
-                                {section.estimatedCosts.recommendation}, <strong>Total Estimated Cost:</strong> $
-                                {section.estimatedCosts.totalEstimatedCost}.
+                                {section.estimatedCosts.laborRate}/hr<br/>
+                                <strong>Hours:</strong> {section.estimatedCosts.hoursRequired}<br/>
+                                <strong>Recommendation:</strong> {section.estimatedCosts.recommendation}
                               </p>
+                          </div>
+                        </div>
+                        
+                        {/* Cost Highlight */}
+                        <div className={styles.costHighlight} style={{
+                          "--selected-color": getSelectedColor(section),
+                        } as React.CSSProperties }>
+                          <div className={styles.totalCost}>
+                            Total Estimated Cost: ${section.estimatedCosts.totalEstimatedCost}
                           </div>
                         </div>
                       </div>
@@ -1202,30 +1487,45 @@ export default function InspectionReportPage() {
                   </div>
                 </div>
             ))}
+
+            {/* Defects Summary Table - Only show in Full Report mode */}
             {filterMode === 'full' && (
-              <div className={styles.contentGridStart}>
-                <div className={styles.descriptionSectionStart}>
+              <div className={styles.reportSection} style={{ marginTop: '2rem' }}>
+                <div style={{ marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '2px solid #e5e7eb' }}>
+                  <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: '#1f2937', margin: '0', letterSpacing: '-0.025em' }}>
+                    Defects Summary & Total Estimated Cost
+                  </h2>
+                </div>
+                <div>
                   <table className={styles.defectsTable}>
                     <thead>
                       <tr>
                         <th>No.</th>
+                        <th>Section</th>
                         <th>Defect</th>
-                        <th>Cost</th>
+                        <th style={{ textAlign: 'right' }}>Cost</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {reportSections.map((section) => (
-                        <tr key={section.id}>
-                          <td>{section.numbering}</td>
-                          <td>{section.defect}</td>
-                          <td>${section.estimatedCosts.totalEstimatedCost}</td>
+                      {reportSections.map((section, index) => (
+                        <tr key={section.id || index}>
+                          <td>{section.numbering || `${index + 1}`}</td>
+                          <td>{section.sectionName || section.heading?.split(' - ')[0] || ''}</td>
+                          <td>{section.defect || section.defect_description || ''}</td>
+                          <td style={{ textAlign: 'right' }}>
+                            ${section.estimatedCosts?.totalEstimatedCost || 0}
+                          </td>
                         </tr>
                       ))}
-                      <tr style={{ fontWeight: 'bold', backgroundColor: '#f3f4f6' }}>
-                        <td colSpan={2}>Total Cost</td>
-                        <td>${reportSections.reduce((total, section) => total + section.estimatedCosts.totalEstimatedCost, 0)}</td>
-                      </tr>
                     </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colSpan={3}>Total</td>
+                        <td style={{ textAlign: 'right' }}>
+                          ${reportSections.reduce((total, section) => total + (section.estimatedCosts?.totalEstimatedCost || 0), 0)}
+                        </td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
               </div>

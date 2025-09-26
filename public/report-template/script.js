@@ -160,50 +160,123 @@ function buildSections(sections, { filterSeverity = null } = {}) {
       row.innerHTML = `<td>${number}</td><td>${sec.title}</td><td>${d.title}</td>`;
       summaryBody.appendChild(row);
 
-      // Defect card
-      const dc = document.createElement('article');
-      dc.className = 'defect-card';
-  const header = document.createElement('div');
-  const sev = (d.severity || '').toLowerCase();
-  const sevClass = sev === 'danger' ? 'red' : sev === 'warning' ? 'orange' : 'blue';
-  header.className = `defect-header ${sevClass}`;
-  
-  // Determine the importance label based on severity
-  let importanceLabel = 'Maintenance Items'; // default blue
-  if (sev === 'danger') importanceLabel = 'Immediate Attention';
-  else if (sev === 'warning') importanceLabel = 'Items for Repair';
-  else if (sev === 'info') importanceLabel = 'Further Evaluation';
+      // Defect section
+      const sev = (d.severity || '').toLowerCase();
+      const defectSection = document.createElement('section');
+      defectSection.className = 'report-section';
+      defectSection.style.setProperty('--selected-color', sev === 'danger' ? '#ef4444' : sev === 'warning' ? '#f59e0b' : '#3b82f6');
       
-  header.textContent = `${number} - ${d.title}`;
-  
-  // Add badge with importance label
-  const badge = document.createElement('span');
-  badge.className = 'importance-badge';
-  badge.textContent = importanceLabel;
-  header.appendChild(badge);
-      const imgWrap = document.createElement('div');
-      imgWrap.className = 'defect-img-wrap';
-      const img = document.createElement('img');
-      img.className = 'defect-img';
-      img.src = d.image;
-      img.alt = d.title;
-      img.loading = 'lazy';
-      img.addEventListener('click', () => openZoom(d.image, d.title));
-      imgWrap.appendChild(img);
-  const inner = document.createElement('div');
-  inner.style.padding = '14px';
-      const title = document.createElement('div');
-      title.className = 'defect-title';
-      title.textContent = `${d.title}`;
-      const meta = document.createElement('div');
-      meta.className = 'defect-meta';
-      meta.innerHTML = `<span>Location:</span><span>${d.location || 'Not specified'}</span>`;
-      const desc = document.createElement('div');
-      desc.className = 'defect-desc';
-      desc.textContent = d.description;
-      inner.append(title, meta, desc);
-      dc.append(header, imgWrap, inner);
-      grid.appendChild(dc);
+      // Section heading
+      const sectionHeading = document.createElement('div');
+      sectionHeading.className = 'section-heading';
+      const headingText = document.createElement('h2');
+      headingText.className = 'section-heading-text';
+      headingText.textContent = `${number} ${sec.title} - ${d.title}`;
+      
+      // Add badge with importance label
+      let importanceLabel = 'Maintenance Items'; // default blue
+      if (sev === 'danger') importanceLabel = 'Immediate Attention';
+      else if (sev === 'warning') importanceLabel = 'Items for Repair';
+      else if (sev === 'info') importanceLabel = 'Further Evaluation';
+      
+      const badge = document.createElement('span');
+      badge.className = 'importance-badge';
+      badge.textContent = importanceLabel;
+      headingText.appendChild(badge);
+      sectionHeading.appendChild(headingText);
+      
+      // Content grid
+      const contentGrid = document.createElement('div');
+      contentGrid.className = 'content-grid';
+      
+      // Image section
+      const imageSection = document.createElement('div');
+      imageSection.className = 'image-section';
+      
+      const imageTitle = document.createElement('h3');
+      imageTitle.className = 'image-title';
+      imageTitle.textContent = 'Visual Evidence';
+      
+      const imageContainer = document.createElement('div');
+      imageContainer.className = 'image-container';
+      
+      if (d.image) {
+        const img = document.createElement('img');
+        img.className = 'property-image';
+        img.src = d.image;
+        img.alt = d.title;
+        img.loading = 'lazy';
+        img.addEventListener('click', () => openZoom(d.image, d.title));
+        imageContainer.appendChild(img);
+      } else {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'image-placeholder';
+        placeholder.innerHTML = '<p>No image available</p>';
+        imageContainer.appendChild(placeholder);
+      }
+      
+      const locationSection = document.createElement('div');
+      locationSection.className = 'location-section';
+      const locationTitle = document.createElement('h4');
+      locationTitle.className = 'section-title';
+      locationTitle.textContent = 'Location';
+      const locationContent = document.createElement('p');
+      locationContent.className = 'section-content';
+      locationContent.textContent = d.location || 'Not specified';
+      locationSection.append(locationTitle, locationContent);
+      
+      imageSection.append(imageTitle, imageContainer, locationSection);
+      
+      // Description section
+      const descriptionSection = document.createElement('div');
+      descriptionSection.className = 'description-section';
+      
+      const descriptionTitle = document.createElement('h3');
+      descriptionTitle.className = 'description-title';
+      descriptionTitle.textContent = 'Analysis Details';
+      
+      const defectDiv = document.createElement('div');
+      defectDiv.className = 'section';
+      const defectTitle = document.createElement('h4');
+      defectTitle.className = 'section-title';
+      defectTitle.textContent = 'Defect';
+      const defectContent = document.createElement('p');
+      defectContent.className = 'section-content';
+      defectContent.textContent = d.description;
+      defectDiv.append(defectTitle, defectContent);
+      
+      // Mock estimated costs (since original data doesn't have these)
+      const costsDiv = document.createElement('div');
+      costsDiv.className = 'section';
+      const costsTitle = document.createElement('h4');
+      costsTitle.className = 'section-title';
+      costsTitle.textContent = 'Estimated Costs';
+      const costsContent = document.createElement('div');
+      costsContent.className = 'section-content';
+      costsContent.innerHTML = `
+        <p>
+          <strong>Materials:</strong> General materials ($85)<br/>
+          <strong>Labor:</strong> Contractor at $100/hr<br/>
+          <strong>Hours:</strong> 2<br/>
+          <strong>Recommendation:</strong> Repair as needed<br/>
+          <strong>Total Estimated Cost:</strong> $285
+        </p>
+      `;
+      costsDiv.append(costsTitle, costsContent);
+      
+      // Cost highlight
+      const costHighlight = document.createElement('div');
+      costHighlight.className = 'cost-highlight';
+      const totalCost = document.createElement('div');
+      totalCost.className = 'total-cost';
+      totalCost.textContent = 'Total Estimated Cost: $285';
+      costHighlight.appendChild(totalCost);
+      
+      descriptionSection.append(descriptionTitle, defectDiv, costsDiv, costHighlight);
+      
+      contentGrid.append(imageSection, descriptionSection);
+      defectSection.append(sectionHeading, contentGrid);
+      grid.appendChild(defectSection);
     });
 
     // Only render section if at least one visible defect
