@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import HeaderImageUploader from './HeaderImageUploader';
 
 interface Defect {
   _id: string;
@@ -33,11 +34,29 @@ export default function DefectEditModal({ isOpen, onClose, inspectionId, inspect
   const [deleting, setDeleting] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editedValues, setEditedValues] = useState<Partial<Defect>>({});
+  const [inspectionDetails, setInspectionDetails] = useState<{headerImage?: string, headerText?: string}>({});
+  const [savingHeaderImage, setSavingHeaderImage] = useState(false);
 
-  // Fetch defects when modal opens
+  // Fetch inspection details
+  const fetchInspectionDetails = async () => {
+    try {
+      const response = await fetch(`/api/inspections/${inspectionId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setInspectionDetails(data);
+      } else {
+        console.error('Failed to fetch inspection details');
+      }
+    } catch (error) {
+      console.error('Error fetching inspection details:', error);
+    }
+  };
+
+  // Fetch defects and inspection details when modal opens
   useEffect(() => {
     if (isOpen && inspectionId) {
       fetchDefects();
+      fetchInspectionDetails();
     }
   }, [isOpen, inspectionId]);
 
@@ -94,6 +113,54 @@ export default function DefectEditModal({ isOpen, onClose, inspectionId, inspect
       style: 'currency',
       currency: 'USD'
     }).format(amount);
+  };
+
+  const setHeaderImage = async (imageUrl: string) => {
+    try {
+      setSavingHeaderImage(true);
+      const response = await fetch(`/api/inspections/${inspectionId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ headerImage: imageUrl }),
+      });
+
+      if (response.ok) {
+        setInspectionDetails(prev => ({ ...prev, headerImage: imageUrl }));
+        alert('Header image updated successfully');
+      } else {
+        alert('Failed to update header image');
+      }
+    } catch (error) {
+      console.error('Error updating header image:', error);
+      alert('Error updating header image');
+    } finally {
+      setSavingHeaderImage(false);
+    }
+  };
+  
+  const setHeaderText = async (text: string) => {
+    try {
+      // Update local state immediately for responsive UI
+      setInspectionDetails(prev => ({ ...prev, headerText: text }));
+      
+      // No need to show loading indicator for text changes
+      // It's distracting and makes the UI feel slow
+      const response = await fetch(`/api/inspections/${inspectionId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ headerText: text }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to update header text');
+      }
+    } catch (error) {
+      console.error('Error updating header text:', error);
+    }
   };
 
   const calculateTotalCost = (defect: Defect) => {
@@ -197,6 +264,25 @@ export default function DefectEditModal({ isOpen, onClose, inspectionId, inspect
         </div>
 
         <div className="modal-body">
+          {/* Header Image Upload */}
+          <div className="header-image-section">
+            <h3>Report Header Image</h3>
+            <p className="section-description">Upload a custom image to use as the header for this inspection report.</p>
+            
+            <div className="header-image-container">
+              <HeaderImageUploader 
+                currentImage={inspectionDetails.headerImage}
+                headerText={inspectionDetails.headerText}
+                onImageUploaded={(imageUrl) => setHeaderImage(imageUrl)}
+                onImageRemoved={() => setHeaderImage('')}
+                onHeaderTextChanged={(text) => setHeaderText(text)}
+              />
+            </div>
+          </div>
+          
+          <div className="section-divider"></div>
+          <h3>Manage Defects</h3>
+          
           {loading ? (
             <div className="loading-container">
               <div className="loading-spinner"></div>

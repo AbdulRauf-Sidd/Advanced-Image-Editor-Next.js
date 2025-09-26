@@ -39,3 +39,35 @@ export async function deleteInspection(inspectionId: string) {
 
   return result;
 }
+
+// 4. Update inspection - can update any inspection field including headerImage and headerText
+export async function updateInspection(inspectionId: string, data: Partial<{
+  name: string;
+  status: string;
+  date: string | Date;
+  headerImage: string;
+  headerText: string;
+}>) {
+  const client = await clientPromise;
+  const db = client.db(DB_NAME);
+
+  // Validate if inspectionId is a valid ObjectId
+  if (!ObjectId.isValid(inspectionId)) {
+    throw new Error('Invalid inspection ID format');
+  }
+
+  // Filter out undefined values to only update fields that are provided
+  const updateData = Object.entries(data).reduce((acc, [key, value]) => {
+    if (value !== undefined) {
+      acc[key] = value;
+    }
+    return acc;
+  }, {} as Record<string, any>);
+
+  const result = await db.collection("inspections").updateOne(
+    { _id: new ObjectId(inspectionId) },
+    { $set: updateData }
+  );
+
+  return result;
+}

@@ -4,6 +4,8 @@ export interface Inspection {
   name: string;
   status: string;
   date: Date | string;
+  headerImage?: string; // URL for the report header image
+  headerText?: string; // Text to display on header image
 }
 
 export interface Defect {
