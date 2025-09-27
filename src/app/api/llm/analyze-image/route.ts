@@ -85,8 +85,22 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    console.log(videoFile);
+    let finalVideoUrl = null;
   
-  
+    if (videoFile) {
+        // Generate R2 key
+        const extension = videoFile.name.split(".").pop();
+        const key = `inspections/${inspectionId}/${Date.now()}.${extension}`;
+
+        // Upload video file (as buffer) to R2
+        const buffer = Buffer.from(await videoFile.arrayBuffer());
+        finalVideoUrl = await uploadToR2(buffer, key, videoFile.type);
+        console.log("✅ Video uploaded to R2:", finalVideoUrl);
+    } else {
+      console.log('no video found')
+    }
 
   // Unique ID for job
   const analysisId = `${inspectionId}-${Date.now()}`;
@@ -106,7 +120,7 @@ export async function POST(request: Request) {
       selectedColor,
       analysisId,
       file,
-      videoFile,
+      finalVideoUrl,
       thumbnail,
       type,
       videoSrc

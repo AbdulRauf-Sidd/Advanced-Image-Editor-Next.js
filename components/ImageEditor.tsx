@@ -2439,7 +2439,7 @@ const drawSquare = (
               display: "flex",
               gap: "12px",
               flexWrap: "wrap",
-              justifyContent: window.innerWidth <= 600 ? "center" : "flex-start", // center on mobile
+              // justifyContent: window.innerWidth <= 600 ? "center" : "flex-start", // center on mobile
             }}
           >
             {/* Choose Image */}

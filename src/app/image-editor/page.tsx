@@ -334,7 +334,7 @@ export default function ImageEditorPage() {
       formData.append('selectedColor', selectedColor);
       formData.append('imageUrl', imageDataUrl);
       if (videoFile) {
-        formData.append('video', videoFile);
+        formData.append('videoFile', videoFile);
         formData.append('thumbnail', thumbnail!);
         formData.append('videoSrc', videoSrc!);
         formData.append('type', 'video');

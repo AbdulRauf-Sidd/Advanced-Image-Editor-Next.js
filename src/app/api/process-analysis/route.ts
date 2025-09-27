@@ -40,7 +40,7 @@ async function handler(request: Request) {
       subSection,
       selectedColor,
       analysisId,
-      videoFile,
+      finalVideoUrl,
       thumbnail,
       type,
       videoSrc
@@ -49,7 +49,7 @@ async function handler(request: Request) {
     console.log("🔄 Processing job", analysisId);
 
     let finalImageUrl = imageUrl;
-    let finalVideoUrl = '';
+    // let finalVideoUrl = '';
 
       if (imageUrl && imageUrl.startsWith("data:")) {
         // Decode base64 into buffer + mime type
@@ -76,18 +76,18 @@ async function handler(request: Request) {
         console.log('no thumbnail found')
       }
 
-      if (videoFile) {
-        // Generate R2 key
-        const extension = videoFile.name.split(".").pop();
-        const key = `inspections/${inspectionId}/${Date.now()}.${extension}`;
+      // if (videoFile) {
+      //   // Generate R2 key
+      //   const extension = videoFile.name.split(".").pop();
+      //   const key = `inspections/${inspectionId}/${Date.now()}.${extension}`;
 
-        // Upload video file (as buffer) to R2
-        const buffer = Buffer.from(await videoFile.arrayBuffer());
-        finalVideoUrl = await uploadToR2(buffer, key, videoFile.type);
-        console.log("✅ Video uploaded to R2:", finalVideoUrl);
-      } else {
-        console.log('no video found')
-      }
+      //   // Upload video file (as buffer) to R2
+      //   const buffer = Buffer.from(await videoFile.arrayBuffer());
+      //   finalVideoUrl = await uploadToR2(buffer, key, videoFile.type);
+      //   console.log("✅ Video uploaded to R2:", finalVideoUrl);
+      // } else {
+      //   console.log('no video found')
+      // }
 
     // ✅ Create OpenAI thread
     const thread = await openai.beta.threads.create();

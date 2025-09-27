@@ -19,6 +19,9 @@ interface Defect {
   hours_required: number;
   recommendation: string;
   color?: string;
+  type: string;
+  thumbnail: string;
+  video: string;
 }
 
 interface DefectEditModalProps {
