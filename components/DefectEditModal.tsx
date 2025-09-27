@@ -342,8 +342,26 @@ export default function DefectEditModal({ isOpen, onClose, inspectionId, inspect
 
                     <div className="defect-content">
                       <div className="defect-image">
-                        <img src={displayDefect.image || '/placeholder-image.jpg'} alt="Defect" />
-                      </div>
+                     {displayDefect.type === "video" && displayDefect.video ? (
+  <video
+    src={displayDefect.video}
+    poster={displayDefect.thumbnail || "/placeholder-image.jpg"}
+    controls
+    style={{ maxWidth: "100%", maxHeight: "200px" }}
+  />
+) : (
+  <img
+    src={displayDefect.image || displayDefect.thumbnail || "/placeholder-image.jpg"}
+    alt="Defect"
+  />
+)}
+
+                    </div>
+
+                      
+                      
+                 
+
 
                       <div className="defect-details">
                         <div className="detail-row">

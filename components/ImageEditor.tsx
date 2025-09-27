@@ -195,7 +195,6 @@ const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
 
 
 
-
 const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -224,31 +223,79 @@ const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCropFrame(null);
     onCropStateChange(false);
 
-    setVideoSrc(videoURL);  // for <video> preview
-    setVideoFile(file);     // store full video
-    setVideoSrc2(videoURL);  // for <video> preview
-    setVideoFile2(file);     // store full video
+    setVideoSrc(videoURL);   // for <video> preview
+    setVideoFile(file);      // store full video
+    setVideoSrc2(videoURL);  // optional second preview
+    setVideoFile2(file);     // optional second video
 
     // Capture the first frame as thumbnail
     const video = document.createElement("video");
     video.src = videoURL;
+    video.crossOrigin = "anonymous"; // allow drawing to canvas
 
-    video.addEventListener("loadeddata", () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext("2d");
+    // Wait for metadata (video dimensions)
+    video.addEventListener("loadedmetadata", () => {
+      video.currentTime = 0; // jump to first frame
+    });
+
+    // Once first frame is ready
+    video.addEventListener("seeked", () => {
+      // ✅ Canvas defined locally here
+      const canvasEl = document.createElement("canvas");
+      canvasEl.width = video.videoWidth;
+      canvasEl.height = video.videoHeight;
+      const ctx = canvasEl.getContext("2d");
+
       if (ctx) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const thumbnailDataUrl = canvas.toDataURL("image/png");
-        setThumbnail(thumbnailDataUrl);  // store thumbnail
-        setThumbnail2(thumbnailDataUrl);  // store thumbnail
+        ctx.drawImage(video, 0, 0, canvasEl.width, canvasEl.height);
+
+        // Create thumbnail as base64
+        const thumbnailDataUrl = canvasEl.toDataURL("image/png");
+
+        setThumbnail(thumbnailDataUrl);   // store thumbnail
+        setThumbnail2(thumbnailDataUrl);  // optional second
         console.log("Thumbnail captured:", thumbnailDataUrl);
       }
     });
   }
+
+  // Reset so same file can be chosen again
   e.target.value = "";
 };
+
+
+
+const canvas = document.createElement("canvas");
+canvas.toBlob(async (blob) => {
+  if (!blob) return;
+  // you can safely use blob here
+}, "image/png");
+
+async function uploadToR2(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) throw new Error("Failed to upload thumbnail");
+  const data = await res.json();
+  return data.url; // <- your backend should return the public R2 URL
+}
+
+canvas.toBlob(async (blob) => {
+  if (blob) {
+    const thumbnailFile = new File([blob], "thumbnail.png", { type: "image/png" });
+
+    // ⬆️ Upload this `thumbnailFile` to R2 (same as you do for videoFile)
+      const uploadedThumbnailUrl = await uploadToR2(thumbnailFile);
+
+    setThumbnail(uploadedThumbnailUrl);  // ✅ Now it’s a proper HTTPS URL
+  }
+}, "image/png");
+
 
 
 

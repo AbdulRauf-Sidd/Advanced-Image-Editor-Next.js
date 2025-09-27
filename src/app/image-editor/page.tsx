@@ -295,6 +295,7 @@ export default function ImageEditorPage() {
       alert('Please select all required location fields.');
       return;
     }
+    
     // if (!currentImage || !editedFile) {
     //   alert('Please upload and edit an image before submitting.');
     //   return;
