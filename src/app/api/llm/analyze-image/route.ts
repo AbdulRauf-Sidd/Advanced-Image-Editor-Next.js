@@ -40,6 +40,10 @@ export async function POST(request: Request) {
     let section: string | undefined;
     let subSection: string | undefined;
     let selectedColor: string | undefined;
+    let videoFile: File | null = null;
+    let thumbnail: string | null = null;
+    let type: string | undefined;
+    let videoSrc: string | null = null;
   
     const contentType = request.headers.get("content-type") || "";
   
@@ -63,6 +67,10 @@ export async function POST(request: Request) {
       section = form.get('section') as string | undefined;
       subSection = form.get('subSection') as string | undefined;
       selectedColor = form.get('selectedColor') as string | undefined;
+      videoFile = form.get("videoFile") as File | null;
+      thumbnail = form.get("thumbnail") as string | null;
+      type = form.get("type") as string | undefined;
+      videoSrc = form.get("videoSrc") as string | null;
     }
     else {
       return NextResponse.json(
@@ -77,8 +85,22 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+
+    console.log(videoFile);
+    let finalVideoUrl = null;
   
-  
+    if (videoFile) {
+        // Generate R2 key
+        const extension = videoFile.name.split(".").pop();
+        const key = `inspections/${inspectionId}/${Date.now()}.${extension}`;
+
+        // Upload video file (as buffer) to R2
+        const buffer = Buffer.from(await videoFile.arrayBuffer());
+        finalVideoUrl = await uploadToR2(buffer, key, videoFile.type);
+        console.log("✅ Video uploaded to R2:", finalVideoUrl);
+    } else {
+      console.log('no video found')
+    }
 
   // Unique ID for job
   const analysisId = `${inspectionId}-${Date.now()}`;
@@ -97,7 +119,9 @@ export async function POST(request: Request) {
       subSection,
       selectedColor,
       analysisId,
-      file,
+      finalVideoUrl,
+      thumbnail,
+      type
     },
   });
 

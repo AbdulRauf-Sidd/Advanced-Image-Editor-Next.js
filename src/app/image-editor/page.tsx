@@ -38,8 +38,10 @@ export default function ImageEditorPage() {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [selectedColor, setSelectedColor] = useState('#d63636'); // Default red color - shared across all tools
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-const [isEdited, setIsEdited] = useState(false);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoSrc, setVideoSrc] = useState<string | null>(null);
+  const [thumbnail, setThumbnail] = useState<string | null>(null);
+
 
 
   const { updateAnalysisData } = useAnalysisStore();
@@ -284,19 +286,20 @@ const [isEdited, setIsEdited] = useState(false);
   };
 
   const handleSubmit = async () => {
-    if (!currentImage || !editedFile) {
-      alert('Please upload and edit an image before submitting.');
-      return;
-    }
+    // if ((!currentImage || !editedFile) && !videoFile) {
+    //   alert('Please upload and edit an image before submitting.');
+    //   return;
+    // }
   
     if (!selectedLocation || !selectedSubLocation || !selectedLocation2) {
       alert('Please select all required location fields.');
       return;
     }
-    if (!currentImage || !editedFile) {
-  alert('Please upload and edit an image before submitting.');
-  return;
-}
+    
+    // if (!currentImage || !editedFile) {
+    //   alert('Please upload and edit an image before submitting.');
+    //   return;
+    // }
 
   
     const selectedSection = selectedLocation;
@@ -307,12 +310,15 @@ const [isEdited, setIsEdited] = useState(false);
     setSubmitStatus('Processing...');
   
     let imageDataUrl: string;
+    imageDataUrl = ''
     try {
-      imageDataUrl = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.readAsDataURL(editedFile);
-      });
+      if (editedFile) {
+        imageDataUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(editedFile);
+        });
+      }
     } catch (conversionError) {
       console.error('Error converting image to data URL:', conversionError);
       imageDataUrl = '';
@@ -320,7 +326,7 @@ const [isEdited, setIsEdited] = useState(false);
   
     try {
       const formData = new FormData();
-      formData.append('image', editedFile);
+      formData.append('image', editedFile!);
       formData.append('description', description);
       formData.append('location', selectedLocationValue);
       formData.append('section', selectedSection);
@@ -328,7 +334,15 @@ const [isEdited, setIsEdited] = useState(false);
       formData.append('inspectionId', selectedInspectionId);
       formData.append('selectedColor', selectedColor);
       formData.append('imageUrl', imageDataUrl);
-  
+      if (videoFile) {
+        formData.append('videoFile', videoFile);
+        formData.append('thumbnail', thumbnail!);
+        formData.append('videoSrc', videoSrc!);
+        formData.append('type', 'video');
+      } else {
+        formData.append('type', 'image');  
+      }
+
       const response = await fetch('/api/llm/analyze-image', {
         method: 'POST',
         body: formData,
@@ -628,6 +642,9 @@ const [isEdited, setIsEdited] = useState(false);
           videoRef={videoRef}
           setIsCameraOpen={setIsCameraOpen}
           isCameraOpen={isCameraOpen}
+          setVideoFile={setVideoFile}
+          setThumbnail={setThumbnail}
+          setVideoSrc={setVideoSrc}
         />
       </div>
 

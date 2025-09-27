@@ -40,11 +40,16 @@ async function handler(request: Request) {
       subSection,
       selectedColor,
       analysisId,
+      finalVideoUrl,
+      thumbnail,
+      type,
+      videoSrc
     } = body;
 
     console.log("🔄 Processing job", analysisId);
 
     let finalImageUrl = imageUrl;
+    // let finalVideoUrl = '';
 
       if (imageUrl && imageUrl.startsWith("data:")) {
         // Decode base64 into buffer + mime type
@@ -57,12 +62,32 @@ async function handler(request: Request) {
         finalImageUrl = await uploadToR2(buffer, key, mime);
       }
 
-    // ✅ If file provided, upload to R2 first
-    // if (file) {
-    //   const buffer = Buffer.from(await file.arrayBuffer());
-    //   const key = `inspections/${inspectionId}/${Date.now()}-${file.name}`;
-    //   finalImageUrl = await uploadToR2(buffer, key, file.type);
-    // }
+      if (thumbnail && thumbnail.startsWith("data:")) {
+        // Decode base64 into buffer + mime type
+        const { mime, buffer } = decodeBase64Image(thumbnail);
+      
+        // Generate R2 key
+        const key = `inspections/${inspectionId}/${Date.now()}-thumbnail.png`;
+      
+        // Upload buffer to R2
+        finalImageUrl = await uploadToR2(buffer, key, mime);
+        console.log("✅ Thumbnail uploaded to R2:", finalImageUrl);
+      } else {
+        console.log('no thumbnail found')
+      }
+
+      // if (videoFile) {
+      //   // Generate R2 key
+      //   const extension = videoFile.name.split(".").pop();
+      //   const key = `inspections/${inspectionId}/${Date.now()}.${extension}`;
+
+      //   // Upload video file (as buffer) to R2
+      //   const buffer = Buffer.from(await videoFile.arrayBuffer());
+      //   finalVideoUrl = await uploadToR2(buffer, key, videoFile.type);
+      //   console.log("✅ Video uploaded to R2:", finalVideoUrl);
+      // } else {
+      //   console.log('no video found')
+      // }
 
     // ✅ Create OpenAI thread
     const thread = await openai.beta.threads.create();
@@ -140,6 +165,9 @@ async function handler(request: Request) {
       hours_required: parsed.hours_required || 0,
       recommendation: parsed.recommendation || "",
       color: selectedColor || undefined,
+      type: type,
+      thumbnail: finalImageUrl,
+      video: finalVideoUrl
     };
 
     await createDefect(defectData);
