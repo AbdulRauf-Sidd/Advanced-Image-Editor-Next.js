@@ -60,6 +60,9 @@ interface ImageEditorProps {
   videoRef?: React.RefObject<HTMLVideoElement>;
   setIsCameraOpen: (val: boolean) => void;
   isCameraOpen: boolean;
+  setVideoFile: (file: File | null) => void;
+  setVideoSrc: (src: string | null) => void;
+  setThumbnail: (thumb: string | null) => void;
 }
 
 const ImageEditor: React.FC<ImageEditorProps> = ({ 
@@ -71,7 +74,10 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   onEditedFile,
   videoRef,
   setIsCameraOpen,
-  isCameraOpen
+  isCameraOpen,
+  setVideoFile,
+  setVideoSrc,
+  setThumbnail
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -137,10 +143,10 @@ const ImageEditor: React.FC<ImageEditorProps> = ({
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const cameraVideoRef = useRef<HTMLInputElement>(null); // for file input (video recording)
-  const [videoSrc, setVideoSrc] = useState<string | null>(null);
+  const [videoSrc, setVideoSrc2] = useState<string | null>(null);
 
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [videoFile, setVideoFile2] = useState<File | null>(null);
+  const [thumbnail, setThumbnail2] = useState<string | null>(null);
 
 
 
@@ -220,6 +226,8 @@ const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
 
     setVideoSrc(videoURL);  // for <video> preview
     setVideoFile(file);     // store full video
+    setVideoSrc2(videoURL);  // for <video> preview
+    setVideoFile2(file);     // store full video
 
     // Capture the first frame as thumbnail
     const video = document.createElement("video");
@@ -234,6 +242,7 @@ const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const thumbnailDataUrl = canvas.toDataURL("image/png");
         setThumbnail(thumbnailDataUrl);  // store thumbnail
+        setThumbnail2(thumbnailDataUrl);  // store thumbnail
         console.log("Thumbnail captured:", thumbnailDataUrl);
       }
     });
