@@ -29,6 +29,7 @@ interface DefectEditModalProps {
   onClose: () => void;
   inspectionId: string;
   inspectionName: string;
+  _isPlaying?: boolean; 
 }
 
 export default function DefectEditModal({ isOpen, onClose, inspectionId, inspectionName }: DefectEditModalProps) {
@@ -39,6 +40,9 @@ export default function DefectEditModal({ isOpen, onClose, inspectionId, inspect
   const [editedValues, setEditedValues] = useState<Partial<Defect>>({});
   const [inspectionDetails, setInspectionDetails] = useState<{headerImage?: string, headerText?: string}>({});
   const [savingHeaderImage, setSavingHeaderImage] = useState(false);
+  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+
+
 
   // Fetch inspection details
   const fetchInspectionDetails = async () => {
@@ -342,27 +346,40 @@ export default function DefectEditModal({ isOpen, onClose, inspectionId, inspect
 
                     <div className="defect-content">
                       <div className="defect-image">
-                     {displayDefect.type === "video" && displayDefect.video ? (
-  <video
-    src={displayDefect.video}
-    poster={displayDefect.thumbnail || "/placeholder-image.jpg"}
-    controls
-    style={{ maxWidth: "100%", maxHeight: "200px" }}
-  />
-) : (
-  <img
-    src={displayDefect.image || displayDefect.thumbnail || "/placeholder-image.jpg"}
-    alt="Defect"
-  />
-)}
+
+
+                 {displayDefect.type === "video" && displayDefect.video ? (
+                  <>
+                    {playingVideoId !== displayDefect._id ? (
+                      <img
+                        src={displayDefect.thumbnail || "/placeholder-image.jpg"}
+                        alt="Video thumbnail"
+                        style={{ maxWidth: "100%", maxHeight: "200px", cursor: "pointer" }}
+                        onClick={() => setPlayingVideoId(displayDefect._id)}
+                      />
+                    ) : (
+                      <video
+                        src={displayDefect.video}
+                        controls
+                        autoPlay
+                        style={{ maxWidth: "100%", maxHeight: "200px" }}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <img
+                    src={
+                      displayDefect.image ||
+                      displayDefect.thumbnail ||
+                      "/placeholder-image.jpg"
+                    }
+                    alt="Defect"
+                  />
+                )}
+
+
 
                     </div>
-
-                      
-                      
-                 
-
-
                       <div className="defect-details">
                         <div className="detail-row">
                           <strong>Location:</strong>{' '}

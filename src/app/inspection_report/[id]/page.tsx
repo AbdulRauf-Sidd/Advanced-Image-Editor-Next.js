@@ -1412,39 +1412,50 @@ export default function InspectionReportPage() {
                     {/* Image */}
                     <div className={styles.imageSection}>
                       <h3 className={styles.imageTitle}>Visual Evidence</h3>
-                     <div className={styles.imageContainer}>
-  {section.type === "video" && section.video ? (
-    <video
-      src={typeof section.video === "string" ? section.video : URL.createObjectURL(section.video)}
-      poster={section.thumbnail || "/placeholder-image.jpg"}
-      controls
-      style={{ maxWidth: "100%", maxHeight: "200px", cursor: "pointer" }}
-    />
-  ) : section.image ? (
-    <img
-      src={
+                    <div className={styles.imageContainer}>
+{section.type === "video" && section.video ? (
+  <video
+    src={
+      typeof section.video === "string"
+        ? section.video
+        : URL.createObjectURL(section.video)
+    }
+    poster={section.thumbnail || "/placeholder-image.jpg"}
+    style={{ maxWidth: "100%", maxHeight: "200px", cursor: "pointer" }}
+    onClick={(e) => {
+      const videoEl = e.currentTarget;
+      videoEl.setAttribute("controls", "true"); // show controls
+      videoEl.play(); // start playing
+    }}
+  />
+) : section.image ? (
+  <img
+    src={
+      typeof section.image === "string"
+        ? section.image
+        : URL.createObjectURL(section.image)
+    }
+    alt="Inspection media"
+    className={styles.propertyImage}
+    role="button"
+    onClick={() => {
+      openLightbox(
         typeof section.image === "string"
           ? section.image
           : URL.createObjectURL(section.image)
-      }
-      alt="Property analysis"
-      className={styles.propertyImage}
-      role="button"
-      onClick={() => {
-        openLightbox(
-          typeof section.image === "string"
-            ? section.image
-            : URL.createObjectURL(section.image)
-        );
-      }}
-      style={{ cursor: "zoom-in" }}
-    />
-  ) : (
-    <div className={styles.imagePlaceholder}>
-      <p>No media available</p>
-    </div>
-  )}
+      );
+    }}
+    style={{ cursor: "zoom-in" }}
+  />
+) : (
+  <div className={styles.imagePlaceholder}>
+    <p>No media available</p>
+  </div>
+)}
+
+
 </div>
+
 
                       
                       {/* Location moved here */}
