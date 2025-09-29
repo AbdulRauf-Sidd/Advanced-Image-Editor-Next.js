@@ -119,11 +119,9 @@ export async function POST(request: Request) {
       subSection,
       selectedColor,
       analysisId,
-      file,
       finalVideoUrl,
       thumbnail,
-      type,
-      videoSrc
+      type
     },
   });
 

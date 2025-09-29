@@ -970,6 +970,9 @@ export default function InspectionReportPage() {
   defect_description: rawDescription,
         location: defect.location,
         color: defect.color || defect.selectedArrowColor || '#d63636', // Add individual color for each section
+        video: defect.video,
+        type: defect.type,
+        thumbnail: defect.thumbnail,
         estimatedCosts: {
           materials: "General materials",
           materialsCost: defect.material_total_cost,
@@ -1633,26 +1636,51 @@ export default function InspectionReportPage() {
                     {/* Image */}
                     <div className={styles.imageSection}>
                       <h3 className={styles.imageTitle}>Visual Evidence</h3>
-                      <div className={styles.imageContainer}>
-                        {section.image ? (
-                          <img
-                            src={
-                              typeof section.image === "string"
-                                ? section.image
-                                : URL.createObjectURL(section.image)
-                            }
-                            alt="Property analysis"
-                            className={styles.propertyImage}
-                            role="button"
-                            onClick={() => { openLightbox(typeof section.image === 'string' ? section.image : URL.createObjectURL(section.image)); }}
-                            style={{ cursor: 'zoom-in' }}
-                          />
-                        ) : (
-                          <div className={styles.imagePlaceholder}>
-                            <p>No image available</p>
-                          </div>
-                        )}
-                      </div>
+                    <div className={styles.imageContainer}>
+{section.type === "video" && section.video ? (
+  <video
+    src={
+      typeof section.video === "string"
+        ? section.video
+        : URL.createObjectURL(section.video)
+    }
+    poster={section.thumbnail || "/placeholder-image.jpg"}
+    style={{ maxWidth: "100%", maxHeight: "200px", cursor: "pointer" }}
+    onClick={(e) => {
+      const videoEl = e.currentTarget;
+      videoEl.setAttribute("controls", "true"); // show controls
+      videoEl.play(); // start playing
+    }}
+  />
+) : section.image ? (
+  <img
+    src={
+      typeof section.image === "string"
+        ? section.image
+        : URL.createObjectURL(section.image)
+    }
+    alt="Inspection media"
+    className={styles.propertyImage}
+    role="button"
+    onClick={() => {
+      openLightbox(
+        typeof section.image === "string"
+          ? section.image
+          : URL.createObjectURL(section.image)
+      );
+    }}
+    style={{ cursor: "zoom-in" }}
+  />
+) : (
+  <div className={styles.imagePlaceholder}>
+    <p>No media available</p>
+  </div>
+)}
+
+
+</div>
+
+
                       
                       {/* Location moved here */}
                       <div className={styles.locationSection} style={{
