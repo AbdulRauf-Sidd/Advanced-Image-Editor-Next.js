@@ -21,6 +21,57 @@ export type ReportMeta = {
   startNumber?: number; // base section number, defaults to 1
 };
 
+function splitDefectText(defectText: string) {
+  if (!defectText) {
+    return { title: "", paragraphs: [] as string[] };
+  }
+
+  const trimmed = defectText.trim();
+
+  const doubleNewlineIndex = trimmed.search(/\n\s*\n/);
+  if (doubleNewlineIndex !== -1) {
+    const title = trimmed.slice(0, doubleNewlineIndex).trim();
+    const rest = trimmed.slice(doubleNewlineIndex).trim();
+    const paragraphs = rest
+      ? rest
+          .split(/\n\s*\n/g)
+          .map((p) => p.trim())
+          .filter(Boolean)
+      : [];
+    return { title, paragraphs };
+  }
+
+  const [firstLine, ...restLines] = trimmed.split(/\r?\n/);
+  const rest = restLines.join("\n").trim();
+  if (rest) {
+    return {
+      title: firstLine.trim(),
+      paragraphs: rest
+        .split(/\n\s*\n/g)
+        .map((p) => p.trim())
+        .filter(Boolean),
+    };
+  }
+
+  const sentenceMatch = trimmed.match(/(.*?[.?!])(\s|$)/);
+  if (sentenceMatch) {
+    const [, firstSentence] = sentenceMatch;
+    const remaining = trimmed.slice(firstSentence.length).trim();
+    const paragraphs = remaining
+      ? remaining
+          .split(/\n\s*\n/g)
+          .map((p) => p.trim())
+          .filter(Boolean)
+      : [];
+    return {
+      title: firstSentence.trim(),
+      paragraphs,
+    };
+  }
+
+  return { title: trimmed, paragraphs: [] as string[] };
+}
+
 function escapeHtml(str: string = ""): string {
   return str
     .replace(/&/g, "&amp;")
@@ -71,6 +122,15 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
       const number = `${currentMain}.${subCounter}`;
       const totalCost = (d.material_total_cost || 0) + (d.labor_rate || 0) * (d.hours_required || 0);
       const selectedColor = d.color || "#d63636";
+      const { title: defectTitle, paragraphs: defectParagraphs } = splitDefectText(d.defect_description || "");
+      const defectBodyHtml = defectParagraphs.length
+        ? `<div class="defect-body">${defectParagraphs
+            .map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`)
+            .join("")}</div>`
+        : "";
+      const fallbackDefectHtml = !defectTitle && defectParagraphs.length === 0 && d.defect_description
+        ? `<div class="defect-body"><p>${escapeHtml(d.defect_description)}</p></div>`
+        : "";
 
       return `
         <section class="report-section" style="--selected-color: ${selectedColor};">
@@ -96,7 +156,11 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
               <h3 class="description-title">Analysis Details</h3>
               <div class="section">
                 <h4 class="section-title">Defect</h4>
-                <p class="section-content">${escapeHtml(d.defect_description || "")}</p>
+                <div class="section-content">
+                  ${defectTitle ? `<p class="defect-title">${escapeHtml(defectTitle)}</p>` : ""}
+                  ${defectBodyHtml}
+                  ${fallbackDefectHtml}
+                </div>
               </div>
               <div class="section">
                 <h4 class="section-title">Estimated Costs</h4>
@@ -137,12 +201,14 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
           acc.sub += 1;
         }
         const numbering = `${acc.current}.${acc.sub}`;
-        const defFirstSentence = (d.defect_description || "").split(".")[0];
+  const { title: summaryTitle } = splitDefectText(d.defect_description || "");
+  const fallbackSentence = (d.defect_description || "").trim().split(/[.?!]/)[0] || "";
+        const summaryText = summaryTitle || fallbackSentence;
         acc.html += `
           <tr>
             <td>${escapeHtml(numbering)}</td>
             <td>${escapeHtml(d.section)} - ${escapeHtml(d.subsection)}</td>
-            <td>${escapeHtml(defFirstSentence)}</td>
+            <td>${escapeHtml(summaryText)}</td>
           </tr>
         `;
         return acc;
@@ -179,6 +245,11 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
     .cover h2 { font-size: 18px; color: #1f2937; }
     .cover p { color: #374151; }
 
+  .category-immediate { color: #c00; }
+  .category-repair { color: #e69500; }
+  .category-maintenance { color: #2d6cdf; }
+  .category-evaluation { color: #800080; }
+
     .section-heading { margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--selected-color, #d63636); }
     .section-heading-text { font-size: 18px; color: var(--selected-color, #d63636); font-weight: 700; }
 
@@ -200,6 +271,10 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
     .table { width: 100%; border-collapse: collapse; }
     .table th, .table td { border: 1px solid #e5e7eb; padding: 8px; font-size: 12px; text-align: left; }
     .table thead th { background: #f3f4f6; }
+
+  .defect-title { font-weight: 700; font-size: 14px; color: var(--selected-color, #d63636); margin-bottom: 6px; }
+  .defect-body { font-size: 13px; color: #374151; line-height: 1.5; display: flex; flex-direction: column; gap: 8px; }
+  .defect-body p { margin: 0; }
 
     .footer { margin-top: 16px; font-size: 11px; color: #6b7280; }
 

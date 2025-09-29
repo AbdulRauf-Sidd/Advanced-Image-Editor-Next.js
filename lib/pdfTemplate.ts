@@ -92,6 +92,92 @@ function colorToImportance(input?: string): 'Immediate Attention' | 'Items for R
   }
 }
 
+type DefectTextParts = {
+  title: string;
+  body: string;
+  paragraphs: string[];
+};
+
+function splitDefectText(raw?: string): DefectTextParts {
+  const normalized = (raw ?? "").replace(/\r\n/g, "\n").trim();
+  if (!normalized) {
+    return { title: "", body: "", paragraphs: [] };
+  }
+
+  const paragraphBlocks = normalized
+    .split(/\n\s*\n/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+
+  if (paragraphBlocks.length > 1) {
+    const [title, ...rest] = paragraphBlocks;
+    return {
+      title,
+      body: rest.join("\n\n").trim(),
+      paragraphs: rest,
+    };
+  }
+
+  const lineBlocks = normalized
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lineBlocks.length > 1) {
+    const [title, ...restLines] = lineBlocks;
+    const restCombined = restLines.join(" ").trim();
+    return {
+      title,
+      body: restCombined,
+      paragraphs: restCombined ? [restCombined] : [],
+    };
+  }
+
+  const colonMatch = normalized.match(/^([^:]{3,120}):\s*([\s\S]+)$/);
+  if (colonMatch) {
+    const [, title, remainder] = colonMatch;
+    const trimmedRemainder = remainder.trim();
+    const paragraphs = trimmedRemainder
+      ? trimmedRemainder.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+      : [];
+    return {
+      title: title.trim(),
+      body: trimmedRemainder,
+      paragraphs: paragraphs.length ? paragraphs : trimmedRemainder ? [trimmedRemainder] : [],
+    };
+  }
+
+  const dashMatch = normalized.match(/^([^–-]{3,120})[–-]\s*([\s\S]+)$/);
+  if (dashMatch) {
+    const [, title, remainder] = dashMatch;
+    const trimmedRemainder = remainder.trim();
+    const paragraphs = trimmedRemainder
+      ? trimmedRemainder.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+      : [];
+    return {
+      title: title.trim(),
+      body: trimmedRemainder,
+      paragraphs: paragraphs.length ? paragraphs : trimmedRemainder ? [trimmedRemainder] : [],
+    };
+  }
+
+  const periodIndex = normalized.indexOf(".");
+  if (periodIndex > 0 && periodIndex < normalized.length - 1) {
+    const title = normalized.slice(0, periodIndex).trim();
+    const remainder = normalized.slice(periodIndex + 1).trim();
+    const paragraphs = remainder
+      ? remainder.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+      : [];
+    return {
+      title,
+      body: remainder,
+      paragraphs: paragraphs.length ? paragraphs : remainder ? [remainder] : [],
+    };
+  }
+
+  return { title: normalized, body: "", paragraphs: [] };
+}
+
 export function generateInspectionReportHTML(defects: DefectItem[], meta: ReportMeta = {}): string {
   const {
     title = "Inspection Report",
@@ -129,6 +215,16 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
       const number = `${currentMain}.${subCounter}`;
       const totalCost = (d.material_total_cost || 0) + (d.labor_rate || 0) * (d.hours_required || 0);
       const selectedColor = d.color || "#d63636";
+      const defectParts = splitDefectText(d.defect_description || "");
+      const defectTitle = defectParts.title;
+      const defectParagraphs = defectParts.paragraphs.length
+        ? defectParts.paragraphs
+        : defectParts.body && defectParts.body !== defectTitle
+          ? [defectParts.body]
+          : [];
+      const defectBodyHtml = defectParagraphs.length
+        ? defectParagraphs.map((p) => `<p class="defect-body">${escapeHtml(p)}</p>`).join("")
+        : (d.defect_description ? `<p class="defect-body">${escapeHtml(d.defect_description)}</p>` : "");
       
       // Determine the importance label based on nearest color category
       const importanceLabel = colorToImportance(selectedColor);
@@ -160,7 +256,10 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
               <h3 class="description-title">Analysis Details</h3>
               <div class="section">
                 <h4 class="section-title">Defect</h4>
-                <p class="section-content">${escapeHtml(d.defect_description || "")}</p>
+                <div class="section-content">
+                  ${defectTitle ? `<p class="defect-title" style="color:${selectedColor};">${escapeHtml(defectTitle)}</p>` : ""}
+                  ${defectBodyHtml}
+                </div>
               </div>
               <div class="section">
                 <h4 class="section-title">Estimated Costs</h4>
@@ -199,7 +298,8 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
       acc.sub += 1;
     }
     const numbering = `${acc.current}.${acc.sub}`;
-    const defFirstSentence = (d.defect_description || "").split(".")[0];
+  const parts = splitDefectText(d.defect_description || "");
+  const defFirstSentence = parts.title || (d.defect_description || "").split(".")[0];
     const costValue = (d.material_total_cost || 0) + (d.labor_rate || 0) * (d.hours_required || 0);
     acc.html += `
       <tr>
@@ -228,7 +328,8 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
       acc.sub += 1;
     }
     const numbering = `${acc.current}.${acc.sub}`;
-    const defFirstSentence = (d.defect_description || "").split(".")[0];
+  const parts = splitDefectText(d.defect_description || "");
+  const defFirstSentence = parts.title || (d.defect_description || "").split(".")[0];
     acc.html += `
       <tr>
         <td>${escapeHtml(numbering)}</td>
@@ -360,12 +461,16 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
   /* Slight offset for the non-priced summary after Section 2 */
   .cover--summary { margin-top: 24px; }
 
-  /* Section 2: revert to standard, readable sizes similar to original */
-  .cover--section2 { padding: 16px; margin-bottom: 20px; }
-  .cover--section2 h2 { font-size: 18px; margin-bottom: 8px; }
-  .cover--section2 h3 { font-size: 16px; margin: 12px 0 8px; }
-  .cover--section2 h4 { font-size: 14px; margin: 10px 0 6px; }
-  .cover--section2 p, .cover--section2 li { font-size: 13px; line-height: 1.5; margin: 0 0 8px 0; hyphens: manual; -webkit-hyphens: manual; }
+  /* Section 2: consistent formatting with tight spacing */
+  .cover--section2 { padding: 20px; margin: 0; }
+  .cover--section2 h2 { font-size: 18px; margin: 0 0 12px 0; }
+  .cover--section2 h3 { font-size: 16px; margin: 16px 0 8px; }
+  .cover--section2 h4 { font-size: 14px; margin: 12px 0 6px; }
+  .cover--section2 p, .cover--section2 li { font-size: 13px; line-height: 1.5; margin: 0 0 10px 0; hyphens: manual; -webkit-hyphens: manual; }
+  .cover--section2 .category-immediate { color: #c00; }
+  .cover--section2 .category-repair { color: #e69500; }
+  .cover--section2 .category-maintenance { color: #2d6cdf; }
+  .cover--section2 .category-evaluation { color: #800080; }
   
   /* Importance badge styling */
   .importance-badge {
@@ -378,17 +483,17 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
     color: #ffffff;
     margin-left: 8px;
   }
-  .cover--section2 ul { margin: 8px 0 12px 18px; }
-  .cover--section2 hr { margin: 12px 0; }
+  .cover--section2 ul { margin: 10px 0 14px 18px; }
+  .cover--section2 hr { margin: 14px 0; }
 
-  /* Section 1: match Section 2 and original sizes */
-  .cover--section1 { padding: 16px; margin-bottom: 20px; }
-  .cover--section1 h2 { font-size: 18px; margin-bottom: 8px; }
-  .cover--section1 h3 { font-size: 16px; margin: 12px 0 8px; }
-  .cover--section1 h4 { font-size: 14px; margin: 10px 0 6px; }
-  .cover--section1 p, .cover--section1 li { font-size: 13px; line-height: 1.5; margin: 0 0 8px 0; hyphens: manual; -webkit-hyphens: manual; }
-  .cover--section1 ul { margin: 8px 0 12px 18px; }
-  .cover--section1 hr { margin: 12px 0; }
+  /* Section 1: consistent formatting with tight spacing */
+  .cover--section1 { padding: 20px; margin: 0; }
+  .cover--section1 h2 { font-size: 18px; margin: 0 0 12px 0; }
+  .cover--section1 h3 { font-size: 16px; margin: 16px 0 8px; }
+  .cover--section1 h4 { font-size: 14px; margin: 12px 0 6px; }
+  .cover--section1 p, .cover--section1 li { font-size: 13px; line-height: 1.5; margin: 0 0 10px 0; hyphens: manual; -webkit-hyphens: manual; }
+  .cover--section1 ul { margin: 10px 0 14px 18px; }
+  .cover--section1 hr { margin: 14px 0; }
 
     .section-heading { margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--selected-color, #d63636); }
     .section-heading-text { font-size: 18px; color: var(--selected-color, #d63636); font-weight: 700; }
@@ -404,6 +509,8 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
     .section { background: #fff; border-left: 3px solid var(--selected-color, #d63636); padding: 12px; border-radius: 6px; margin-bottom: 10px; }
     .section-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: #1f2937; }
     .section-content { font-size: 13px; color: #374151; line-height: 1.5; }
+  .defect-title { font-weight: 700; font-size: 14px; margin: 0 0 6px 0; color: var(--selected-color, #d63636); }
+  .defect-body { font-size: 13px; color: #374151; line-height: 1.6; margin: 0 0 8px 0; }
 
     .cost-highlight { background: #f8fafc; border: 1px solid var(--selected-color, #d63636); padding: 10px; border-radius: 8px; margin-top: 10px; }
     .total-cost { text-align: center; font-weight: 700; color: var(--selected-color, #d63636); }
@@ -444,7 +551,16 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
     /* Keep headings attached to the content that follows */
     .section-heading { page-break-after: avoid; break-after: avoid; }
 
-    @media print { .page-break { page-break-before: always; } }
+    .page-break { 
+      page-break-before: always; 
+      break-before: page; 
+      margin: 0; 
+      padding: 0; 
+      height: 0; 
+    }
+    @media print { 
+      .page-break { page-break-before: always; } 
+    }
   </style>
 </head>
 <body>
@@ -476,44 +592,48 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
   
   <div class="content-wrapper">
 
-  ${reportType === 'full' ? `<section class="cover cover--section1">
+  ${reportType === 'full' ? `<section class="cover cover--section1 keep-together">
     <h2>Section 1 - Inspection Scope, Client Responsibilities, and Repair Estimates</h2>
-    <p>This is a <strong>visual inspection only</strong>. The scope of this inspection is to verify the proper performance of the home's major systems. We do not verify proper design.</p>
+    <hr style="margin: 8px 0 16px 0; border: none; height: 1px; background-color: #000000;">
+    <p>This is a visual inspection only. The scope of this inspection is to verify the proper performance of the home's major systems. We do not verify proper design.</p>
     <p>The following items reflect the condition of the home and its systems <strong>at the time and date the inspection was performed</strong>. Conditions of an occupied home can change after the inspection (e.g., leaks may occur beneath sinks, water may run at toilets, walls or flooring may be damaged during moving, appliances may fail, etc.).</p>
     <p>Furnishings, personal items, and/or systems of the home are not dismantled or moved. A 3–4 hour inspection is not equal to "live-in exposure" and will not discover all concerns. Unless otherwise stated, we will only inspect/comment on the following systems: <em>Electrical, Heating/Cooling, Appliances, Plumbing, Roof and Attic, Exterior, Grounds, and the Foundation</em>.</p>
-    <p><strong>NOTE:</strong> This inspection is not a warranty or insurance policy. The limit of liability of AGI Property Inspections and its employees does not extend beyond the day the inspection was performed.</p>
+  <p>This inspection is not a warranty or insurance policy. The limit of liability of AGI Property Inspections and its employees does not extend beyond the day the inspection was performed.</p>
     <p>Cosmetic items (e.g., peeling wallpaper, wall scuffs, nail holes, normal wear and tear, etc.) are not part of this inspection. We also do not inspect for fungi, rodents, or insects. If such issues are noted, it is only to bring them to your attention so you can have the proper contractor evaluate further.</p>
     <p>Although every effort is made to inspect all systems, not every defect can be identified. Some areas may be inaccessible or hazardous. The home should be carefully reviewed during your final walk-through to ensure no new concerns have occurred and that requested repairs have been completed.</p>
-    <p><strong>IMPORTANT:</strong> Please contact our office immediately at <a href="tel:3379051428">337-905-1428</a> if you suspect or discover any concerns during the final walk-through.</p>
-    <p>Repair recommendations and cost estimates included in this report are <strong>approximate</strong>, generated from typical labor and material rates in our region. They are not formal quotes and must always be verified by licensed contractors. AGI Property Inspections does not guarantee their accuracy.</p>
+  <p>Please contact our office immediately at <a href="tel:3379051428">337-905-1428</a> if you suspect or discover any concerns during the final walk-through.</p>
+    <p>Repair recommendations and cost estimates included in this report are approximate, generated from typical labor and material rates in our region. They are not formal quotes and must always be verified by licensed contractors. AGI Property Inspections does not guarantee their accuracy.</p>
     <p>We do not provide guaranteed repair methods. Any corrections should be performed by qualified, licensed contractors. Consult your Real Estate Professional, Attorney, or Contractor for further advice regarding responsibility for these repairs.</p>
     <p>While this report may identify products involved in recalls or lawsuits, it is not comprehensive. Identifying all recalled products is not a requirement for Louisiana licensed Home Inspectors.</p>
-    <p>This inspection complies with the standards of practice of the <strong>State of Louisiana Home Inspectors Licensing Board</strong>. Home inspectors are generalists and recommend further review by licensed specialists when needed.</p>
+    <p>This inspection complies with the standards of practice of the State of Louisiana Home Inspectors Licensing Board. Home inspectors are generalists and recommend further review by licensed specialists when needed.</p>
     <p><em>This inspection report and all information contained within is the sole property of AGI Property Inspections and is leased to the clients named in this report. It may not be shared or passed on without AGI’s consent. Doing so may result in legal action.</em></p>
   </section>
 
   <div class="page-break"></div>
 
-  <section class="cover cover--section2">
+  <section class="cover cover--section2 keep-together">
     <h2>Section 2 - Inspection Scope &amp; Limitations</h2>
+    <hr style="margin: 8px 0 16px 0; border: none; height: 1px; background-color: #000000;">
     <h3>Inspection Categories &amp; Summary</h3>
-    <h4>Immediate Attention</h4>
-    <p><strong>Major Defects:</strong> Issues that compromise the home’s structural integrity, may result in additional damage if not repaired, or are considered a safety hazard. These items are color-coded <span style="color:#ef4444; font-weight:600;">red</span> in the report and should be corrected as soon as possible.</p>
-    <h4>Items for Repair</h4>
-    <p><strong>Defects:</strong> Items in need of repair or correction, such as plumbing or electrical concerns, damaged or improperly installed components, etc. These are color-coded <span style="color:#f59e0b; font-weight:600;">orange</span> in the report and have no strict repair timeline.</p>
-    <h4>Maintenance Items</h4>
-    <p>Small DIY-type repairs and maintenance recommendations provided to increase knowledge of long-term care. While not urgent, addressing these will reduce future repair needs and costs.</p>
+    <h4 class="category-immediate">Immediate Attention</h4>
+    <p class="category-immediate"><strong>Major Defects:</strong> Issues that compromise the home’s structural integrity, may result in additional damage if not repaired, or are considered a safety hazard. These items are color-coded red in the report and should be corrected as soon as possible.</p>
+    <h4 class="category-repair">Items for Repair</h4>
+    <p class="category-repair"><strong>Defects:</strong> Items in need of repair or correction, such as plumbing or electrical concerns, damaged or improperly installed components, etc. These are color-coded orange in the report and have no strict repair timeline.</p>
+    <h4 class="category-maintenance">Maintenance Items</h4>
+    <p class="category-maintenance">Small DIY-type repairs and maintenance recommendations provided to increase knowledge of long-term care. While not urgent, addressing these will reduce future repair needs and costs.</p>
+  <h4 class="category-evaluation">Further Evaluation</h4>
+  <p class="category-evaluation">In some cases, a defect falls outside the scope of a general home inspection or requires a more extensive level of knowledge to determine the full extent of the issue. These items should be further evaluated by a specialist.</p>
     <hr />
     <h3>Important Information &amp; Limitations</h3>
-    <p>AGI Property Inspections performs all inspections in compliance with the <strong>Louisiana Standards of Practice</strong>. We inspect readily accessible, visually observable, permanently installed systems and components of the home. This inspection is not technically exhaustive or quantitative.</p>
+    <p>AGI Property Inspections performs all inspections in compliance with the Louisiana Standards of Practice. We inspect readily accessible, visually observable, permanently installed systems and components of the home. This inspection is not technically exhaustive or quantitative.</p>
     <p>Some comments may go beyond the minimum Standards as a courtesy to provide additional detail. Any item noted for repair, replacement, maintenance, or further evaluation should be reviewed by qualified, licensed tradespeople.</p>
     <p>This inspection cannot predict future conditions or reveal hidden or latent defects. The report reflects the home’s condition only at the time of inspection. Weather, occupancy, or use may reveal issues not present at the time.</p>
-    <p>This report should be considered alongside the <strong>seller’s disclosure, pest inspection report, and contractor evaluations</strong> for a complete picture of the home’s condition.</p>
+    <p>This report should be considered alongside the seller’s disclosure, pest inspection report, and contractor evaluations for a complete picture of the home’s condition.</p>
     <hr />
     <h3>Repair Estimates Disclaimer</h3>
     <p>This report may include repair recommendations and estimated costs. These are based on typical labor and material rates in our region, generated from AI image review. They are approximate and not formal quotes.</p>
     <ul>
-      <li>Estimates are <strong>not formal quotes</strong>.</li>
+      <li>Estimates are not formal quotes.</li>
       <li>They do not account for unique site conditions and may vary depending on contractor, materials, and methods.</li>
       <li>Final pricing must always be obtained through qualified, licensed contractors with on-site evaluation.</li>
       <li>AGI Property Inspections does not guarantee the accuracy of estimates or assume responsibility for work performed by outside contractors.</li>
@@ -521,8 +641,8 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
     <hr />
     <h3>Recommendations</h3>
     <ul>
-      <li><strong>Contractors / Further Evaluation:</strong> Repairs noted should be performed by licensed professionals. Keep receipts for warranty and documentation purposes.</li>
-      <li><strong>Causes of Damage / Methods of Repair:</strong> Suggested repair methods are based on inspector experience and opinion. Final determination should always be made by licensed contractors.</li>
+      <li>Contractors / Further Evaluation: Repairs noted should be performed by licensed professionals. Keep receipts for warranty and documentation purposes.</li>
+      <li>Causes of Damage / Methods of Repair: Suggested repair methods are based on inspector experience and opinion. Final determination should always be made by licensed contractors.</li>
     </ul>
     <hr />
     <h3>Excluded Items</h3>
@@ -557,7 +677,7 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
   <div class="page-break"></div>
 
   ${reportType === 'full' ? `<section class="cover">
-    <h2>Defects Summary</h2>
+    <h2>Total Estimated Cost</h2>
     <table class="table">
       <thead>
         <tr>

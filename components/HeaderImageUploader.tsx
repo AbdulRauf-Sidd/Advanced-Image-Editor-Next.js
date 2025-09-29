@@ -37,6 +37,7 @@ const HeaderImageUploader: React.FC<HeaderImageUploaderProps> = ({
       const formData = new FormData();
       formData.append("file", file);
       
+      console.log("Uploading image to R2...");
       const response = await fetch("/api/r2api", {
         method: "POST",
         body: formData,
@@ -44,13 +45,16 @@ const HeaderImageUploader: React.FC<HeaderImageUploaderProps> = ({
       
       const data = await response.json();
       if (!response.ok) {
+        console.error("Upload failed response:", data);
         throw new Error(data.error || "Failed to upload image");
       }
       
+      console.log("Upload successful, URL:", data.url);
       onImageUploaded(data.url);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Upload error:", error);
-      alert("Failed to upload image. Please try again.");
+      // More detailed error message
+      alert(`Failed to upload image: ${error.message || "Please try again."}`);
     } finally {
       setUploading(false);
       // Clean up preview URL

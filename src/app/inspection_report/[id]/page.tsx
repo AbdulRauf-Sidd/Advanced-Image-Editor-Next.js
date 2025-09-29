@@ -6,6 +6,93 @@ import { useRef } from "react";
 import Button from "@/components/Button";
 
 
+type DefectTextParts = {
+  title: string;
+  body: string;
+  paragraphs: string[];
+};
+
+const splitDefectText = (raw?: string): DefectTextParts => {
+  const normalized = (raw ?? "").replace(/\r\n/g, "\n").trim();
+  if (!normalized) {
+    return { title: "", body: "", paragraphs: [] };
+  }
+
+  const paragraphBlocks = normalized
+    .split(/\n\s*\n/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+
+  if (paragraphBlocks.length > 1) {
+    const [title, ...rest] = paragraphBlocks;
+    return {
+      title,
+      body: rest.join("\n\n").trim(),
+      paragraphs: rest,
+    };
+  }
+
+  const lineBlocks = normalized
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lineBlocks.length > 1) {
+    const [title, ...restLines] = lineBlocks;
+    const restCombined = restLines.join(" ").trim();
+    return {
+      title,
+      body: restCombined,
+      paragraphs: restCombined ? [restCombined] : [],
+    };
+  }
+
+  const colonMatch = normalized.match(/^([^:]{3,120}):\s*([\s\S]+)$/);
+  if (colonMatch) {
+    const [, title, remainder] = colonMatch;
+    const trimmedRemainder = remainder.trim();
+    const paragraphs = trimmedRemainder
+      ? trimmedRemainder.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+      : [];
+    return {
+      title: title.trim(),
+      body: trimmedRemainder,
+      paragraphs: paragraphs.length ? paragraphs : trimmedRemainder ? [trimmedRemainder] : [],
+    };
+  }
+
+  const dashMatch = normalized.match(/^([^–-]{3,120})[–-]\s*([\s\S]+)$/);
+  if (dashMatch) {
+    const [, title, remainder] = dashMatch;
+    const trimmedRemainder = remainder.trim();
+    const paragraphs = trimmedRemainder
+      ? trimmedRemainder.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+      : [];
+    return {
+      title: title.trim(),
+      body: trimmedRemainder,
+      paragraphs: paragraphs.length ? paragraphs : trimmedRemainder ? [trimmedRemainder] : [],
+    };
+  }
+
+  const periodIndex = normalized.indexOf(".");
+  if (periodIndex > 0 && periodIndex < normalized.length - 1) {
+    const title = normalized.slice(0, periodIndex).trim();
+    const remainder = normalized.slice(periodIndex + 1).trim();
+    const paragraphs = remainder
+      ? remainder.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+      : [];
+    return {
+      title,
+      body: remainder,
+      paragraphs: paragraphs.length ? paragraphs : remainder ? [remainder] : [],
+    };
+  }
+
+  return { title: normalized, body: "", paragraphs: [] };
+};
+
+
 export default function InspectionReportPage() {
   const params = useParams();
   const { id } = params; // this is inspection_id
@@ -285,7 +372,7 @@ export default function InspectionReportPage() {
       const defectsPayload = sectionsToExport.map((r: any) => ({
         section: r.heading2?.split(' - ')[0] || '',
         subsection: r.heading2?.split(' - ')[1] || '',
-        defect_description: r.defect || '',
+  defect_description: r.defect_description || r.defect || '',
         image: r.image,
         location: r.location,
         material_total_cost: r.estimatedCosts?.materialsCost ?? 0,
@@ -370,7 +457,7 @@ export default function InspectionReportPage() {
       const summaryRows = sectionsToExport
         .map((s) => {
           const cost = s.estimatedCosts?.totalEstimatedCost ?? 0;
-          const def = s.defect || (s.defect_description ? String(s.defect_description).split('.') [0] : '');
+          const def = s.defectTitle || s.defect || (s.defect_description ? String(s.defect_description).split('.')[0] : '');
           return `
             <tr>
               <td>${escapeHtml(s.numbering ?? '')}</td>
@@ -383,28 +470,48 @@ export default function InspectionReportPage() {
         .join('');
       const totalAll = sectionsToExport.reduce((sum: number, s: any) => sum + (s.estimatedCosts?.totalEstimatedCost ?? 0), 0);
 
+      const summaryTableRows = sectionsToExport
+        .map((s) => {
+          const defectParts = splitDefectText(s.defect_description || s.defect || "");
+          const summaryDefect =
+            s.defectTitle ||
+            defectParts.title ||
+            (s.defect || "").trim() ||
+            (defectParts.paragraphs[0] || "");
+          return `
+            <tr class="rpt-summary-row" data-target="${escapeHtml(s.anchorId || '')}" tabindex="0" role="link" aria-label="Jump to ${escapeHtml(s.numbering ?? '')}: ${escapeHtml(summaryDefect)}">
+              <td>${escapeHtml(s.numbering ?? '')}</td>
+              <td>${escapeHtml(s.heading2 ?? s.sectionName ?? '')}</td>
+              <td>${escapeHtml(summaryDefect)}</td>
+            </tr>
+          `;
+        })
+        .join('');
+
       // Intro sections (Section 1 & 2) content
       const introHtml = `
         <section class="rpt-section">
           <h2 class="rpt-h2">Section 1 - Inspection Scope, Client Responsibilities, and Repair Estimates</h2>
+          <hr style="margin: 8px 0 16px 0; border: none; height: 1px; background-color: #000000;">
           <div class="rpt-card">
-            <p>This is a <strong>visual inspection only</strong>. The scope of this inspection is to verify the proper performance of the home's major systems. We do not verify proper design.</p>
-            <p>The following items reflect the condition of the home and its systems<strong> at the time and date the inspection was performed</strong>. Conditions of an occupied home can change after the inspection (e.g., leaks may occur beneath sinks, water may run at toilets, walls or flooring may be damaged during moving, appliances may fail, etc.).</p>
+            <p>This is a visual inspection only. The scope of this inspection is to verify the proper performance of the home's major systems. We do not verify proper design.</p>
+            <p>The following items reflect the condition of the home and its systems at the time and date the inspection was performed. Conditions of an occupied home can change after the inspection (e.g., leaks may occur beneath sinks, water may run at toilets, walls or flooring may be damaged during moving, appliances may fail, etc.).</p>
             <p>Furnishings, personal items, and/or systems of the home are not dismantled or moved. A 3–4 hour inspection is not equal to "live-in exposure" and will not discover all concerns. Unless otherwise stated, we will only inspect/comment on the following systems: <em>Electrical, Heating/Cooling, Appliances, Plumbing, Roof and Attic, Exterior, Grounds, and the Foundation</em>.</p>
-            <p class="note"><strong>NOTE:</strong> This inspection is not a warranty or insurance policy. The limit of liability of AGI Property Inspections and its employees does not extend beyond the day the inspection was performed.</p>
+            <p>This inspection is not a warranty or insurance policy. The limit of liability of AGI Property Inspections and its employees does not extend beyond the day the inspection was performed.</p>
             <p>Cosmetic items (e.g., peeling wallpaper, wall scuffs, nail holes, normal wear and tear, etc.) are not part of this inspection. We also do not inspect for fungi, rodents, or insects. If such issues are noted, it is only to bring them to your attention so you can have the proper contractor evaluate further.</p>
             <p>Although every effort is made to inspect all systems, not every defect can be identified. Some areas may be inaccessible or hazardous. The home should be carefully reviewed during your final walk-through to ensure no new concerns have occurred and that requested repairs have been completed.</p>
-            <p class="note"><strong>IMPORTANT:</strong> Please contact our office immediately at <a href="tel:3379051428">337-905-1428</a> if you suspect or discover any concerns during the final walk-through.</p>
-            <p>Repair recommendations and cost estimates included in this report are <strong>approximate</strong>, generated from typical labor and material rates in our region. They are not formal quotes and must always be verified by licensed contractors. AGI Property Inspections does not guarantee their accuracy.</p>
+            <p>Please contact our office immediately at <a href="tel:3379051428">337-905-1428</a> if you suspect or discover any concerns during the final walk-through.</p>
+            <p>Repair recommendations and cost estimates included in this report are approximate, generated from typical labor and material rates in our region. They are not formal quotes and must always be verified by licensed contractors. AGI Property Inspections does not guarantee their accuracy.</p>
             <p>We do not provide guaranteed repair methods. Any corrections should be performed by qualified, licensed contractors. Consult your Real Estate Professional, Attorney, or Contractor for further advice regarding responsibility for these repairs.</p>
             <p>While this report may identify products involved in recalls or lawsuits, it is not comprehensive. Identifying all recalled products is not a requirement for Louisiana licensed Home Inspectors.</p>
-            <p>This inspection complies with the standards of practice of the <strong>State of Louisiana Home Inspectors Licensing Board</strong>. Home inspectors are generalists and recommend further review by licensed specialists when needed.</p>
+            <p>This inspection complies with the standards of practice of the State of Louisiana Home Inspectors Licensing Board. Home inspectors are generalists and recommend further review by licensed specialists when needed.</p>
             <p class="disclaimer">This inspection report and all information contained within is the sole property of AGI Property Inspections and is leased to the clients named in this report. It may not be shared or passed on without AGI’s consent. <em>Doing so may result in legal action.</em></p>
           </div>
         </section>
 
         <section class="rpt-section">
           <h2 class="rpt-h2">Section 2 - Inspection Scope & Limitations</h2>
+          <hr style="margin: 8px 0 16px 0; border: none; height: 1px; background-color: #000000;">
           <div class="rpt-card">
             <h3>Inspection Categories & Summary</h3>
             <h4 class="cat-red">Immediate Attention</h4>
@@ -416,20 +523,20 @@ export default function InspectionReportPage() {
             <h4 class="cat-blue">Maintenance Items</h4>
             <p class="cat-blue">Small DIY-type repairs and maintenance recommendations provided to increase knowledge of long-term care. While not urgent, addressing these will reduce future repair needs and costs.</p>
 
-            <h4 class="cat-purple">Recommend Further Evaluation</h4>
-            <p class="cat-purple">Items that would benefit from evaluation by a specialist or licensed professional for a more in-depth assessment.</p>
+            <h4 class="cat-purple">Further Evaluation</h4>
+            <p class="cat-purple">In some cases, a defect falls outside the scope of a general home inspection or requires a more extensive level of knowledge to determine the full extent of the issue. These items should be further evaluated by a specialist.</p>
 
             <hr class="rpt-hr" />
             <h3>Important Information & Limitations</h3>
-            <p>AGI Property Inspections performs all inspections in compliance with the <strong>Louisiana Standards of Practice</strong>. We inspect readily accessible, visually observable, permanently installed systems and components of the home. This inspection is not technically exhaustive or quantitative.</p>
+            <p>AGI Property Inspections performs all inspections in compliance with the Louisiana Standards of Practice. We inspect readily accessible, visually observable, permanently installed systems and components of the home. This inspection is not technically exhaustive or quantitative.</p>
             <p>Some comments may go beyond the minimum Standards as a courtesy to provide additional detail. Any item noted for repair, replacement, maintenance, or further evaluation should be reviewed by qualified, licensed tradespeople.</p>
             <p>This inspection cannot predict future conditions or reveal hidden or latent defects. The report reflects the home’s condition only at the time of inspection. Weather, occupancy, or use may reveal issues not present at the time.</p>
-            <p>This report should be considered alongside the <strong>seller’s disclosure, pest inspection report, and contractor evaluations</strong> for a complete picture of the home’s condition.</p>
+            <p>This report should be considered alongside the seller’s disclosure, pest inspection report, and contractor evaluations for a complete picture of the home’s condition.</p>
 
             <hr class="rpt-hr" />
             <h3>Repair Estimates Disclaimer</h3>
             <ul>
-              <li>Estimates are <strong>not formal quotes</strong>.</li>
+              <li>Estimates are not formal quotes.</li>
               <li>They do not account for unique site conditions and may vary depending on contractor, materials, and methods.</li>
               <li>Final pricing must always be obtained through qualified, licensed contractors with on-site evaluation.</li>
               <li>AGI Property Inspections does not guarantee the accuracy of estimates or assume responsibility for work performed by outside contractors.</li>
@@ -451,33 +558,55 @@ export default function InspectionReportPage() {
         .map((s) => {
           const imgSrc = typeof s.image === 'string' ? s.image : '';
           const cost = s.estimatedCosts?.totalEstimatedCost ?? 0;
+          const defectPartsExport = splitDefectText(s.defect_description || "");
+          const exportTitle = s.defectTitle || defectPartsExport.title;
+          const exportParagraphs = Array.isArray(s.defectParagraphs) && s.defectParagraphs.length
+            ? s.defectParagraphs
+            : defectPartsExport.paragraphs.length
+              ? defectPartsExport.paragraphs
+              : defectPartsExport.body && defectPartsExport.body !== exportTitle
+                ? [defectPartsExport.body]
+                : [];
+          const defectBodyHtml = exportParagraphs.length
+            ? exportParagraphs.map((p: string) => `<p class="rpt-defect-body">${escapeHtml(p)}</p>`).join("")
+            : (s.defect_description ? `<p class="rpt-defect-body">${escapeHtml(s.defect_description)}</p>` : "");
+          const selectedColor = s.color || '#dc2626';
+          const selectedRgb = parseColorToRgb(selectedColor);
+          const shadowColor = selectedRgb ? `rgba(${selectedRgb.r}, ${selectedRgb.g}, ${selectedRgb.b}, 0.18)` : 'rgba(214, 54, 54, 0.18)';
+          const highlightBg = selectedRgb ? `rgba(${selectedRgb.r}, ${selectedRgb.g}, ${selectedRgb.b}, 0.12)` : 'rgba(214, 54, 54, 0.12)';
+          const badgeLabel = escapeHtml(colorToImportance(selectedColor));
+          const locationText = escapeHtml(s.location || 'Not specified');
+
           return `
-            <section id="${s.anchorId}" class="rpt-section" style="--selected-color:${s.color || '#dc2626'}">
-              <div class="rpt-section-heading" style="border-bottom-color:${s.color || '#dc2626'}">
-                <h2 class="rpt-section-heading-text" style="color:${s.color || '#dc2626'}">
+            <section id="${s.anchorId}" class="rpt-section" style="--selected-color:${selectedColor};--shadow-color:${shadowColor};--highlight-bg:${highlightBg};">
+              <div class="rpt-section-heading">
+                <h2 class="rpt-section-heading-text">
                   ${escapeHtml(s.heading)}
-                  <span class="rpt-badge" style="background:${s.color || '#dc2626'}">${colorToImportance(s.color || '#dc2626')}</span>
+                  <span class="rpt-badge">${badgeLabel}</span>
                 </h2>
               </div>
               <div class="rpt-content-grid">
-                <div class="rpt-image-section" style="border-color:${s.color || '#dc2626'}">
-                  <h3 class="rpt-section-title" style="color:${s.color || '#dc2626'}">Visual Evidence</h3>
-                  <div class="rpt-image-container" style="border-color:${s.color || '#dc2626'}">
-                    ${imgSrc ? `<img class="rpt-img" src="${imgSrc}" alt="Defect image"/>` : `<div class="rpt-image-placeholder" style="border-color:${s.color || '#dc2626'}"><p>No image available</p></div>`}
+                <div class="rpt-image-section">
+                  <h3 class="rpt-section-title">Visual Evidence</h3>
+                  <div class="rpt-image-container">
+                    ${imgSrc ? `<img class="rpt-img" src="${imgSrc}" alt="Defect image"/>` : `<div class="rpt-image-placeholder"><p>No image available</p></div>`}
                   </div>
-                  <div class="rpt-location-section" style="border-left-color:${s.color || '#dc2626'}; border-top-color:${s.color || '#dc2626'}; border-right-color:${s.color || '#dc2626'}; border-bottom-color:${s.color || '#dc2626'}">
-                    <h4 class="rpt-subsection-title" style="color:${s.color || '#dc2626'}">Location</h4>
-                    <p class="rpt-subsection-content">${escapeHtml(s.location)}</p>
+                  <div class="rpt-location-section">
+                    <h4 class="rpt-subsection-title">Location</h4>
+                    <p class="rpt-subsection-content">${locationText}</p>
                   </div>
                 </div>
-                <div class="rpt-description-section" style="border-color:${s.color || '#dc2626'}">
-                  <h3 class="rpt-section-title" style="color:${s.color || '#dc2626'}">Analysis Details</h3>
-                  <div class="rpt-section bordered" style="border-left-color:${s.color || '#dc2626'}; border-top-color:${s.color || '#dc2626'}; border-right-color:${s.color || '#dc2626'}; border-bottom-color:${s.color || '#dc2626'}">
-                    <h4 class="rpt-subsection-title" style="color:${s.color || '#dc2626'}">Defect</h4>
-                    <p class="rpt-subsection-content">${escapeHtml(s.defect_description)}</p>
+                <div class="rpt-description-section">
+                  <h3 class="rpt-section-title">Analysis Details</h3>
+                  <div class="rpt-detail-card">
+                    <h4 class="rpt-subsection-title">Defect</h4>
+                    <div class="rpt-subsection-content">
+                      ${exportTitle ? `<p class="rpt-defect-title">${escapeHtml(exportTitle)}</p>` : ''}
+                      ${defectBodyHtml}
+                    </div>
                   </div>
-                  <div class="rpt-section bordered" style="border-left-color:${s.color || '#dc2626'}; border-top-color:${s.color || '#dc2626'}; border-right-color:${s.color || '#dc2626'}; border-bottom-color:${s.color || '#dc2626'}">
-                    <h4 class="rpt-subsection-title" style="color:${s.color || '#dc2626'}">Estimated Costs</h4>
+                  <div class="rpt-detail-card">
+                    <h4 class="rpt-subsection-title">Estimated Costs</h4>
                     <div class="rpt-subsection-content">
                       <p>
                         <strong>Materials:</strong> ${escapeHtml(s.estimatedCosts?.materials)} ($${s.estimatedCosts?.materialsCost ?? 0})<br/>
@@ -487,8 +616,8 @@ export default function InspectionReportPage() {
                       </p>
                     </div>
                   </div>
-                  <div class="rpt-cost-highlight" style="border-color:${s.color || '#dc2626'}; background-color:${s.color || '#dc2626'}10;">
-                    <div class="rpt-total-cost" style="color:${s.color || '#dc2626'}">
+                  <div class="rpt-cost-highlight">
+                    <div class="rpt-total-cost">
                       Total Estimated Cost: $${cost}
                     </div>
                   </div>
@@ -505,54 +634,63 @@ export default function InspectionReportPage() {
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>${escapeHtml(title)}</title>
   <style>
-    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f1f5f9;color:#0f172a;margin:0;padding:24px 24px 4px 24px}
-    .rpt-wrap{max-width:1100px;margin:0 auto}
-    .rpt-h1{font-size:28px;margin:0 0 16px 0}
-    .rpt-toc{background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.06);margin:12px 0}
-    .toc-h{font-weight:800;margin:0;padding:14px 16px;border-bottom:1px solid #f1f5f9}
-    .toc-ul{list-style:none;margin:0;padding:8px 12px 12px}
-    .toc-li{display:flex;align-items:center}
-    .toc-li+.toc-li{border-top:1px dashed #e5e7eb}
-    .toc-a{display:grid;grid-template-columns:auto 1fr auto;gap:10px;width:100%;padding:10px 8px;color:#0f172a;text-decoration:none}
-    .toc-a:hover{background:#f8fafc}
-    .toc-text{font-weight:600}
-    .toc-dots{height:1px;background-image:linear-gradient(to right,#d1d5db 33%,rgba(255,255,255,0) 0);background-size:8px 1px;background-repeat:repeat-x}
-    .toc-badge{font-weight:700;background:#3b82f6;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px}
-    .rpt-section{background:#fff;border:1px solid #e7eaf3;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.12);padding:24px;margin:24px 0 0 0}
-    .rpt-section-heading{margin:24px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--selected-color,#dc2626)}
-    .rpt-section-heading-text{font-size:18px;color:var(--selected-color,#dc2626);font-weight:700;margin:0}
-    .rpt-content-grid{display:grid;grid-template-columns:1fr 2fr;gap:16px}
-    .rpt-image-section{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:0}
-    .rpt-description-section{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:24px;margin-bottom:0}
-    .rpt-section-title{font-size:16px;font-weight:700;color:#1f2937;margin-bottom:12px}
-    .rpt-image-container{border-radius:8px;overflow:hidden;min-height:220px;background:#fff;display:flex;align-items:center;justify-content:center}
-    .rpt-img{width:100%;height:auto;display:block;cursor:zoom-in}
-    .rpt-image-placeholder{color:#6b7280;border:2px dashed #cbd5e1;background:#fff;width:100%;height:220px;display:flex;align-items:center;justify-content:center}
-    .rpt-location-section{margin-top:12px;background:#fff;border-left:3px solid var(--selected-color,#dc2626);padding:12px;border-radius:6px}
-    .rpt-section{background:#fff;padding:16px;border-radius:6px;margin-bottom:12px}
-    .rpt-section.bordered{border-left:3px solid var(--selected-color,#dc2626)}
-    .rpt-section:last-child{margin-bottom:0}
-    .rpt-subsection-title{font-size:14px;font-weight:700;margin-bottom:6px;color:#1f2937}
-    .rpt-subsection-content{font-size:13px;color:#374151;line-height:1.5}
-    .rpt-cost-highlight{background:#f8fafc;border:2px solid var(--selected-color,#dc2626);padding:24px;border-radius:12px;margin-top:20px;margin-bottom:16px}
-    .rpt-total-cost{text-align:center;font-weight:700;color:var(--selected-color,#dc2626);padding:16px 0;font-size:18px}
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#eef2f7;color:#0f172a;margin:0;padding:32px 24px 48px}
+    .rpt-wrap{max-width:1200px;margin:0 auto}
+    .rpt-h1{font-size:32px;font-weight:700;margin:0 0 24px 0;color:#111827}
+  .rpt-summary-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 8px 24px rgba(15,23,42,0.12);margin:32px 0 0 0}
+  .rpt-summary-header{padding:24px 28px 16px;border-bottom:1px solid #e2e8f0}
+  .rpt-summary-subtitle{margin:6px 0 0;color:#64748b;font-size:0.95rem}
+  .rpt-summary-table-wrap{overflow-x:auto;padding:0 28px 28px}
+  .rpt-summary-table{width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(15,23,42,0.08)}
+  .rpt-summary-table thead th{text-transform:uppercase;font-size:0.75rem;letter-spacing:0.08em;color:#475569;background:#f8fafc;padding:12px 14px;text-align:left;border-bottom:1px solid #e2e8f0}
+  .rpt-summary-table tbody td{padding:13px 14px;font-size:0.95rem;color:#1f2937;border-bottom:1px solid #e2e8f0}
+  .rpt-summary-table tbody tr:last-child td{border-bottom:none}
+  .rpt-summary-row{cursor:pointer;transition:background 0.2s ease,transform 0.2s ease}
+  .rpt-summary-row:hover{background:#f8fafc}
+  .rpt-summary-row:focus{outline:2px solid #3b82f6;outline-offset:-2px}
+    .rpt-section{background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 8px 32px rgba(15,23,42,0.12);padding:32px;margin:32px 0 0 0}
+    .rpt-section:first-of-type{margin-top:0}
+    .rpt-section-heading{margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid var(--selected-color,#dc2626)}
+    .rpt-section-heading-text{font-size:1.75rem;color:var(--selected-color,#dc2626);font-weight:700;margin:0;letter-spacing:-0.025em}
+    .rpt-badge{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:9999px;font-weight:700;color:#fff;font-size:0.8rem;background:var(--selected-color,#dc2626);box-shadow:0 2px 6px rgba(15,23,42,0.2);margin-left:8px}
+    .rpt-content-grid{display:grid;grid-template-columns:1fr 3fr;gap:32px;align-items:start}
+    .rpt-image-section{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:24px;box-shadow:0 4px 16px rgba(15,23,42,0.12);position:relative;overflow:hidden}
+    .rpt-image-section::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,var(--selected-color,#dc2626),var(--shadow-color,rgba(214,54,54,0.16)),var(--selected-color,#dc2626))}
+    .rpt-section-title{font-size:1.5rem;font-weight:700;color:#1f2937;margin-bottom:24px;letter-spacing:-0.025em}
+    .rpt-image-container{border-radius:16px;overflow:hidden;min-height:300px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(15,23,42,0.15)}
+    .rpt-img{width:100%;height:auto;display:block;cursor:zoom-in;border-radius:12px;transition:transform .3s ease}
+    .rpt-img:hover{transform:scale(1.02)}
+    .rpt-image-placeholder{color:#64748b;border:2px dashed #cbd5e1;background:#fff;width:100%;height:300px;display:flex;align-items:center;justify-content:center;border-radius:16px;font-weight:500}
+    .rpt-location-section{margin-top:24px;padding:16px;background:#fff;border-radius:12px;border-left:3px solid var(--selected-color,#dc2626);box-shadow:0 4px 6px var(--shadow-color,rgba(214,54,54,0.15));transition:all .3s ease}
+    .rpt-location-section:hover{background:#f8fafc;transform:translateX(2px)}
+    .rpt-description-section{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:24px;box-shadow:0 4px 16px rgba(15,23,42,0.12);position:relative;overflow:hidden}
+    .rpt-detail-card{margin-bottom:16px;padding:16px;background:#fff;border-radius:12px;border-left:3px solid var(--selected-color,#dc2626);box-shadow:0 4px 6px var(--shadow-color,rgba(214,54,54,0.15));transition:all .3s ease}
+    .rpt-detail-card:hover{background:#f8fafc;transform:translateX(2px)}
+    .rpt-detail-card:last-child{margin-bottom:0}
+    .rpt-subsection-title{font-size:1rem;font-weight:600;margin-bottom:8px;color:#1f2937;letter-spacing:-0.01em}
+    .rpt-subsection-content{font-size:0.9rem;color:#374151;line-height:1.55}
+    .rpt-defect-title{font-weight:700;font-size:1rem;margin:0 0 8px 0;color:var(--selected-color,#dc2626)}
+    .rpt-defect-body{font-size:0.9rem;color:#374151;line-height:1.6;margin:0 0 10px 0}
+    .rpt-defect-body:last-child{margin-bottom:0}
+    .rpt-cost-highlight{border:2px solid var(--selected-color,#dc2626);border-radius:12px;padding:20px;margin-top:24px;box-shadow:0 6px 18px rgba(15,23,42,0.12)}
+    .rpt-total-cost{text-align:center;font-weight:700;color:var(--selected-color,#dc2626);font-size:1.25rem;letter-spacing:-0.02em}
   /* Lightbox overlay */
   .lb-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:9999}
   .lb-overlay.open{display:flex}
   .lb-img{max-width:95vw;max-height:92vh;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.5);transition:transform 80ms linear;will-change:transform;cursor: zoom-in}
-    .rpt-badge{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:9999px;font-weight:700;color:#fff;font-size:12px}
     .rpt-hr{border:none;border-top:1px solid #e5e7eb;margin:12px 0}
-    .cat-red{color:#dc2626}
-    .cat-orange{color:#f59e0b}
-    .cat-blue{color:#3b82f6}
-    .cat-purple{color:#7c3aed}
-    .rpt-table{width:100%;border-collapse:collapse;margin-top:12px}
-    .rpt-table th,.rpt-table td{border:1px solid #e5e7eb;padding:8px;text-align:left;font-size:14px}
-    .rpt-table thead th{background:#f3f4f6}
-    .rpt-table tfoot td{font-weight:700;background:#f3f4f6}
-    .note{background:#fff8e1;border-left:4px solid #ff9800;padding:8px;margin:8px 0}
+  .cat-red{color:#cc0000}
+  .cat-orange{color:#e69500}
+  .cat-blue{color:#2d6cdf}
+  .cat-purple{color:#800080}
+    .rpt-table{width:100%;border-collapse:collapse;margin-top:16px;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(15,23,42,0.08)}
+    .rpt-table th,.rpt-table td{border:1px solid #e5e7eb;padding:12px 14px;text-align:left;font-size:0.95rem;background:#fff}
+    .rpt-table thead th{background:#f3f4f6;font-size:0.85rem;letter-spacing:0.02em;text-transform:uppercase;color:#475569}
+    .rpt-table tfoot td{font-weight:700;background:#f1f5f9}
     .disclaimer{font-size:12px;color:#6b7280;font-style:italic;border-top:1px solid #e5e7eb;padding-top:8px}
-    @media(max-width:768px){.rpt-content-grid{grid-template-columns:1fr}}
+    .rpt-h2{font-size:1.5rem;font-weight:700;color:#111827;margin:0 0 16px 0}
+    @media(max-width:1024px){.rpt-content-grid{grid-template-columns:1fr;gap:24px}}
+    @media(max-width:640px){body{padding:24px 16px 32px}.rpt-section{padding:24px}.rpt-section-heading-text{font-size:1.5rem}}
     /* Header with image and content below */
     .header-container {width: 100%; margin-bottom: 40px; text-align: center;}
     .image-container {width: 100%; height: auto; margin-bottom: 30px; max-height: 500px; overflow: hidden;}
@@ -579,22 +717,33 @@ export default function InspectionReportPage() {
       </div>
     </div>
     ` : `<h1 class="rpt-h1">Inspection Report</h1>`}
-    ${reportType === 'full' ? `<div class="rpt-toc">
-      <div class="toc-h">Inspection Sections</div>
-      <ul class="toc-ul">
-        ${Object.entries(groupedBySection)
-          .map(([name, data]) => {
-            const txt = escapeHtml(name);
-            return `<li class="toc-li"><a class="toc-a" href="#${data.firstAnchor ?? ''}"><span class="toc-text">${txt}</span><span class="toc-dots"></span><span class="toc-badge">${data.count}</span></a></li>`;
-          })
-          .join('')}
-      </ul>
-    </div>` : ''}
+    ${reportType === 'full' ? `
+    <section class="rpt-summary-card">
+      <div class="rpt-summary-header">
+        <h2 class="rpt-h2">Inspection Sections</h2>
+        <p class="rpt-summary-subtitle">Select a row to jump to the matching defect details.</p>
+      </div>
+      <div class="rpt-summary-table-wrap">
+        <table class="rpt-summary-table">
+          <thead>
+            <tr>
+              <th scope="col">No.</th>
+              <th scope="col">Section</th>
+              <th scope="col">Defect</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${summaryTableRows}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    ` : ''}
     ${reportType === 'full' ? introHtml : ''}
     ${sectionHtml}
     ${reportType === 'full' ? `
     <section class="rpt-section">
-      <h2 class="rpt-h2">Defects Summary & Total Estimated Cost</h2>
+      <h2 class="rpt-h2">Total Estimated Cost</h2>
       <table class="rpt-table">
         <thead>
           <tr>
@@ -698,6 +847,24 @@ export default function InspectionReportPage() {
         Array.prototype.forEach.call(document.querySelectorAll('.rpt-img'), function(el){
           el.addEventListener('click', function(){ openLightbox(el.getAttribute('src')); });
         });
+
+        // Make summary rows scroll to section anchors
+        Array.prototype.forEach.call(document.querySelectorAll('.rpt-summary-row'), function(row){
+          row.addEventListener('click', function(){
+            var targetId = row.getAttribute('data-target');
+            if (!targetId) return;
+            var el = document.getElementById(targetId);
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          });
+          row.addEventListener('keydown', function(e){
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              row.click();
+            }
+          });
+        });
       })();
     </script>
   </div>
@@ -768,7 +935,17 @@ export default function InspectionReportPage() {
       }
       console.log('DEFECTS', defect);
 
-      const def = defect.defect_description.split(".")[0] || "";
+      const rawDescription = defect.defect_description || "";
+      const defectParts = splitDefectText(rawDescription);
+      const summaryTitle = (defect.defect && String(defect.defect).trim())
+        || defectParts.title
+        || rawDescription.split(/\n|\./)[0]?.trim()
+        || "";
+      const bodyParagraphs = defectParts.paragraphs.length
+        ? defectParts.paragraphs
+        : defectParts.body && defectParts.body !== summaryTitle
+          ? [defectParts.body]
+          : [];
 
 
   const numbering = `${currentMain}.${subCounter}`;
@@ -786,8 +963,11 @@ export default function InspectionReportPage() {
         heading2: `${defect.section} - ${defect.subsection}`,
         heading: `${numbering} ${defect.section} - ${defect.subsection}`,
         image: defect.image,
-        defect: def,
-        defect_description: defect.defect_description,
+  defect: summaryTitle,
+  defectTitle: summaryTitle,
+  defectParagraphs: bodyParagraphs,
+  defectBody: defectParts.body,
+  defect_description: rawDescription,
         location: defect.location,
         color: defect.color || defect.selectedArrowColor || '#d63636', // Add individual color for each section
         video: defect.video,
@@ -1112,31 +1292,61 @@ export default function InspectionReportPage() {
                   </div>
                 </div>
               </div>
-              {/* Inspection Sections - TOC */}
-              <nav className={styles.tocContainer} aria-label="Inspection Sections">
-                <div className={styles.tocHeader}>
-                  <h2 className={styles.tocTitle}>Inspection Sections</h2>
+              {/* Defects Summary Table */}
+              <section className={styles.summaryCard} aria-label="Inspection Sections">
+                <div className={styles.summaryHeader}>
+                  <h2 className={styles.summaryTitle}>Inspection Sections</h2>
+                  
                 </div>
-                <ul className={styles.tocList}>
-                  {Object.entries(groupedBySection).map(([sectionName, data]) => {
-                    const sectionIsActive = data.items.some(i => i.anchorId === activeAnchor);
-                    return (
-                      <li key={sectionName} className={`${styles.tocItem} ${sectionIsActive ? styles.tocItemActive : ''}`}>
-                        <button
-                          className={styles.tocLink}
-                          onClick={() => { if (data.firstAnchor) scrollToAnchor(data.firstAnchor); }}
-                          aria-current={sectionIsActive ? 'page' : undefined}
-                          title={`${sectionName} (${data.count})`}
-                        >
-                          <span className={styles.tocText}>{sectionName}</span>
-                          <span className={styles.tocDots} aria-hidden="true" />
-                          <span className={styles.tocCount}>{data.count}</span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </nav>
+                <div className={styles.summaryTableWrapper}>
+                  <table className={styles.summaryTable}>
+                    <thead>
+                      <tr>
+                        <th scope="col">No.</th>
+                        <th scope="col">Section</th>
+                        <th scope="col">Defect</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleSections.map((section) => {
+                        const defectParts = splitDefectText(section.defect_description || section.defect || "");
+                        const summaryDefect =
+                          section.defectTitle ||
+                          defectParts.title ||
+                          (section.defect || "").trim() ||
+                          (defectParts.paragraphs[0] || "");
+                        const sectionLabel = section.heading2 || section.sectionName || '';
+
+                        return (
+                          <tr
+                            key={section.anchorId}
+                            className={styles.summaryRow}
+                            onClick={() => scrollToAnchor(section.anchorId)}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                scrollToAnchor(section.anchorId);
+                              }
+                            }}
+                            role="link"
+                            tabIndex={0}
+                            aria-label={`Jump to defect ${section.numbering}: ${summaryDefect}`}
+                          >
+                            <td>{section.numbering}</td>
+                            <td>{sectionLabel}</td>
+                            <td>{summaryDefect}</td>
+                          </tr>
+                        );
+                      })}
+                      {visibleSections.length === 0 && (
+                        <tr>
+                          <td colSpan={3} className={styles.summaryEmpty}>No defects match this view.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
               <br></br><br></br>
               {filterMode === 'full' && <>
               <div className={styles.sectionHeadingStart}>
@@ -1144,14 +1354,14 @@ export default function InspectionReportPage() {
                   </div>
                       <div className={styles.descriptionSectionStart}>
                         <p>
-                          This is a <strong>visual inspection only</strong>. The scope of this
+                          This is a visual inspection only. The scope of this
                           inspection is to verify the proper performance of the home's major
                           systems. We do not verify proper design.
                         </p>
 
                         <p>
                           The following items reflect the condition of the home and its systems
-                          <strong> at the time and date the inspection was performed</strong>.
+                           at the time and date the inspection was performed.
                           Conditions of an occupied home can change after the inspection (e.g.,
                           leaks may occur beneath sinks, water may run at toilets, walls or flooring
                           may be damaged during moving, appliances may fail, etc.).
@@ -1162,17 +1372,17 @@ export default function InspectionReportPage() {
                           or moved. A 3–4 hour inspection is not equal to "live-in exposure" and
                           will not discover all concerns. Unless otherwise stated, we will only
                           inspect/comment on the following systems:
-                          <em>
+                          
                             Electrical, Heating/Cooling, Appliances, Plumbing, Roof and Attic,
                             Exterior, Grounds, and the Foundation
-                          </em>
+                          
                           .
                         </p>
                           
-                        <p className={styles.note}>
-                          <strong>NOTE:</strong> This inspection is not a warranty or insurance
-                          policy. The limit of liability of AGI Property Inspections and its
-                          employees does not extend beyond the day the inspection was performed.
+                        <p>
+                          This inspection is not a warranty or insurance policy. The limit of
+                          liability of AGI Property Inspections and its employees does not extend
+                          beyond the day the inspection was performed.
                         </p>
                           
                         <p>
@@ -1190,15 +1400,15 @@ export default function InspectionReportPage() {
                           new concerns have occurred and that requested repairs have been completed.
                         </p>
                           
-                        <p className={styles.note}>
-                          <strong>IMPORTANT:</strong> Please contact our office immediately at{" "}
+                        <p>
+                          Please contact our office immediately at{" "}
                           <a href="tel:3379051428">337-905-1428</a> if you suspect or discover any
                           concerns during the final walk-through.
                         </p>
                           
                         <p>
-                          Repair recommendations and cost estimates included in this report are{" "}
-                          <strong>approximate</strong>, generated from typical labor and material
+                          Repair recommendations and cost estimates included in this report are
+                          approximate, generated from typical labor and material
                           rates in our region. They are not formal quotes and must always be
                           verified by licensed contractors. AGI Property Inspections does not
                           guarantee their accuracy.
@@ -1219,9 +1429,9 @@ export default function InspectionReportPage() {
                           
                         <p>
                           This inspection complies with the standards of practice of the{" "}
-                          <strong>
+                          
                             State of Louisiana Home Inspectors Licensing Board
-                          </strong>
+                          
                           . Home inspectors are generalists and recommend further review by licensed
                           specialists when needed.
                         </p>
@@ -1290,7 +1500,7 @@ export default function InspectionReportPage() {
                       <h3>Important Information & Limitations</h3>
                       <p>
                         AGI Property Inspections performs all inspections in compliance with the{" "}
-                        <strong>Louisiana Standards of Practice</strong>. We inspect readily
+                        Louisiana Standards of Practice. We inspect readily
                         accessible, visually observable, permanently installed systems and
                         components of the home. This inspection is not technically exhaustive or
                         quantitative.
@@ -1308,8 +1518,8 @@ export default function InspectionReportPage() {
                       </p>
                       <p>
                         This report should be considered alongside the{" "}
-                        <strong>seller’s disclosure, pest inspection report, and contractor
-                        evaluations</strong> for a complete picture of the home’s condition.
+                        seller’s disclosure, pest inspection report, and contractor
+                        evaluations for a complete picture of the home’s condition.
                       </p>
 
                       <hr />
@@ -1322,7 +1532,7 @@ export default function InspectionReportPage() {
                         AI image review. They are approximate and not formal quotes.
                       </p>
                       <ul>
-                        <li>Estimates are <strong>not formal quotes</strong>.</li>
+                        <li>Estimates are not formal quotes.</li>
                         <li>
                           They do not account for unique site conditions and may vary depending on
                           contractor, materials, and methods.
@@ -1343,12 +1553,12 @@ export default function InspectionReportPage() {
                       <h3>Recommendations</h3>
                       <ul>
                         <li>
-                          <strong>Contractors / Further Evaluation:</strong> Repairs noted should be
+                          Contractors / Further Evaluation: Repairs noted should be
                           performed by licensed professionals. Keep receipts for warranty and
                           documentation purposes.
                         </li>
                         <li>
-                          <strong>Causes of Damage / Methods of Repair:</strong> Suggested repair
+                          Causes of Damage / Methods of Repair: Suggested repair
                           methods are based on inspector experience and opinion. Final determination
                           should always be made by licensed contractors.
                         </li>
@@ -1388,7 +1598,21 @@ export default function InspectionReportPage() {
 
                   <br></br><br></br>
               </>}
-                {visibleSections.map((section) => (
+                {visibleSections.map((section) => {
+                  const defectPartsView = splitDefectText(section.defect_description || section.defect || "");
+                  const defectTitle = section.defectTitle || defectPartsView.title;
+                  const defectParagraphsRaw = Array.isArray(section.defectParagraphs) && section.defectParagraphs.length
+                    ? section.defectParagraphs
+                    : defectPartsView.paragraphs.length
+                      ? defectPartsView.paragraphs
+                      : defectPartsView.body && defectPartsView.body !== defectTitle
+                        ? [defectPartsView.body]
+                        : [];
+                  const defectParagraphs = defectParagraphsRaw
+                    .map((paragraph: string) => paragraph?.trim?.())
+                    .filter((paragraph: string | undefined): paragraph is string => Boolean(paragraph));
+
+                  return (
                 <div 
                   key={section.id} 
                   className={styles.reportSection}
@@ -1480,7 +1704,25 @@ export default function InspectionReportPage() {
                           // '--light-color': getLightColor(section)
                         } as React.CSSProperties }>
                           <h4 className={styles.sectionTitle}>Defect</h4>
-                            <p className={styles.sectionContent}>{section.defect_description}</p>
+                            <div>
+                              {defectTitle ? (
+                                <p
+                                  className={styles.defectHeadline}
+                                  style={{ color: getSelectedColor(section) }}
+                                >
+                                  {defectTitle}
+                                </p>
+                              ) : null}
+                              {defectParagraphs.length > 0 ? (
+                                defectParagraphs.map((paragraph: string, idx: number) => (
+                                  <p key={idx} className={styles.defectBody}>
+                                    {paragraph}
+                                  </p>
+                                ))
+                              ) : !defectTitle && section.defect_description ? (
+                                <p className={styles.defectBody}>{section.defect_description}</p>
+                              ) : null}
+                            </div>
                         </div>
 
                         {/* Estimated Costs */}
@@ -1514,14 +1756,15 @@ export default function InspectionReportPage() {
                     </div>
                   </div>
                 </div>
-            ))}
+                  );
+                })}
 
             {/* Defects Summary Table - Only show in Full Report mode */}
             {filterMode === 'full' && (
               <div className={styles.reportSection} style={{ marginTop: '2rem' }}>
                 <div style={{ marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '2px solid #e5e7eb' }}>
                   <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: '#1f2937', margin: '0', letterSpacing: '-0.025em' }}>
-                    Defects Summary & Total Estimated Cost
+                    Total Estimated Cost
                   </h2>
                 </div>
                 <div>
