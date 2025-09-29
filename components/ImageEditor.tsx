@@ -2482,12 +2482,16 @@ const drawSquare = (
       <div className={styles.buttonContainer}>
         <div className="button-group">
           <div
-            style={{
-              display: "flex",
-              gap: "12px",
-              flexWrap: "wrap",
-              // justifyContent: window.innerWidth <= 600 ? "center" : "flex-start", // center on mobile
-            }}
+           style={{
+    display: "flex",
+    gap: "12px",
+    flexWrap: "wrap",
+    justifyContent:
+      typeof window !== "undefined" && window.innerWidth <= 600
+        ? "center"
+        : "flex-start",
+    width: "100%",
+  }}
           >
             {/* Choose Image */}
            <button
