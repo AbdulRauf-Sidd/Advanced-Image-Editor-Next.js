@@ -721,7 +721,6 @@ export default function InspectionReportPage() {
     <section class="rpt-summary-card">
       <div class="rpt-summary-header">
         <h2 class="rpt-h2">Inspection Sections</h2>
-        <p class="rpt-summary-subtitle">Select a row to jump to the matching defect details.</p>
       </div>
       <div class="rpt-summary-table-wrap">
         <table class="rpt-summary-table">
@@ -1100,11 +1099,38 @@ export default function InspectionReportPage() {
 
   return (
     <div className={styles.userReportContainer}>
+      {/* Back Button - Standalone navigation element */}
+      <div className={styles.backButtonContainer}>
+        <button
+          className={styles.backButton}
+          onClick={() => window.location.href = '/'}
+          title="Back to Inspections List"
+        >
+          ← Back to Inspections
+        </button>
+      </div>
+      
       <main className="py-8">
         {/* Removed top Download PDF button for clarity; use Export PDF in toolbar */}
         <div className={`${styles.reportLayout} ${styles.noSidebar}`}>
           <div ref={reportRef} className={styles.mainContent}>
             <div className={styles.reportSectionsContainer}>
+              {/* Header Image Display - At the very top */}
+              {headerImage && (
+                <div className={styles.headerImageDisplay}>
+                  <img 
+                    src={headerImage} 
+                    alt="Report Header" 
+                    className={styles.headerImage}
+                    onError={(e) => {
+                      console.error('Failed to load header image:', headerImage);
+                      // Hide the header image section if image fails to load
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              
               <div className={styles.reportToolbar} role="tablist" aria-label="Report view">
                 <div className={styles.toolbarGroup}>
                 <button
@@ -1195,32 +1221,6 @@ export default function InspectionReportPage() {
                       >
                         Export PDF Full Report
                       </button>
-                      <div className={styles.toolbarMenuDivider} aria-hidden="true" />
-                      <div className={styles.toolbarMenuHeader}>Select Report Header Image</div>
-                      <div className={styles.headerImageSelector}>
-                        {defects.filter(d => d.image).slice(0, 5).map((defect, index) => (
-                          <div 
-                            key={`header-img-${index}`}
-                            className={`${styles.headerImageOption} ${headerImage === defect.image ? styles.selected : ''}`}
-                            onClick={() => { 
-                              selectHeaderImage(defect.image);
-                              // Don't close menu to allow multiple selections
-                            }}
-                          >
-                            <img src={defect.image} alt={`Option ${index + 1}`} />
-                          </div>
-                        ))}
-                        {headerImage && (
-                          <button
-                            className={`${styles.toolbarMenuItem} ${styles.clearBtn}`}
-                            onClick={() => {
-                              setHeaderImage(null);
-                            }}
-                          >
-                            Clear Selection
-                          </button>
-                        )}
-                      </div>
                     </div>
                   )}
                 </div>
@@ -1292,6 +1292,7 @@ export default function InspectionReportPage() {
                   </div>
                 </div>
               </div>
+              
               {/* Defects Summary Table */}
               <section className={styles.summaryCard} aria-label="Inspection Sections">
                 <div className={styles.summaryHeader}>
