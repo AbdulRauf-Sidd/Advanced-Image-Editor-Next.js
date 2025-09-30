@@ -1105,6 +1105,22 @@ export default function InspectionReportPage() {
         <div className={`${styles.reportLayout} ${styles.noSidebar}`}>
           <div ref={reportRef} className={styles.mainContent}>
             <div className={styles.reportSectionsContainer}>
+              {/* Header Image Display - At the very top */}
+              {headerImage && (
+                <div className={styles.headerImageDisplay}>
+                  <img 
+                    src={headerImage} 
+                    alt="Report Header" 
+                    className={styles.headerImage}
+                    onError={(e) => {
+                      console.error('Failed to load header image:', headerImage);
+                      // Hide the header image section if image fails to load
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              
               <div className={styles.reportToolbar} role="tablist" aria-label="Report view">
                 <div className={styles.toolbarGroup}>
                 <button
@@ -1292,6 +1308,7 @@ export default function InspectionReportPage() {
                   </div>
                 </div>
               </div>
+              
               {/* Defects Summary Table */}
               <section className={styles.summaryCard} aria-label="Inspection Sections">
                 <div className={styles.summaryHeader}>

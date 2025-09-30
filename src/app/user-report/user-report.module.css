@@ -399,6 +399,27 @@
 .toolbarBtn:hover { background: rgba(255,255,255,0.16); }
 .toolbarBtnActive { background: #3b82f6; border-color: #60a5fa; color: #fff; }
 
+/* Header Image Display */
+.headerImageDisplay {
+  width: 100%;
+  max-width: 1200px;
+  margin: 2rem auto;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.headerImage {
+  width: 100%;
+  height: auto;
+  max-height: 500px;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
 .summaryCard {
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -617,6 +638,16 @@
     width: calc(100% - 16px);
     margin: 0 8px;
     text-align: center;
+  }
+  
+  /* Header Image responsive styles */
+  .headerImageDisplay {
+    margin: 1.5rem 0;
+    border-radius: 0.75rem;
+  }
+  
+  .headerImage {
+    max-height: 350px;
     padding: 12px 16px; /* larger tap target */
     font-size: 16px;
     border-radius: 10px;
@@ -1214,6 +1245,16 @@
   .imageSection,
   .descriptionSection {
     padding: 0.5rem;
+  }
+  
+  /* Header Image mobile styles */
+  .headerImageDisplay {
+    margin: 1rem 0;
+    border-radius: 0.5rem;
+  }
+  
+  .headerImage {
+    max-height: 250px;
   }
   
   .contentGrid {

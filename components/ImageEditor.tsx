@@ -275,7 +275,7 @@ async function uploadToR2(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch("/api/upload", {
+  const res = await fetch("/api/r2api", {
     method: "POST",
     body: formData,
   });
