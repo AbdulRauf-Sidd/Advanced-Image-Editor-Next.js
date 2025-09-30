@@ -376,9 +376,9 @@
 .reportToolbar {
   display: flex;
   gap: 8px;
-  background: #334155;
+  background: #222222;
   padding: 10px;
-  border-radius: 10px;
+  border-radius: 6px;
   align-items: center;
   justify-content: space-between;
   box-shadow: 0 6px 16px rgba(0,0,0,0.15);
@@ -388,16 +388,17 @@
 
 .toolbarBtn {
   appearance: none;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.1);
-  color: #e5e7eb;
+  border: 1px solid #333333;
+  background: #333333;
+  color: #FFFFFF;
   font-weight: 600;
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
-.toolbarBtn:hover { background: rgba(255,255,255,0.16); }
-.toolbarBtnActive { background: #3b82f6; border-color: #60a5fa; color: #fff; }
+.toolbarBtn:hover { background: #D00909; color: #FFFFFF; border-color: #D00909; }
+.toolbarBtnActive { background: #D00909; border-color: #D00909; color: #FFFFFF; }
 
 /* Header Image Display */
 .headerImageDisplay {
@@ -507,8 +508,9 @@
   font-style: italic;
   padding: 1.5rem 0;
 }
-.toolbarBtnDanger { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); }
-.toolbarBtnDanger.toolbarBtnActive { background: #3b82f6; border-color: #60a5fa; color: #fff; }
+.toolbarBtnDanger { background: #333333; border-color: #333333; color: #FFFFFF; }
+.toolbarBtnDanger:hover { background: #D00909; border-color: #D00909; color: #FFFFFF; }
+.toolbarBtnDanger.toolbarBtnActive { background: #D00909; border-color: #D00909; color: #FFFFFF; }
 
 /* Toolbar dropdown (Report Viewing Options) */
 .toolbarMenuContainer { position: relative; display: none; }
@@ -517,9 +519,9 @@
   position: absolute;
   right: 0;
   top: calc(100% + 6px);
-  background: #f8fafc; /* light gray to stand out */
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  background: #333333;
+  border: 1px solid #222222;
+  border-radius: 6px;
   box-shadow: 0 12px 28px rgba(0,0,0,0.14);
   padding: 8px;
   min-width: 220px;
@@ -531,12 +533,13 @@
   text-align: left;
   background: transparent;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 10px 12px;
   font-weight: 700;
-  color: #0f172a;
+  color: #FFFFFF;
+  transition: all 0.15s ease;
 }
-.toolbarMenuItem:hover { background: #e2e8f0; }
+.toolbarMenuItem:hover { background: #D00909; color: #FFFFFF; }
 .toolbarMenuDivider { height: 1px; background: #e5e7eb; margin: 8px 4px; border-radius: 1px; }
 
 /* HTML Dropdown Styles */
@@ -549,9 +552,9 @@
   position: absolute;
   right: 0;
   top: calc(100% + 6px);
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  background: #333333;
+  border: 1px solid #333333;
+  border-radius: 6px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   padding: 4px;
   min-width: 140px;
@@ -567,15 +570,15 @@
   border-radius: 6px;
   padding: 8px 12px;
   font-weight: 600;
-  color: #1f2937;
+  color: #FFFFFF;
   font-size: 14px;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 .htmlDropdownItem:hover {
-  background: #f3f4f6;
-  color: #111827;
+  background: #000000;
+  color: #FFFFFF;
 }
 
 /* PDF Dropdown Styles */
@@ -588,9 +591,9 @@
   position: absolute;
   right: 0;
   top: calc(100% + 6px);
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  background: #333333;
+  border: 1px solid #333333;
+  border-radius: 6px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   padding: 4px;
   min-width: 140px;
@@ -606,15 +609,15 @@
   border-radius: 6px;
   padding: 8px 12px;
   font-weight: 600;
-  color: #1f2937;
+  color: #FFFFFF;
   font-size: 14px;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 .pdfDropdownItem:hover {
-  background: #f3f4f6;
-  color: #111827;
+  background: #000000;
+  color: #FFFFFF;
 }
 
 /* Mobile: show dropdown, hide individual buttons */
@@ -1396,4 +1399,32 @@
 
 .clearBtn:hover {
   background-color: #e5e7eb;
+}
+
+/* Back Button - Standalone navigation element */
+.backButtonContainer {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 100;
+}
+
+.backButton {
+  appearance: none;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  color: #374151;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 8px 16px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
+}
+
+.backButton:hover {
+  background: #F9FAFB;
+  border-color: #D1D5DB;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
