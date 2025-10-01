@@ -1621,17 +1621,16 @@ export default function InspectionReportPage() {
                     .filter((paragraph: string | undefined): paragraph is string => Boolean(paragraph));
 
                   return (
-                <div 
-                  key={section.id} 
-                  className={styles.reportSection}
-                  id={section.anchorId}
-                  style={{
-                    '--selected-color': getSelectedColor(section),
-                    '--light-color': getLightColor(section),
-                  } as React.CSSProperties}
-                >
-                  {/* Heading */}
-                  <div className={styles.sectionHeading}>
+                <div key={section.id}>
+                  {/* Heading outside the section */}
+                  <div 
+                    className={styles.sectionHeading} 
+                    id={section.anchorId}
+                    style={{
+                      '--selected-color': getSelectedColor(section),
+                      '--light-color': getLightColor(section),
+                    } as React.CSSProperties}
+                  >
                     <h2 className={styles.sectionHeadingText}>
                       {section.heading}
                       <span className={styles.importanceBadge} style={{ background: getSelectedColor(section) }}>
@@ -1640,7 +1639,14 @@ export default function InspectionReportPage() {
                     </h2>
                   </div>
 
-                  <div className={styles.contentGrid}>
+                  <div 
+                    className={styles.reportSection}
+                    style={{
+                      '--selected-color': getSelectedColor(section),
+                      '--light-color': getLightColor(section),
+                    } as React.CSSProperties}
+                  >
+                    <div className={styles.contentGrid}>
                     {/* Image */}
                     <div className={styles.imageSection}>
                       <h3 className={styles.imageTitle}>Visual Evidence</h3>
@@ -1763,6 +1769,7 @@ export default function InspectionReportPage() {
                       </div>
                     </div>
                   </div>
+                </div>
                 </div>
                   );
                 })}

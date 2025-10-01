@@ -528,7 +528,7 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
     /* Prevent splitting a single defect across pages */
     .report-section { 
       /* Further increased space between defects for optimal separation while keeping 2 per page */
-      margin: 33px 0;
+      margin: 24px 0;
       page-break-inside: avoid; 
       break-inside: avoid; 
       -webkit-region-break-inside: avoid;
