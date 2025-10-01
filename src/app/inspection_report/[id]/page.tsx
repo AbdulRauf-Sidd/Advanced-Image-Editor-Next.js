@@ -1128,6 +1128,13 @@ export default function InspectionReportPage() {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
                   />
+                  {/* Header Text - Below the image */}
+                  <div className={styles.headerTextContainer}>
+                    {headerText && (
+                      <h1 className={styles.inspectionTitle}>{headerText}</h1>
+                    )}
+                    <h2 className={styles.reportTitle}>HOME INSPECTION REPORT</h2>
+                  </div>
                 </div>
               )}
               
