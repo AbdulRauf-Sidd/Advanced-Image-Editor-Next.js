@@ -632,7 +632,7 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
       <div class="title">${escapeHtml(title)}</div>
       <div class="meta">${escapeHtml(subtitle)}${company ? " • " + escapeHtml(company) : ""} • ${escapeHtml(date)}</div>
     </div>
-    ${logoUrl ? `<img src="${escapeHtml(logoUrl)}" alt="Logo" class="logo" />` : ""}
+    ${logoUrl ? `<img src="${escapeHtml(inlineLogo)}" alt="Logo" class="logo" />` : ""}
   </header>
   `}
   
