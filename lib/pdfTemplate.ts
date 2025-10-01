@@ -203,7 +203,7 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
   let subCounter = 0;
 
   const sectionsHtml = sorted
-    .map((d) => {
+    .map((d, index) => {
       if (d.section !== lastSection) {
         currentMain += 1;
         subCounter = 1;
@@ -229,11 +229,14 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
       // Determine the importance label based on nearest color category
       const importanceLabel = colorToImportance(selectedColor);
 
+      // Add page break after every 2 sections (except the last one)
+      const pageBreak = (index + 1) % 2 === 0 && index < sorted.length - 1 ? '<div class="page-break"></div>' : '';
+
       return `
         <section class="report-section" style="--selected-color: ${selectedColor};">
           <div class="section-heading">
             <h2 class="section-heading-text">
-              ${escapeHtml(number)} ${escapeHtml(d.section)} - ${escapeHtml(d.subsection)}
+              ${escapeHtml(number)} ${escapeHtml(d.section)}
               <span class="importance-badge" style="background-color: ${selectedColor};">${importanceLabel}</span>
             </h2>
           </div>
@@ -279,6 +282,7 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
             </div>
           </div>
         </section>
+        ${pageBreak}
       `;
     })
     .join("\n");
@@ -495,24 +499,24 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
   .cover--section1 ul { margin: 10px 0 14px 18px; }
   .cover--section1 hr { margin: 14px 0; }
 
-    .section-heading { margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--selected-color, #d63636); }
-    .section-heading-text { font-size: 18px; color: var(--selected-color, #d63636); font-weight: 700; }
+    .section-heading { margin: 16px 0 8px; padding-bottom: 6px; border-bottom: 2px solid var(--selected-color, #d63636); }
+    .section-heading-text { font-size: 16px; color: var(--selected-color, #d63636); font-weight: 700; }
 
-    .content-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
-    .image-section, .description-section { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; }
-    .image-title, .description-title { font-size: 16px; font-weight: 700; color: #1f2937; margin-bottom: 12px; }
-    .image-container { border-radius: 8px; overflow: hidden; min-height: 220px; background: #fff; display: flex; align-items: center; justify-content: center; }
+    .content-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; }
+    .image-section, .description-section { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; }
+    .image-title, .description-title { font-size: 14px; font-weight: 700; color: #1f2937; margin-bottom: 8px; }
+    .image-container { border-radius: 6px; overflow: hidden; min-height: 160px; background: #fff; display: flex; align-items: center; justify-content: center; }
     .property-image { width: 100%; height: auto; display: block; }
     .image-placeholder { color: #6b7280; border: 2px dashed #cbd5e1; background: #fff; width: 100%; height: 220px; display: flex; align-items: center; justify-content: center; }
 
-    .location-section { margin-top: 12px; background: #fff; border-left: 3px solid var(--selected-color, #d63636); padding: 12px; border-radius: 6px; }
-    .section { background: #fff; border-left: 3px solid var(--selected-color, #d63636); padding: 12px; border-radius: 6px; margin-bottom: 10px; }
+    .location-section { margin-top: 8px; background: #fff; border-left: 3px solid var(--selected-color, #d63636); padding: 8px; border-radius: 4px; }
+    .section { background: #fff; border-left: 3px solid var(--selected-color, #d63636); padding: 8px; border-radius: 4px; margin-bottom: 8px; }
     .section-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: #1f2937; }
     .section-content { font-size: 13px; color: #374151; line-height: 1.5; }
   .defect-title { font-weight: 700; font-size: 14px; margin: 0 0 6px 0; color: var(--selected-color, #d63636); }
   .defect-body { font-size: 13px; color: #374151; line-height: 1.6; margin: 0 0 8px 0; }
 
-    .cost-highlight { background: #f8fafc; border: 1px solid var(--selected-color, #d63636); padding: 10px; border-radius: 8px; margin-top: 10px; }
+    .cost-highlight { background: #f8fafc; border: 1px solid var(--selected-color, #d63636); padding: 8px; border-radius: 6px; margin-top: 8px; }
     .total-cost { text-align: center; font-weight: 700; color: var(--selected-color, #d63636); }
 
     .table { width: 100%; border-collapse: collapse; }
@@ -523,8 +527,8 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
 
     /* Prevent splitting a single defect across pages */
     .report-section { 
-      /* Increase space between defects */
-      margin: 32px 0;
+      /* Further increased space between defects for optimal separation while keeping 2 per page */
+      margin: 33px 0;
       page-break-inside: avoid; 
       break-inside: avoid; 
       -webkit-region-break-inside: avoid;
