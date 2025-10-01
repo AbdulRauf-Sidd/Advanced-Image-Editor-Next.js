@@ -343,6 +343,31 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
     return acc;
   }, { html: "", current: startNumber - 1, last: null, sub: 0 }).html;
 
+  // Ensure a default logo if not provided
+  const effectiveLogo = logoUrl || '/AGI_Logo.png';
+  // Attempt to inline the logo if it's a local/public asset so Puppeteer can load it without an HTTP request
+  let inlineLogo = effectiveLogo;
+  try {
+    if (!/^https?:/i.test(effectiveLogo) && !effectiveLogo.startsWith('data:')) {
+      // Build absolute path relative to project root's public folder when leading slash
+      const path = effectiveLogo.startsWith('/')
+        ? `${process.cwd()}/public${effectiveLogo}`
+        : `${process.cwd()}/${effectiveLogo}`;
+      // Lazy import fs to avoid bundling issues
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const fs = require('fs');
+      if (fs.existsSync(path)) {
+        const ext = path.split('.').pop() || '';
+        const mimeExt = ext.toLowerCase();
+        const mime = mimeExt === 'svg' ? 'image/svg+xml' : mimeExt === 'png' ? 'image/png' : 'image/jpeg';
+        const b64 = fs.readFileSync(path).toString('base64');
+        inlineLogo = `data:${mime};base64,${b64}`;
+      }
+    }
+  } catch (e) {
+    // Fallback silently; if inlining fails we'll leave the original path
+  }
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -356,29 +381,40 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
     h1, h2, h3, h4 { margin: 0 0 8px 0; }
     p { margin: 0 0 8px 0; }
     
-    /* Header with image and content below */
+    /* Header with image and added branding band */
     .header-container { 
       width: 100%;
-      margin-bottom: 40px;
+      margin: 0 0 40px 0;
       text-align: center;
     }
-    
-    .logo-container {
-      text-align: left;
-      margin-bottom: 20px;
-      padding: 20px 0;
+    .branding-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 28px 48px 12px 0px; /* reduced left padding to shift logo left */
+      position: relative;
+      min-height: 80px;
     }
-    
-    .logo { 
-      height: 60px;
+    .branding-bar .logo { height: 70px; }
+    .contact-block {
+      text-align: right;
+      font-size: 14px;
+      line-height: 1.4;
+      font-weight: 400;
+      color: #333;
     }
+    .contact-block .company { font-size:16px; font-weight:600; letter-spacing:.5px; }
+    .contact-block a { color:#333; text-decoration:none; }
+    .contact-block a:hover { text-decoration:underline; }
     
     .image-container {
       width: 100%;
       height: auto;
-      margin-bottom: 30px;
+      margin: 12px auto 30px auto; /* pushed down below branding */
+      max-width: 750px;
       max-height: 500px;
       overflow: hidden;
+      border-radius: 6px;
     }
     
     .header-image {
@@ -569,14 +605,20 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
 </head>
 <body>
   ${meta.headerImageUrl ? `
-  <!-- New header with image -->
+  <!-- Branded header with logo + contact info and image -->
   <div class="header-container">
-    ${logoUrl ? `<div class="logo-container"><img src="${escapeHtml(logoUrl)}" alt="Logo" class="logo" /></div>` : ""}
+    <div class="branding-bar">
+  <div class="logo-wrap"><img src="${escapeHtml(inlineLogo)}" alt="Logo" class="logo" /></div>
+      <div class="contact-block">
+        <div class="company">AGI: PROPERTY INSPECTIONS</div>
+        <div>3379051428</div>
+        <div><a href="mailto:info@agi-swla.com">info@agi-swla.com</a></div>
+        <div><a href="https://www.agi-swla.com" target="_blank">https://www.agi-swla.com</a></div>
+      </div>
+    </div>
     <div class="image-container">
       <img src="${escapeHtml(meta.headerImageUrl)}" alt="Property Image" class="header-image" />
     </div>
-    
-    <!-- Header text appears below the image -->
     <div class="report-header-content">
       ${meta.headerText ? `<h1 class="header-text">${escapeHtml(meta.headerText)}</h1>` : ''}
       <h2 class="report-title">HOME INSPECTION REPORT</h2>
