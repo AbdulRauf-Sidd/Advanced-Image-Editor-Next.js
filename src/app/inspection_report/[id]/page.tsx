@@ -975,7 +975,13 @@ export default function InspectionReportPage() {
             var label = sec.getAttribute('data-section-label') || '';
             var title = sec.getAttribute('data-defect-title') || '';
             var summary = sec.getAttribute('data-defect-summary') || '';
-            rows += '<tr class="rpt-summary-row" data-target="'+sec.id+'" tabindex="0" role="link" aria-label="Jump to '+num+': '+title+'">'+
+            var colorHex = {
+              'red': '#d32f2f',
+              'orange': '#f57c00',
+              'blue': '#1976d2',
+              'purple': '#6a1b9a'
+            }[cat] || '#d32f2f';
+            rows += '<tr class="rpt-summary-row" data-target="'+sec.id+'" tabindex="0" role="link" aria-label="Jump to '+num+': '+title+'" style="border-left:6px solid '+colorHex+';">'+
               '<td>'+num+'</td><td>'+label+'</td><td>'+title+'</td>' + (includeSummary ? '<td>'+summary+'</td>' : '') + '</tr>';
           });
           summaryBody.innerHTML = rows || '<tr><td colspan="'+(includeSummary?4:3)+'">No defects match this view.</td></tr>';
