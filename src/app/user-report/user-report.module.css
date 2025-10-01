@@ -517,6 +517,21 @@
   background: #e0f2fe;
 }
 
+/* Defect category coloring for Inspection Sections table rows */
+.summaryRowCatRed { border-left: 6px solid #dc2626; }
+.summaryRowCatOrange { border-left: 6px solid #f59e0b; }
+.summaryRowCatBlue { border-left: 6px solid #3b82f6; }
+.summaryRowCatPurple { border-left: 6px solid #7c3aed; }
+.summaryRowCatRed td:first-child,
+.summaryRowCatOrange td:first-child,
+.summaryRowCatBlue td:first-child,
+.summaryRowCatPurple td:first-child { padding-left: 0.75rem; }
+
+.summaryRowCatRed:hover { background: rgba(220,38,38,0.06); }
+.summaryRowCatOrange:hover { background: rgba(245,158,11,0.08); }
+.summaryRowCatBlue:hover { background: rgba(59,130,246,0.08); }
+.summaryRowCatPurple:hover { background: rgba(124,58,237,0.08); }
+
 .summaryEmpty {
   text-align: center;
   color: #94a3b8;

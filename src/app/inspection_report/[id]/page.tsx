@@ -473,13 +473,16 @@ export default function InspectionReportPage() {
       const summaryTableRows = sectionsToExport
         .map((s) => {
           const defectParts = splitDefectText(s.defect_description || s.defect || "");
-          const summaryDefect =
-            s.defectTitle ||
-            defectParts.title ||
-            (s.defect || "").trim() ||
-            (defectParts.paragraphs[0] || "");
+          const summaryDefect = s.defectTitle || defectParts.title || (s.defect || "").trim() || (defectParts.paragraphs[0] || "");
+          const cat = nearestCategory(s.color) || 'red';
+          const catClass = {
+            red: 'rpt-row-cat-red',
+            orange: 'rpt-row-cat-orange',
+            blue: 'rpt-row-cat-blue',
+            purple: 'rpt-row-cat-purple'
+          }[cat];
           return `
-            <tr class="rpt-summary-row" data-target="${escapeHtml(s.anchorId || '')}" tabindex="0" role="link" aria-label="Jump to ${escapeHtml(s.numbering ?? '')}: ${escapeHtml(summaryDefect)}">
+            <tr class="rpt-summary-row ${catClass}" data-target="${escapeHtml(s.anchorId || '')}" tabindex="0" role="link" aria-label="Jump to ${escapeHtml(s.numbering ?? '')}: ${escapeHtml(summaryDefect)}">
               <td>${escapeHtml(s.numbering ?? '')}</td>
               <td>${escapeHtml(s.heading2 ?? s.sectionName ?? '')}</td>
               <td>${escapeHtml(summaryDefect)}</td>
@@ -488,9 +491,33 @@ export default function InspectionReportPage() {
         })
         .join('');
 
-      // Intro sections (Section 1 & 2) content
+      // For summary HTML export only: build inspection sections table rows with defect title and separate defects summary
+      const summaryInspectionTableRows = reportType === 'summary'
+        ? sectionsToExport.map((s) => {
+            const defectParts = splitDefectText(s.defect_description || s.defect || "");
+            const defectTitle = (s.defectTitle || defectParts.title || (s.defect || "").trim() || '').trim();
+            const defectSummary = (defectParts.paragraphs && defectParts.paragraphs.length > 0 ? defectParts.paragraphs[0] : '').trim();
+            const cat = nearestCategory(s.color) || 'red';
+            const catClass = {
+              red: 'rpt-row-cat-red',
+              orange: 'rpt-row-cat-orange',
+              blue: 'rpt-row-cat-blue',
+              purple: 'rpt-row-cat-purple'
+            }[cat];
+            return `
+              <tr class="rpt-summary-row ${catClass}" data-target="${escapeHtml(s.anchorId || '')}" tabindex="0" role="link" aria-label="Jump to ${escapeHtml(s.numbering ?? '')}: ${escapeHtml(defectTitle)}">
+                <td>${escapeHtml(s.numbering ?? '')}</td>
+                <td>${escapeHtml(s.heading2 ?? s.sectionName ?? '')}</td>
+                <td>${escapeHtml(defectTitle)}</td>
+                <td>${escapeHtml(defectSummary)}</td>
+              </tr>
+            `;
+          }).join('')
+        : '';
+
+      // Intro sections (Section 1 & 2) content (tagged with data-intro for mode filtering in exported HTML)
       const introHtml = `
-        <section class="rpt-section">
+        <section class="rpt-section intro-section" data-intro="1">
           <h2 class="rpt-h2">Section 1 - Inspection Scope, Client Responsibilities, and Repair Estimates</h2>
           <hr style="margin: 8px 0 16px 0; border: none; height: 1px; background-color: #000000;">
           <div class="rpt-card">
@@ -509,7 +536,7 @@ export default function InspectionReportPage() {
           </div>
         </section>
 
-        <section class="rpt-section">
+  <section class="rpt-section intro-section" data-intro="1">
           <h2 class="rpt-h2">Section 2 - Inspection Scope & Limitations</h2>
           <hr style="margin: 8px 0 16px 0; border: none; height: 1px; background-color: #000000;">
           <div class="rpt-card">
@@ -577,8 +604,14 @@ export default function InspectionReportPage() {
           const badgeLabel = escapeHtml(colorToImportance(selectedColor));
           const locationText = escapeHtml(s.location || 'Not specified');
 
+          const category = nearestCategory(selectedColor) || 'red';
+          const defectParts = splitDefectText(s.defect_description || s.defect || "");
+          const summaryTitle = (s.defectTitle || defectParts.title || (s.defect || "").trim() || '').trim();
+          const summaryBody = (defectParts.paragraphs && defectParts.paragraphs.length > 0
+            ? defectParts.paragraphs[0]
+            : (defectParts.body && defectParts.body !== summaryTitle ? defectParts.body : '')).trim();
           return `
-            <section id="${s.anchorId}" class="rpt-section" style="--selected-color:${selectedColor};--shadow-color:${shadowColor};--highlight-bg:${highlightBg};">
+            <section id="${s.anchorId}" class="rpt-section" data-cat="${category}" data-numbering="${escapeHtml(s.numbering)}" data-section-label="${escapeHtml(s.heading2 || s.sectionName || '')}" data-defect-title="${escapeHtml(summaryTitle)}" data-defect-summary="${escapeHtml(summaryBody)}" style="--selected-color:${selectedColor};--shadow-color:${shadowColor};--highlight-bg:${highlightBg};">
               <div class="rpt-section-heading">
                 <h2 class="rpt-section-heading-text">
                   ${escapeHtml(s.heading)}
@@ -648,6 +681,14 @@ export default function InspectionReportPage() {
   .rpt-summary-row{cursor:pointer;transition:background 0.2s ease,transform 0.2s ease}
   .rpt-summary-row:hover{background:#f8fafc}
   .rpt-summary-row:focus{outline:2px solid #3b82f6;outline-offset:-2px}
+  .rpt-row-cat-red{border-left:6px solid #dc2626}
+  .rpt-row-cat-orange{border-left:6px solid #f59e0b}
+  .rpt-row-cat-blue{border-left:6px solid #3b82f6}
+  .rpt-row-cat-purple{border-left:6px solid #7c3aed}
+  .rpt-row-cat-red:hover{background:rgba(220,38,38,0.06)}
+  .rpt-row-cat-orange:hover{background:rgba(245,158,11,0.08)}
+  .rpt-row-cat-blue:hover{background:rgba(59,130,246,0.08)}
+  .rpt-row-cat-purple:hover{background:rgba(124,58,237,0.08)}
     .rpt-section{background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 8px 32px rgba(15,23,42,0.12);padding:32px;margin:32px 0 0 0}
     .rpt-section:first-of-type{margin-top:0}
     .rpt-section-heading{margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid var(--selected-color,#dc2626)}
@@ -700,6 +741,22 @@ export default function InspectionReportPage() {
     .report-title {font-size: 28px; font-weight: 600; color: #444; margin: 0 0 10px 0; text-transform: uppercase;}
     .meta-info {font-size: 16px; color: #666; margin-bottom: 10px;}
     .logo {height: 60px; margin-bottom: 20px;}
+    /* Mobile dropdown for export toolbar (only affects if elements present in full export) */
+    .export-toolbar{position:relative}
+    .export-toolbar-toggle{display:none}
+    @media(max-width:640px){
+      .export-toolbar{flex-wrap:wrap}
+      .export-toolbar .mode-btn{display:none}
+      .export-toolbar-toggle{display:block;width:100%;background:#333333;color:#FFFFFF;font-weight:700;padding:12px 14px;border:1px solid #222222;border-radius:6px;text-align:center;cursor:pointer;font-family:Inter,system-ui,sans-serif;font-size:0.95rem}
+  .export-toolbar-dropdown{position:absolute;left:50%;top:calc(100% + 6px);transform:translateX(-50%);background:#333333;border:1px solid #222222;border-radius:6px;box-shadow:0 12px 28px rgba(0,0,0,0.14);padding:8px;min-width:220px;z-index:70;display:none}
+      .export-toolbar-dropdown.open{display:block}
+      .export-toolbar-dropdown .dropdown-item{display:block;width:100%;text-align:left;background:transparent;border:none;border-radius:6px;padding:10px 12px;font-weight:700;color:#FFFFFF;cursor:pointer;transition:all .15s ease;font-size:0.95rem}
+      .export-toolbar-dropdown .dropdown-item:hover{background:#D00909;color:#FFFFFF}
+      .export-toolbar-dropdown .dropdown-item.active{background:#D00909;color:#FFFFFF}
+    }
+    @media(min-width:641px){
+      .export-toolbar-dropdown,.export-toolbar-toggle{display:none !important}
+    }
   </style>
 </head>
 <body>
@@ -718,6 +775,17 @@ export default function InspectionReportPage() {
     </div>
     ` : `<h1 class="rpt-h1">Inspection Report</h1>`}
     ${reportType === 'full' ? `
+    <div class="export-toolbar" style="max-width:1200px;margin:24px auto 0 auto;display:flex;gap:8px;align-items:center;background:#222;padding:10px;border-radius:6px;font-family:Inter,system-ui,sans-serif;">
+      <button data-mode="full" class="mode-btn" style="background:#D00909;border:1px solid #D00909;color:#fff;font-weight:600;padding:8px 14px;border-radius:6px;cursor:pointer;">Full Report</button>
+      <button data-mode="summary" class="mode-btn" style="background:#333;border:1px solid #333;color:#fff;font-weight:600;padding:8px 14px;border-radius:6px;cursor:pointer;">Summary</button>
+      <button data-mode="hazard" class="mode-btn" style="background:#333;border:1px solid #333;color:#fff;font-weight:600;padding:8px 14px;border-radius:6px;cursor:pointer;">Immediate Attention</button>
+      <button type="button" class="export-toolbar-toggle" aria-haspopup="true" aria-expanded="false">Report Viewing Options ▾</button>
+      <div class="export-toolbar-dropdown" role="menu" aria-label="Report Viewing Options">
+        <button class="dropdown-item active" data-mode="full" role="menuitem">Full Report</button>
+        <button class="dropdown-item" data-mode="summary" role="menuitem">Summary</button>
+        <button class="dropdown-item" data-mode="hazard" role="menuitem">Immediate Attention</button>
+      </div>
+    </div>
     <section class="rpt-summary-card">
       <div class="rpt-summary-header">
         <h2 class="rpt-h2">Inspection Sections</h2>
@@ -733,6 +801,28 @@ export default function InspectionReportPage() {
           </thead>
           <tbody>
             ${summaryTableRows}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    ` : ''}
+    ${reportType === 'summary' ? `
+    <section class="rpt-summary-card">
+      <div class="rpt-summary-header">
+        <h2 class="rpt-h2">Inspection Sections</h2>
+      </div>
+      <div class="rpt-summary-table-wrap">
+        <table class="rpt-summary-table">
+          <thead>
+            <tr>
+              <th scope="col">No.</th>
+              <th scope="col">Section</th>
+              <th scope="col">Defect</th>
+              <th scope="col">Defects summary</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${summaryInspectionTableRows}
           </tbody>
         </table>
       </div>
@@ -864,6 +954,93 @@ export default function InspectionReportPage() {
             }
           });
         });
+        // ---- Mode Switching Logic ----
+        var toolbar = document.querySelector('.export-toolbar');
+        var summaryCard = document.querySelector('.rpt-summary-card');
+        var summaryTable = summaryCard ? summaryCard.querySelector('table.rpt-summary-table') : null;
+        var summaryHead = summaryTable ? summaryTable.querySelector('thead tr') : null;
+        var summaryBody = summaryTable ? summaryTable.querySelector('tbody') : null;
+        var introSections = document.querySelectorAll('.rpt-section.intro-section');
+        var defectSections = Array.prototype.filter.call(document.querySelectorAll('.rpt-section'), function(sec){ return !sec.classList.contains('intro-section'); });
+        var currentMode = 'full';
+
+        function rebuildSummary(filterFn, includeSummary){
+          if(!summaryHead || !summaryBody) return;
+          summaryHead.innerHTML = '<th scope="col">No.</th><th scope="col">Section</th><th scope="col">Defect</th>' + (includeSummary ? '<th scope="col">Defects summary</th>' : '');
+          var rows = '';
+          defectSections.forEach(function(sec){
+            var cat = sec.getAttribute('data-cat');
+            if(filterFn && !filterFn(cat)) return;
+            var num = sec.getAttribute('data-numbering') || '';
+            var label = sec.getAttribute('data-section-label') || '';
+            var title = sec.getAttribute('data-defect-title') || '';
+            var summary = sec.getAttribute('data-defect-summary') || '';
+            rows += '<tr class="rpt-summary-row" data-target="'+sec.id+'" tabindex="0" role="link" aria-label="Jump to '+num+': '+title+'">'+
+              '<td>'+num+'</td><td>'+label+'</td><td>'+title+'</td>' + (includeSummary ? '<td>'+summary+'</td>' : '') + '</tr>';
+          });
+          summaryBody.innerHTML = rows || '<tr><td colspan="'+(includeSummary?4:3)+'">No defects match this view.</td></tr>';
+          Array.prototype.forEach.call(summaryBody.querySelectorAll('.rpt-summary-row'), function(row){
+            row.addEventListener('click', function(){
+              var targetId = row.getAttribute('data-target');
+              if(!targetId) return; var el = document.getElementById(targetId); if(el){ el.scrollIntoView({behavior:'smooth',block:'start'});} });
+            row.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); row.click(); }});
+          });
+        }
+
+        function setMode(mode){
+          if(mode===currentMode) return; currentMode = mode;
+          // Visual state for desktop buttons & dropdown items
+          Array.prototype.forEach.call(toolbar.querySelectorAll('.mode-btn, .export-toolbar-dropdown .dropdown-item'), function(btn){
+            if(btn.getAttribute('data-mode')===mode){
+              btn.classList.add('active');
+              btn.style.background='#D00909';
+              btn.style.borderColor='#D00909';
+              btn.style.cursor='default';
+            } else {
+              btn.classList.remove('active');
+              btn.style.background='#333';
+              btn.style.borderColor='#333';
+              btn.style.cursor='pointer';
+            }
+          });
+          // Intro sections
+            introSections.forEach(function(sec){ sec.style.display = (mode==='full') ? '' : 'none'; });
+          // Defect filtering
+          defectSections.forEach(function(sec){
+            var cat = sec.getAttribute('data-cat');
+            if(mode==='summary'){ sec.style.display = (cat==='blue') ? 'none' : ''; }
+            else if(mode==='hazard'){ sec.style.display = (cat==='red') ? '' : 'none'; }
+            else { sec.style.display = ''; }
+          });
+          if(mode==='summary') rebuildSummary(function(cat){ return cat!=='blue'; }, true);
+          else if(mode==='hazard') rebuildSummary(function(cat){ return cat==='red'; }, false);
+          else rebuildSummary(null, false);
+          window.scrollTo({ top:0, behavior:'smooth' });
+        }
+        Array.prototype.forEach.call(toolbar.querySelectorAll('.mode-btn'), function(btn){ btn.addEventListener('click', function(){ setMode(btn.getAttribute('data-mode')); }); });
+        // Mobile dropdown toggle & items
+        var toggleBtn = toolbar ? toolbar.querySelector('.export-toolbar-toggle') : null;
+        var dropdown = toolbar ? toolbar.querySelector('.export-toolbar-dropdown') : null;
+        if(toggleBtn && dropdown){
+          toggleBtn.addEventListener('click', function(e){
+            e.stopPropagation();
+            var open = dropdown.classList.toggle('open');
+            toggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+          });
+          document.addEventListener('click', function(e){
+            if(!toolbar.contains(e.target)){
+              dropdown.classList.remove('open');
+              toggleBtn.setAttribute('aria-expanded','false');
+            }
+          });
+          Array.prototype.forEach.call(dropdown.querySelectorAll('.dropdown-item'), function(item){
+            item.addEventListener('click', function(){
+              dropdown.classList.remove('open');
+              toggleBtn.setAttribute('aria-expanded','false');
+              setMode(item.getAttribute('data-mode'));
+            });
+          });
+        }
       })();
     </script>
   </div>
@@ -1313,22 +1490,33 @@ export default function InspectionReportPage() {
                         <th scope="col">No.</th>
                         <th scope="col">Section</th>
                         <th scope="col">Defect</th>
+                        {filterMode === 'summary' && <th scope="col">Defects summary</th>}
                       </tr>
                     </thead>
                     <tbody>
                       {visibleSections.map((section) => {
                         const defectParts = splitDefectText(section.defect_description || section.defect || "");
-                        const summaryDefect =
-                          section.defectTitle ||
-                          defectParts.title ||
-                          (section.defect || "").trim() ||
-                          (defectParts.paragraphs[0] || "");
                         const sectionLabel = section.heading2 || section.sectionName || '';
+                        // Title (short) for the Defect column
+                        const defectTitle = section.defectTitle ||
+                          defectParts.title ||
+                          (section.defect || "").split(/\n|\./)[0].trim();
+                        // Body/first paragraph (long) for the Defects summary column (only in summary view)
+                        const bodyCandidate = defectParts.paragraphs.length
+                          ? defectParts.paragraphs[0]
+                          : (defectParts.body && defectParts.body !== defectTitle ? defectParts.body : '');
+                        const defectSummary = bodyCandidate || defectTitle; // fallback so cell not empty
 
+                        const cat = nearestCategory(section.color) || 'red';
+                        let catClass = '';
+                        if(cat === 'red') catClass = styles.summaryRowCatRed;
+                        else if(cat === 'orange') catClass = styles.summaryRowCatOrange;
+                        else if(cat === 'blue') catClass = styles.summaryRowCatBlue;
+                        else if(cat === 'purple') catClass = styles.summaryRowCatPurple;
                         return (
                           <tr
                             key={section.anchorId}
-                            className={styles.summaryRow}
+                            className={`${styles.summaryRow} ${catClass}`}
                             onClick={() => scrollToAnchor(section.anchorId)}
                             onKeyDown={(event) => {
                               if (event.key === 'Enter' || event.key === ' ') {
@@ -1338,17 +1526,18 @@ export default function InspectionReportPage() {
                             }}
                             role="link"
                             tabIndex={0}
-                            aria-label={`Jump to defect ${section.numbering}: ${summaryDefect}`}
+                            aria-label={`Jump to defect ${section.numbering}: ${defectTitle}`}
                           >
                             <td>{section.numbering}</td>
                             <td>{sectionLabel}</td>
-                            <td>{summaryDefect}</td>
+                            <td>{defectTitle}</td>
+                            {filterMode === 'summary' && <td>{defectSummary}</td>}
                           </tr>
                         );
                       })}
                       {visibleSections.length === 0 && (
                         <tr>
-                          <td colSpan={3} className={styles.summaryEmpty}>No defects match this view.</td>
+                          <td colSpan={filterMode === 'summary' ? 4 : 3} className={styles.summaryEmpty}>No defects match this view.</td>
                         </tr>
                       )}
                     </tbody>

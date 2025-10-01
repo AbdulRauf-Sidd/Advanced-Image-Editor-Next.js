@@ -526,7 +526,7 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
     .footer { margin-top: 16px; font-size: 11px; color: #6b7280; }
 
     /* Prevent splitting a single defect across pages */
-    .report-section { 
+    .report-section {   
       /* Further increased space between defects for optimal separation while keeping 2 per page */
       margin: 24px 0;
       page-break-inside: avoid; 
@@ -595,6 +595,43 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
   `}
   
   <div class="content-wrapper">
+
+  ${reportType === 'summary' ? `
+  <!-- Summary report: include Inspection Sections table beneath header -->
+  <section class="cover cover--summary keep-together" style="margin-top:16px;">
+    <h2 style="margin:0 0 12px 0;">Inspection Sections</h2>
+    <table class="table" style="font-size:12px;">
+      <thead>
+        <tr>
+          <th style="width:8%;">No.</th>
+          <th style="width:32%;">Section</th>
+          <th style="width:30%;">Defect</th>
+          <th style="width:30%;">Defects summary</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sorted.reduce((acc, d) => {
+          if (d.section !== acc.last) { acc.current += 1; acc.sub = 1; acc.last = d.section; } else { acc.sub += 1; }
+          const numbering = `${acc.current}.${acc.sub}`;
+          const raw = d.defect_description || '';
+          const parts = splitDefectText(raw);
+          const defectTitle = parts.title || raw.split('.').shift() || '';
+          // Summary body = first paragraph after title, or body text if different, fallback to empty
+          let summaryBody = '';
+          if (parts.paragraphs && parts.paragraphs.length) {
+            summaryBody = parts.paragraphs[0];
+          } else if (parts.body && parts.body !== parts.title) {
+            summaryBody = parts.body;
+          }
+          // Final fallback: if no separate body, leave summary blank (do NOT duplicate title)
+          acc.rows.push(`<tr><td>${escapeHtml(numbering)}</td><td>${escapeHtml(d.section)} - ${escapeHtml(d.subsection)}</td><td>${escapeHtml(defectTitle)}</td><td>${escapeHtml(summaryBody)}</td></tr>`);
+          return acc;
+        }, { rows: [] as string[], current: startNumber - 1, last: null as string | null, sub: 0 }).rows.join('\n')}
+      </tbody>
+    </table>
+  </section>
+  <div class="page-break"></div>
+  ` : ''}
 
   ${reportType === 'full' ? `<section class="cover cover--section1 keep-together">
     <h2>Section 1 - Inspection Scope, Client Responsibilities, and Repair Estimates</h2>
