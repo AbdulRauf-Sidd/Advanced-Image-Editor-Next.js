@@ -77,6 +77,8 @@
   .sideNavOpen { transform: translateX(0%); }
   .sideNavClose { display: inline-flex; background: transparent; border: none; font-size: 22px; cursor: pointer; }
   .mobileNavBar { display: block; }
+  /* Center defect card headings on mobile */
+  .imageTitle, .descriptionTitle { text-align: center; justify-content: center; }
 }
 
 /* Print: hide nav */
@@ -98,7 +100,7 @@
 }
 
 .sectionHeading {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   padding-bottom: 1rem;
   border-bottom: 2px solid var(--selected-color, #d63636);
 }
@@ -107,6 +109,19 @@
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--selected-color, #d63636);
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+/* Subsection heading styles */
+.subsectionHeading {
+  margin-bottom: 2rem;
+  padding-bottom: 0.5rem;
+}
+
+.subsectionHeadingText {
+  font-size: 1.5rem;
+  font-weight: 600;
   margin: 0;
   letter-spacing: -0.025em;
 }

@@ -204,7 +204,9 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
 
   const sectionsHtml = sorted
     .map((d, index) => {
-      if (d.section !== lastSection) {
+      const isNewSection = d.section !== lastSection;
+      
+      if (isNewSection) {
         currentMain += 1;
         subCounter = 1;
         lastSection = d.section;
@@ -232,11 +234,24 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
       // Add page break after every 2 sections (except the last one)
       const pageBreak = (index + 1) % 2 === 0 && index < sorted.length - 1 ? '<div class="page-break"></div>' : '';
 
+      // Two-tier heading structure: Section in black (only when section changes), then subsection with color
+      const sectionHeading = `Section ${currentMain} - ${escapeHtml(d.section)}`;
+      const subsectionHeading = `${number} - ${escapeHtml(d.subsection)}`;
+      
+      // Only show section heading when section changes
+      const sectionHeadingHtml = isNewSection ? `
+          <div class="section-heading" style="--selected-color: #111827;">
+            <h2 class="section-heading-text" style="color: #111827;">
+              ${sectionHeading}
+            </h2>
+          </div>` : '';
+
       return `
         <section class="report-section" style="--selected-color: ${selectedColor};">
-          <div class="section-heading">
+          ${sectionHeadingHtml}
+          <div class="section-heading" style="--selected-color: ${selectedColor}; margin-top: ${isNewSection ? '0.75rem' : '0.5rem'};">
             <h2 class="section-heading-text">
-              ${escapeHtml(number)} ${escapeHtml(d.section)}
+              ${subsectionHeading}
               <span class="importance-badge" style="background-color: ${selectedColor};">${importanceLabel}</span>
             </h2>
           </div>

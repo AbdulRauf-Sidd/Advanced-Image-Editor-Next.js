@@ -700,7 +700,8 @@ export default function InspectionReportPage() {
     .rpt-content-grid{display:grid;grid-template-columns:1fr 3fr;gap:32px;align-items:start}
     .rpt-image-section{background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:24px;box-shadow:0 4px 16px rgba(15,23,42,0.12);position:relative;overflow:hidden}
     .rpt-image-section::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,var(--selected-color,#dc2626),var(--shadow-color,rgba(214,54,54,0.16)),var(--selected-color,#dc2626))}
-    .rpt-section-title{font-size:1.5rem;font-weight:700;color:#1f2937;margin-bottom:24px;letter-spacing:-0.025em}
+  .rpt-section-title{font-size:1.5rem;font-weight:700;color:#1f2937;margin-bottom:24px;letter-spacing:-0.025em}
+  @media(max-width:640px){.rpt-section-title{text-align:center;}}
     .rpt-image-container{border-radius:16px;overflow:hidden;min-height:300px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(15,23,42,0.15)}
     .rpt-img{width:100%;height:auto;display:block;cursor:zoom-in;border-radius:12px;transition:transform .3s ease}
     .rpt-img:hover{transform:scale(1.02)}
@@ -1184,8 +1185,11 @@ export default function InspectionReportPage() {
         anchorId,
         numbering,
         sectionName: defect.section,
-        heading2: `${defect.section}`,
-        heading: `${numbering} ${defect.section}`,
+        subsectionName: defect.subsection,
+        sectionHeading: `Section ${currentMain} - ${defect.section}`,
+        subsectionHeading: `${numbering} - ${defect.subsection}`,
+        heading2: `${defect.section} - ${defect.subsection}`,
+        heading: `${numbering} ${defect.subsection}`,
         image: defect.image,
   defect: summaryTitle,
   defectTitle: summaryTitle,
@@ -1838,7 +1842,7 @@ export default function InspectionReportPage() {
 
                   <br></br><br></br>
               </>}
-                {visibleSections.map((section) => {
+                {visibleSections.map((section, idx) => {
                   const defectPartsView = splitDefectText(section.defect_description || section.defect || "");
                   const defectTitle = section.defectTitle || defectPartsView.title;
                   const defectParagraphsRaw = Array.isArray(section.defectParagraphs) && section.defectParagraphs.length
@@ -1852,19 +1856,38 @@ export default function InspectionReportPage() {
                     .map((paragraph: string) => paragraph?.trim?.())
                     .filter((paragraph: string | undefined): paragraph is string => Boolean(paragraph));
 
+                  // Check if this is the first defect in a new section
+                  const isNewSection = idx === 0 || visibleSections[idx - 1].sectionName !== section.sectionName;
+
                   return (
                 <div key={section.id}>
-                  {/* Heading outside the section */}
+                  {/* Main Section Heading (Black) - Only show when section changes */}
+                  {isNewSection && (
+                    <div 
+                      className={styles.sectionHeading}
+                      style={{
+                        '--selected-color': '#111827',
+                        '--text-color': '#111827',
+                      } as React.CSSProperties}
+                    >
+                      <h2 className={styles.sectionHeadingText} style={{ color: '#111827' }}>
+                        {section.sectionHeading}
+                      </h2>
+                    </div>
+                  )}
+                  
+                  {/* Subsection Heading (Colored with badge) - Always show */}
                   <div 
-                    className={styles.sectionHeading} 
+                    className={styles.sectionHeading}
                     id={section.anchorId}
                     style={{
                       '--selected-color': getSelectedColor(section),
                       '--light-color': getLightColor(section),
+                      marginTop: isNewSection ? '1rem' : '0.5rem',
                     } as React.CSSProperties}
                   >
                     <h2 className={styles.sectionHeadingText}>
-                      {section.heading.startsWith('Section - ') ? section.heading : `Section - ${section.heading}`}
+                      {section.subsectionHeading}
                       <span className={styles.importanceBadge} style={{ background: getSelectedColor(section) }}>
                         {colorToImportance(section.color)}
                       </span>
