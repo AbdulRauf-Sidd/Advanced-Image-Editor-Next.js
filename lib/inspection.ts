@@ -46,7 +46,9 @@ export async function updateInspection(inspectionId: string, data: Partial<{
   status: string;
   date: string | Date;
   headerImage: string;
-  headerText: string;
+  headerText: string; // legacy single-line header
+  headerName: string; // new: name line
+  headerAddress: string; // new: address line
 }>) {
   const client = await clientPromise;
   const db = client.db(DB_NAME);

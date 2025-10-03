@@ -491,12 +491,11 @@ export default function InspectionReportPage() {
         })
         .join('');
 
-      // For summary HTML export only: build inspection sections table rows with defect title and separate defects summary
+      // Summary HTML export table rows (no separate defects summary column)
       const summaryInspectionTableRows = reportType === 'summary'
         ? sectionsToExport.map((s) => {
             const defectParts = splitDefectText(s.defect_description || s.defect || "");
             const defectTitle = (s.defectTitle || defectParts.title || (s.defect || "").trim() || '').trim();
-            const defectSummary = (defectParts.paragraphs && defectParts.paragraphs.length > 0 ? defectParts.paragraphs[0] : '').trim();
             const cat = nearestCategory(s.color) || 'red';
             const catClass = {
               red: 'rpt-row-cat-red',
@@ -509,7 +508,6 @@ export default function InspectionReportPage() {
                 <td>${escapeHtml(s.numbering ?? '')}</td>
                 <td>${escapeHtml(s.heading2 ?? s.sectionName ?? '')}</td>
                 <td>${escapeHtml(defectTitle)}</td>
-                <td>${escapeHtml(defectSummary)}</td>
               </tr>
             `;
           }).join('')
@@ -517,9 +515,10 @@ export default function InspectionReportPage() {
 
       // Intro sections (Section 1 & 2) content (tagged with data-intro for mode filtering in exported HTML)
       const introHtml = `
+        <div class="rpt-section-heading" data-intro-heading="1">
+          <h2 class="rpt-section-heading-text" style="color:#111827">Section 1 - Inspection Overview & Client Responsibilities</h2>
+        </div>
         <section class="rpt-section intro-section" data-intro="1">
-          <h2 class="rpt-h2">Section 1 - Inspection Scope, Client Responsibilities, and Repair Estimates</h2>
-          <hr style="margin: 8px 0 16px 0; border: none; height: 1px; background-color: #000000;">
           <div class="rpt-card">
             <p>This is a visual inspection only. The scope of this inspection is to verify the proper performance of the home's major systems. We do not verify proper design.</p>
             <p>The following items reflect the condition of the home and its systems at the time and date the inspection was performed. Conditions of an occupied home can change after the inspection (e.g., leaks may occur beneath sinks, water may run at toilets, walls or flooring may be damaged during moving, appliances may fail, etc.).</p>
@@ -532,13 +531,13 @@ export default function InspectionReportPage() {
             <p>We do not provide guaranteed repair methods. Any corrections should be performed by qualified, licensed contractors. Consult your Real Estate Professional, Attorney, or Contractor for further advice regarding responsibility for these repairs.</p>
             <p>While this report may identify products involved in recalls or lawsuits, it is not comprehensive. Identifying all recalled products is not a requirement for Louisiana licensed Home Inspectors.</p>
             <p>This inspection complies with the standards of practice of the State of Louisiana Home Inspectors Licensing Board. Home inspectors are generalists and recommend further review by licensed specialists when needed.</p>
-            <p class="disclaimer">This inspection report and all information contained within is the sole property of AGI Property Inspections and is leased to the clients named in this report. It may not be shared or passed on without AGI’s consent. <em>Doing so may result in legal action.</em></p>
+            <p>This inspection report and all information contained within is the sole property of AGI Property Inspections and is leased to the clients named in this report. It may not be shared or passed on without AGI’s consent. Doing so may result in legal action.</p>
           </div>
         </section>
-
-  <section class="rpt-section intro-section" data-intro="1">
-          <h2 class="rpt-h2">Section 2 - Inspection Scope & Limitations</h2>
-          <hr style="margin: 8px 0 16px 0; border: none; height: 1px; background-color: #000000;">
+        <div class="rpt-section-heading" data-intro-heading="2">
+          <h2 class="rpt-section-heading-text" style="color:#111827">Section 2 - Inspection Scope & Limitations</h2>
+        </div>
+        <section class="rpt-section intro-section" data-intro="1">
           <div class="rpt-card">
             <h3>Inspection Categories & Summary</h3>
             <h4 class="cat-red">Immediate Attention</h4>
@@ -611,13 +610,13 @@ export default function InspectionReportPage() {
             ? defectParts.paragraphs[0]
             : (defectParts.body && defectParts.body !== summaryTitle ? defectParts.body : '')).trim();
           return `
+            <div class="rpt-section-heading" id="${s.anchorId}-heading" data-cat="${category}" style="--selected-color:${selectedColor};--shadow-color:${shadowColor};">
+              <h2 class="rpt-section-heading-text">
+                Section - ${escapeHtml(s.heading)}
+                <span class="rpt-badge">${badgeLabel}</span>
+              </h2>
+            </div>
             <section id="${s.anchorId}" class="rpt-section" data-cat="${category}" data-numbering="${escapeHtml(s.numbering)}" data-section-label="${escapeHtml(s.heading2 || s.sectionName || '')}" data-defect-title="${escapeHtml(summaryTitle)}" data-defect-summary="${escapeHtml(summaryBody)}" style="--selected-color:${selectedColor};--shadow-color:${shadowColor};--highlight-bg:${highlightBg};">
-              <div class="rpt-section-heading">
-                <h2 class="rpt-section-heading-text">
-                  ${escapeHtml(s.heading)}
-                  <span class="rpt-badge">${badgeLabel}</span>
-                </h2>
-              </div>
               <div class="rpt-content-grid">
                 <div class="rpt-image-section">
                   <h3 class="rpt-section-title">Visual Evidence</h3>
@@ -675,8 +674,10 @@ export default function InspectionReportPage() {
   .rpt-summary-subtitle{margin:6px 0 0;color:#64748b;font-size:0.95rem}
   .rpt-summary-table-wrap{overflow-x:auto;padding:0 28px 28px}
   .rpt-summary-table{width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(15,23,42,0.08)}
-  .rpt-summary-table thead th{text-transform:uppercase;font-size:0.75rem;letter-spacing:0.08em;color:#475569;background:#f8fafc;padding:12px 14px;text-align:left;border-bottom:1px solid #e2e8f0}
-  .rpt-summary-table tbody td{padding:13px 14px;font-size:0.95rem;color:#1f2937;border-bottom:1px solid #e2e8f0}
+  .rpt-summary-table thead th{text-transform:uppercase;font-size:0.75rem;letter-spacing:0.08em;color:#475569;background:#f8fafc;padding:12px 14px;text-align:left;border-bottom:1px solid #e2e8f0;border-right:1px solid #d9dee5}
+  .rpt-summary-table thead th:last-child{border-right:none}
+  .rpt-summary-table tbody td{padding:13px 14px;font-size:0.95rem;color:#1f2937;border-bottom:1px solid #e2e8f0;border-right:1px solid #e2e8f0}
+  .rpt-summary-table tbody td:last-child{border-right:none}
   .rpt-summary-table tbody tr:last-child td{border-bottom:none}
   .rpt-summary-row{cursor:pointer;transition:background 0.2s ease,transform 0.2s ease}
   .rpt-summary-row:hover{background:#f8fafc}
@@ -691,7 +692,9 @@ export default function InspectionReportPage() {
   .rpt-row-cat-purple:hover{background:rgba(124,58,237,0.08)}
     .rpt-section{background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 8px 32px rgba(15,23,42,0.12);padding:32px;margin:32px 0 0 0}
     .rpt-section:first-of-type{margin-top:0}
-    .rpt-section-heading{margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid var(--selected-color,#dc2626)}
+  .rpt-section-heading{margin:56px 0 24px 0;padding-bottom:16px;border-bottom:2px solid var(--selected-color,#dc2626)}
+  .rpt-section-heading[data-intro-heading]{border-bottom:2px solid #000000}
+  .rpt-section-heading:first-of-type{margin-top:0}
     .rpt-section-heading-text{font-size:1.75rem;color:var(--selected-color,#dc2626);font-weight:700;margin:0;letter-spacing:-0.025em}
     .rpt-badge{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:9999px;font-weight:700;color:#fff;font-size:0.8rem;background:var(--selected-color,#dc2626);box-shadow:0 2px 6px rgba(15,23,42,0.2);margin-left:8px}
     .rpt-content-grid{display:grid;grid-template-columns:1fr 3fr;gap:32px;align-items:start}
@@ -719,6 +722,8 @@ export default function InspectionReportPage() {
   .lb-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:9999}
   .lb-overlay.open{display:flex}
   .lb-img{max-width:95vw;max-height:92vh;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.5);transition:transform 80ms linear;will-change:transform;cursor: zoom-in}
+  .lb-close{position:absolute;top:12px;right:16px;background:rgba(0,0,0,0.6);color:#fff;border:none;font-size:20px;line-height:1;font-weight:600;padding:6px 10px;border-radius:6px;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.3);transition:background .15s ease}
+  .lb-close:hover{background:rgba(0,0,0,0.75)}
     .rpt-hr{border:none;border-top:1px solid #e5e7eb;margin:12px 0}
   .cat-red{color:#cc0000}
   .cat-orange{color:#e69500}
@@ -768,7 +773,18 @@ export default function InspectionReportPage() {
         <img src="${escapeHtml(headerImageUrl)}" alt="Property Image" class="header-image" />
       </div>
       <div class="report-header-content">
-        ${headerText ? `<h1 class="header-text">${escapeHtml(headerText)}</h1>` : ''}
+        ${(()=>{ 
+          // prefer separate fields if available on client state (in closure via inspection) else split headerText
+          const nameLine = inspection?.headerName || (headerText ? headerText.split('\n')[0] : '');
+          const addressLine = inspection?.headerAddress || (headerText ? headerText.split('\n').slice(1).join(' ') : '');
+          if (!nameLine && !addressLine) return '';
+          const safeName = escapeHtml(nameLine);
+          const safeAddress = escapeHtml(addressLine);
+          return `<div style="line-height:1.15;margin-bottom:14px;">
+            ${safeName ? `<div style=\"font-size:30px;font-weight:700;color:#111827;\">${safeName}</div>` : ''}
+            ${safeAddress ? `<div style=\"font-size:30px;font-weight:700;color:#111827;margin-top:4px;\">${safeAddress}</div>` : ''}
+          </div>`;
+        })()}
         <h2 class="report-title">HOME INSPECTION REPORT</h2>
         <div class="meta-info">AGI Property Inspections • Generated ${new Date().toLocaleDateString()}</div>
       </div>
@@ -818,7 +834,6 @@ export default function InspectionReportPage() {
               <th scope="col">No.</th>
               <th scope="col">Section</th>
               <th scope="col">Defect</th>
-              <th scope="col">Defects summary</th>
             </tr>
           </thead>
           <tbody>
@@ -830,6 +845,30 @@ export default function InspectionReportPage() {
     ` : ''}
     ${reportType === 'full' ? introHtml : ''}
     ${sectionHtml}
+    ${reportType === 'summary' ? `
+    <section class="rpt-section">
+      <h2 class="rpt-h2">Total Estimated Cost</h2>
+      <table class="rpt-table">
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Section</th>
+            <th>Defect</th>
+            <th style="text-align:right;">Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${summaryRows}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3">Total</td>
+            <td style="text-align:right;">$${totalAll}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </section>
+    ` : ''}
     ${reportType === 'full' ? `
     <section class="rpt-section">
       <h2 class="rpt-h2">Total Estimated Cost</h2>
@@ -855,6 +894,7 @@ export default function InspectionReportPage() {
     </section>` : ''}
     <!-- Lightbox overlay for image zoom/pan -->
     <div id="lb-overlay" class="lb-overlay" role="dialog" aria-modal="true" aria-label="Image preview">
+      <button type="button" id="lb-close" class="lb-close" aria-label="Close image">×</button>
       <img id="lb-img" class="lb-img" alt="Zoomed defect" />
     </div>
     <script>
@@ -896,7 +936,9 @@ export default function InspectionReportPage() {
         }
 
         document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeLightbox(); });
-        overlay.addEventListener('click', function(){ closeLightbox(); });
+  overlay.addEventListener('click', function(){ closeLightbox(); });
+  var closeBtn = document.getElementById('lb-close');
+  if(closeBtn){ closeBtn.addEventListener('click', function(e){ e.stopPropagation(); closeLightbox(); }); }
         img.addEventListener('click', function(e){ e.stopPropagation(); });
 
         // Double-click to toggle zoom
@@ -966,7 +1008,7 @@ export default function InspectionReportPage() {
 
         function rebuildSummary(filterFn, includeSummary){
           if(!summaryHead || !summaryBody) return;
-          summaryHead.innerHTML = '<th scope="col">No.</th><th scope="col">Section</th><th scope="col">Defect</th>' + (includeSummary ? '<th scope="col">Defects summary</th>' : '');
+          summaryHead.innerHTML = '<th scope="col">No.</th><th scope="col">Section</th><th scope="col">Defect</th>';
           var rows = '';
           defectSections.forEach(function(sec){
             var cat = sec.getAttribute('data-cat');
@@ -1015,11 +1057,11 @@ export default function InspectionReportPage() {
           defectSections.forEach(function(sec){
             var cat = sec.getAttribute('data-cat');
             if(mode==='summary'){ sec.style.display = (cat==='blue') ? 'none' : ''; }
-            else if(mode==='hazard'){ sec.style.display = (cat==='red') ? '' : 'none'; }
+            else if(mode==='hazard'){ sec.style.display = (cat==='red' || cat==='purple') ? '' : 'none'; }
             else { sec.style.display = ''; }
           });
           if(mode==='summary') rebuildSummary(function(cat){ return cat!=='blue'; }, true);
-          else if(mode==='hazard') rebuildSummary(function(cat){ return cat==='red'; }, false);
+          else if(mode==='hazard') rebuildSummary(function(cat){ return cat==='red' || cat==='purple'; }, false);
           else rebuildSummary(null, false);
           window.scrollTo({ top:0, behavior:'smooth' });
         }
@@ -1218,7 +1260,8 @@ export default function InspectionReportPage() {
   };
 
   const isHazardColor = (input?: string) => {
-    return nearestCategory(input) === 'red';
+    const cat = nearestCategory(input);
+    return cat === 'red' || cat === 'purple';
   };
 
   const visibleSections = useMemo(() => {
@@ -1282,16 +1325,6 @@ export default function InspectionReportPage() {
 
   return (
     <div className={styles.userReportContainer}>
-      {/* Back Button - Standalone navigation element */}
-      <div className={styles.backButtonContainer}>
-        <button
-          className={styles.backButton}
-          onClick={() => window.location.href = '/'}
-          title="Back to Inspections List"
-        >
-          ← Back to Inspections
-        </button>
-      </div>
       
       <main className="py-8">
         {/* Removed top Download PDF button for clarity; use Export PDF in toolbar */}
@@ -1313,8 +1346,17 @@ export default function InspectionReportPage() {
                   />
                   {/* Header Text - Below the image */}
                   <div className={styles.headerTextContainer}>
-                    {headerText && (
-                      <h1 className={styles.inspectionTitle}>{headerText}</h1>
+                    {(inspection?.headerName || inspection?.headerAddress || headerText) && (
+                      <div style={{ textAlign:'center', marginBottom:'8px' }}>
+                        { (inspection?.headerName || headerText?.split('\n')[0]) && (
+                          <h1 className={styles.inspectionTitle} style={{ margin:'0 0 4px 0', fontSize:'1.75rem' }}>
+                            {inspection?.headerName || headerText?.split('\n')[0]}
+                          </h1>) }
+                        { (inspection?.headerAddress || headerText?.split('\n').slice(1).join(' ')) && (
+                          <div style={{fontSize:'1.75rem', fontWeight:700, color:'#1f2937', marginTop:'2px'}}>
+                            {inspection?.headerAddress || headerText?.split('\n').slice(1).join(' ')}
+                          </div>) }
+                      </div>
                     )}
                     <h2 className={styles.reportTitle}>HOME INSPECTION REPORT</h2>
                   </div>
@@ -1496,7 +1538,7 @@ export default function InspectionReportPage() {
                         <th scope="col">No.</th>
                         <th scope="col">Section</th>
                         <th scope="col">Defect</th>
-                        {filterMode === 'summary' && <th scope="col">Defects summary</th>}
+                        {/* Removed Defects summary column */}
                       </tr>
                     </thead>
                     <tbody>
@@ -1507,11 +1549,8 @@ export default function InspectionReportPage() {
                         const defectTitle = section.defectTitle ||
                           defectParts.title ||
                           (section.defect || "").split(/\n|\./)[0].trim();
-                        // Body/first paragraph (long) for the Defects summary column (only in summary view)
-                        const bodyCandidate = defectParts.paragraphs.length
-                          ? defectParts.paragraphs[0]
-                          : (defectParts.body && defectParts.body !== defectTitle ? defectParts.body : '');
-                        const defectSummary = bodyCandidate || defectTitle; // fallback so cell not empty
+                        // Removed defects summary column cell
+                        // Defects summary column removed; no need to compute bodyCandidate/defectSummary
 
                         const cat = nearestCategory(section.color) || 'red';
                         let catClass = '';
@@ -1537,13 +1576,12 @@ export default function InspectionReportPage() {
                             <td>{section.numbering}</td>
                             <td>{sectionLabel}</td>
                             <td>{defectTitle}</td>
-                            {filterMode === 'summary' && <td>{defectSummary}</td>}
                           </tr>
                         );
                       })}
                       {visibleSections.length === 0 && (
                         <tr>
-                          <td colSpan={filterMode === 'summary' ? 4 : 3} className={styles.summaryEmpty}>No defects match this view.</td>
+                          <td colSpan={3} className={styles.summaryEmpty}>No defects match this view.</td>
                         </tr>
                       )}
                     </tbody>
@@ -1553,7 +1591,7 @@ export default function InspectionReportPage() {
               <br></br><br></br>
               {filterMode === 'full' && <>
               <div className={styles.sectionHeadingStart}>
-                    <h2 className={styles.sectionHeadingTextStart}>Section 1 - Inspection Scope, Client Responsibilities, and Repair Estimates</h2>
+                    <h2 className={styles.sectionHeadingTextStart}>Section 1 - Inspection Overview & Client Responsibilities</h2>
                   </div>
                       <div className={styles.descriptionSectionStart}>
                         <p>
@@ -1639,11 +1677,10 @@ export default function InspectionReportPage() {
                           specialists when needed.
                         </p>
                           
-                        <p className={styles.disclaimer}>
+                        <p>
                           This inspection report and all information contained within is the sole
                           property of AGI Property Inspections and is leased to the clients named in
-                          this report. It may not be shared or passed on without AGI’s consent.{" "}
-                          <em>Doing so may result in legal action.</em>
+                          this report. It may not be shared or passed on without AGI’s consent. Doing so may result in legal action.
                         </p>
                       </div>
 
@@ -1827,7 +1864,7 @@ export default function InspectionReportPage() {
                     } as React.CSSProperties}
                   >
                     <h2 className={styles.sectionHeadingText}>
-                      {section.heading}
+                      {section.heading.startsWith('Section - ') ? section.heading : `Section - ${section.heading}`}
                       <span className={styles.importanceBadge} style={{ background: getSelectedColor(section) }}>
                         {colorToImportance(section.color)}
                       </span>
@@ -2027,6 +2064,14 @@ export default function InspectionReportPage() {
                   aria-modal="true"
                   aria-label="Image preview"
                 >
+                  <button
+                    type="button"
+                    className={styles.lightboxClose}
+                    aria-label="Close image"
+                    onClick={(e) => { e.stopPropagation(); setLightboxOpen(false); setLightboxSrc(null); setZoomScale(1); setTranslate({ x:0, y:0 }); }}
+                  >
+                    ×
+                  </button>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     ref={imageRef}

@@ -648,7 +648,6 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
           <th style="width:8%;">No.</th>
           <th style="width:32%;">Section</th>
           <th style="width:30%;">Defect</th>
-          <th style="width:30%;">Defects summary</th>
         </tr>
       </thead>
       <tbody>
@@ -658,15 +657,7 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
           const raw = d.defect_description || '';
           const parts = splitDefectText(raw);
           const defectTitle = parts.title || raw.split('.').shift() || '';
-          // Summary body = first paragraph after title, or body text if different, fallback to empty
-          let summaryBody = '';
-          if (parts.paragraphs && parts.paragraphs.length) {
-            summaryBody = parts.paragraphs[0];
-          } else if (parts.body && parts.body !== parts.title) {
-            summaryBody = parts.body;
-          }
-          // Final fallback: if no separate body, leave summary blank (do NOT duplicate title)
-          acc.rows.push(`<tr><td>${escapeHtml(numbering)}</td><td>${escapeHtml(d.section)} - ${escapeHtml(d.subsection)}</td><td>${escapeHtml(defectTitle)}</td><td>${escapeHtml(summaryBody)}</td></tr>`);
+          acc.rows.push(`<tr><td>${escapeHtml(numbering)}</td><td>${escapeHtml(d.section)} - ${escapeHtml(d.subsection)}</td><td>${escapeHtml(defectTitle)}</td></tr>`);
           return acc;
         }, { rows: [] as string[], current: startNumber - 1, last: null as string | null, sub: 0 }).rows.join('\n')}
       </tbody>
@@ -676,7 +667,7 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
   ` : ''}
 
   ${reportType === 'full' ? `<section class="cover cover--section1 keep-together">
-    <h2>Section 1 - Inspection Scope, Client Responsibilities, and Repair Estimates</h2>
+    <h2>Section 1 - Inspection Overview & Client Responsibilities</h2>
     <hr style="margin: 8px 0 16px 0; border: none; height: 1px; background-color: #000000;">
     <p>This is a visual inspection only. The scope of this inspection is to verify the proper performance of the home's major systems. We do not verify proper design.</p>
     <p>The following items reflect the condition of the home and its systems <strong>at the time and date the inspection was performed</strong>. Conditions of an occupied home can change after the inspection (e.g., leaks may occur beneath sinks, water may run at toilets, walls or flooring may be damaged during moving, appliances may fail, etc.).</p>
@@ -689,7 +680,7 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
     <p>We do not provide guaranteed repair methods. Any corrections should be performed by qualified, licensed contractors. Consult your Real Estate Professional, Attorney, or Contractor for further advice regarding responsibility for these repairs.</p>
     <p>While this report may identify products involved in recalls or lawsuits, it is not comprehensive. Identifying all recalled products is not a requirement for Louisiana licensed Home Inspectors.</p>
     <p>This inspection complies with the standards of practice of the State of Louisiana Home Inspectors Licensing Board. Home inspectors are generalists and recommend further review by licensed specialists when needed.</p>
-    <p><em>This inspection report and all information contained within is the sole property of AGI Property Inspections and is leased to the clients named in this report. It may not be shared or passed on without AGI’s consent. Doing so may result in legal action.</em></p>
+  <p>This inspection report and all information contained within is the sole property of AGI Property Inspections and is leased to the clients named in this report. It may not be shared or passed on without AGI’s consent. Doing so may result in legal action.</p>
   </section>
 
   <div class="page-break"></div>
@@ -760,6 +751,26 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
   <div class="page-break"></div>
 
   ${reportType === 'full' ? `<section class="cover">
+    <h2>Total Estimated Cost</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>No.</th>
+          <th>Defect</th>
+          <th style="text-align:right;">Cost ($)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${costSummaryRows}
+        <tr>
+          <td colspan="2" style="font-weight:700;background:#f3f4f6;">Total Estimated Cost</td>
+          <td style="font-weight:700;background:#f3f4f6; text-align:right;">${currency(totalAll)}</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>` : ''}
+
+  ${reportType === 'summary' ? `<section class="cover">
     <h2>Total Estimated Cost</h2>
     <table class="table">
       <thead>

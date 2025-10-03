@@ -38,7 +38,7 @@ export default function DefectEditModal({ isOpen, onClose, inspectionId, inspect
   const [deleting, setDeleting] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editedValues, setEditedValues] = useState<Partial<Defect>>({});
-  const [inspectionDetails, setInspectionDetails] = useState<{headerImage?: string, headerText?: string}>({});
+  const [inspectionDetails, setInspectionDetails] = useState<{headerImage?: string, headerText?: string, headerName?: string, headerAddress?: string}>({});
   const [savingHeaderImage, setSavingHeaderImage] = useState(false);
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
 
@@ -147,27 +147,21 @@ export default function DefectEditModal({ isOpen, onClose, inspectionId, inspect
     }
   };
   
-  const setHeaderText = async (text: string) => {
+  const setHeaderName = async (text: string) => {
     try {
-      // Update local state immediately for responsive UI
-      setInspectionDetails(prev => ({ ...prev, headerText: text }));
-      
-      // No need to show loading indicator for text changes
-      // It's distracting and makes the UI feel slow
-      const response = await fetch(`/api/inspections/${inspectionId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ headerText: text }),
+      setInspectionDetails(prev => ({ ...prev, headerName: text }));
+      await fetch(`/api/inspections/${inspectionId}`, {
+        method: 'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ headerName: text })
       });
-
-      if (!response.ok) {
-        console.error('Failed to update header text');
-      }
-    } catch (error) {
-      console.error('Error updating header text:', error);
-    }
+    } catch(e){ console.error('Error updating header name', e); }
+  };
+  const setHeaderAddress = async (text: string) => {
+    try {
+      setInspectionDetails(prev => ({ ...prev, headerAddress: text }));
+      await fetch(`/api/inspections/${inspectionId}`, {
+        method: 'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ headerAddress: text })
+      });
+    } catch(e){ console.error('Error updating header address', e); }
   };
 
   const calculateTotalCost = (defect: Defect) => {
@@ -279,10 +273,12 @@ export default function DefectEditModal({ isOpen, onClose, inspectionId, inspect
             <div className="header-image-container">
               <HeaderImageUploader 
                 currentImage={inspectionDetails.headerImage}
-                headerText={inspectionDetails.headerText}
+                headerName={inspectionDetails.headerName || (inspectionDetails.headerText ? inspectionDetails.headerText.split('\n')[0] : '')}
+                headerAddress={inspectionDetails.headerAddress || (inspectionDetails.headerText ? inspectionDetails.headerText.split('\n').slice(1).join(' ') : '')}
                 onImageUploaded={(imageUrl) => setHeaderImage(imageUrl)}
                 onImageRemoved={() => setHeaderImage('')}
-                onHeaderTextChanged={(text) => setHeaderText(text)}
+                onHeaderNameChanged={(text) => setHeaderName(text)}
+                onHeaderAddressChanged={(text) => setHeaderAddress(text)}
               />
             </div>
           </div>

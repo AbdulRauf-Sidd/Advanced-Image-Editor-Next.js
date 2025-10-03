@@ -20,6 +20,7 @@
     "docx": "^9.5.1",
     "docxtemplater": "^3.66.3",
     "file-saver": "^2.0.5",
+    "heic2any": "^0.0.4",
     "html-to-docx": "^1.8.0",
     "html2canvas": "^1.4.1",
     "html2pdf.js": "^0.12.0",

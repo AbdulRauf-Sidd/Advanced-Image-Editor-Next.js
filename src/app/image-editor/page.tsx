@@ -96,7 +96,8 @@ export default function ImageEditorPage() {
       'Coverings',
       'Flashing & Seals',
       'Roof Penetrations',
-      'Roof Structure & Attic'
+      'Roof Structure & Attic',
+      'Gutters'
     ],
     'Exterior': [
       'Exterior Doors',
@@ -117,7 +118,8 @@ export default function ImageEditorPage() {
       'Walls',
       'Ceilings',
       'Countertops & Cabinets',
-      'Trim'
+      'Trim',
+      'Steps, Staircase, & Railings'
     ],
     'Insulation & Ventilation': [
       'Attic Access',

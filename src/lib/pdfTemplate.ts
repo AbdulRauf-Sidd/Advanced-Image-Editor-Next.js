@@ -135,7 +135,7 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
       return `
         <section class="report-section" style="--selected-color: ${selectedColor};">
           <div class="section-heading">
-            <h2 class="section-heading-text">${escapeHtml(number)} ${escapeHtml(d.section)} - ${escapeHtml(d.subsection)}</h2>
+            <h2 class="section-heading-text">Section - ${escapeHtml(number)} ${escapeHtml(d.section)} - ${escapeHtml(d.subsection)}</h2>
           </div>
 
           <div class="content-grid">
