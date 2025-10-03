@@ -100,7 +100,7 @@
 }
 
 .sectionHeading {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 2px solid var(--selected-color, #d63636);
 }
@@ -109,19 +109,6 @@
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--selected-color, #d63636);
-  margin: 0;
-  letter-spacing: -0.025em;
-}
-
-/* Subsection heading styles */
-.subsectionHeading {
-  margin-bottom: 2rem;
-  padding-bottom: 0.5rem;
-}
-
-.subsectionHeadingText {
-  font-size: 1.5rem;
-  font-weight: 600;
   margin: 0;
   letter-spacing: -0.025em;
 }
@@ -1262,6 +1249,67 @@
 @media print {
   .collapseToggle, .backToTop { display: none !important; }
   .lightboxOverlay { display: none !important; }
+}
+
+/* Mobile responsive styles for Total Estimated Cost table */
+@media (max-width: 640px) {
+  /* Center the Total Estimated Cost heading */
+  .reportSection h2 {
+    text-align: center !important;
+  }
+  
+  /* Center any h2 in a div that's above the defectsTable */
+  .reportSection > div > h2 {
+    text-align: center !important;
+  }
+  
+  .defectsTable {
+    font-size: 0.875rem;
+    border-radius: 12px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .defectsTable th,
+  .defectsTable td {
+    padding: 10px 8px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+  
+  .defectsTable th {
+    font-size: 0.7rem;
+    padding: 10px 8px;
+  }
+  
+  /* Optimize column widths for mobile */
+  .defectsTable th:nth-child(1),
+  .defectsTable td:nth-child(1) {
+    width: 12%;
+    text-align: center;
+  }
+  
+  .defectsTable th:nth-child(2),
+  .defectsTable td:nth-child(2) {
+    width: 28%;
+  }
+  
+  .defectsTable th:nth-child(3),
+  .defectsTable td:nth-child(3) {
+    width: 42%;
+    word-break: break-word;
+  }
+  
+  .defectsTable th:nth-child(4),
+  .defectsTable td:nth-child(4) {
+    width: 18%;
+    text-align: right !important;
+  }
+  
+  .defectsTable tfoot td {
+    font-size: 0.95rem;
+    padding: 12px 8px;
+  }
 }
 
 

@@ -616,6 +616,66 @@ export function generateInspectionReportHTML(defects: DefectItem[], meta: Report
     @media print { 
       .page-break { page-break-before: always; } 
     }
+
+    /* Mobile responsive styles for tables */
+    @media (max-width: 640px) {
+      /* Reduce content wrapper padding to prevent table shift */
+      .content-wrapper {
+        padding: 0 8px;
+      }
+      
+      /* Center Total Estimated Cost heading */
+      .cover h2 {
+        text-align: center !important;
+      }
+      
+      /* Ensure cover section has balanced padding */
+      .cover {
+        padding: 12px 8px;
+        margin-left: 0;
+        margin-right: 0;
+      }
+      
+      /* Center and fix table alignment */
+      .table { 
+        font-size: 10px;
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%;
+        display: table;
+      }
+      
+      .table th, .table td { 
+        padding: 6px 5px; 
+        font-size: 10px;
+        line-height: 1.3;
+      }
+      
+      /* Cost summary table column widths */
+      .table th:nth-child(1),
+      .table td:nth-child(1) { 
+        width: 12%; 
+        text-align: center;
+      }
+      
+      .table th:nth-child(2),
+      .table td:nth-child(2) { 
+        width: 58%; 
+        word-break: break-word;
+      }
+      
+      .table th:nth-child(3),
+      .table td:nth-child(3) { 
+        width: 30%; 
+        text-align: right;
+      }
+      
+      /* Summary table with 3 columns (No., Section, Defect) */
+      .table thead tr th:nth-child(3):not([style*="text-align"]),
+      .table tbody tr td:nth-child(3):not([style*="text-align"]) {
+        text-align: left;
+      }
+    }
   </style>
 </head>
 <body>
